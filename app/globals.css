@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --color-charcoal: #1f1c18;
+  --color-warm-gray: #7d7365;
+  --color-gold: #b39150;
+  --color-gold-soft: #dcc496;
+  --color-cream: #f8f4ec;
+  --color-taupe: #ded4c5;
+  --color-line: rgba(60, 51, 41, 0.14);
+  --color-muted: #6f665a;
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --font-body: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+}
+
+html {
+  background: var(--color-cream);
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, rgba(179, 145, 80, 0.12), transparent 32%),
+    linear-gradient(180deg, #fffdf9 0%, #f7f2e9 100%);
+  color: var(--color-charcoal);
+  font-family: var(--font-body);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+a {
+  outline-color: var(--color-gold);
+}
+
+::selection {
+  background: rgba(179, 145, 80, 0.25);
+}

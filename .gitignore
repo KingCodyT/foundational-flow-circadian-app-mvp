@@ -1,0 +1,9 @@
+.next
+node_modules
+dist
+coverage
+npm-debug.log*
+.DS_Store
+.npm-cache
+.vercel
+.tools

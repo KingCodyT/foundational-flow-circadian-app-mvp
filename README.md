@@ -4,13 +4,14 @@ This is a shareable Next.js MVP for a circadian signal audit. It walks a user th
 
 ## What it includes
 
-- Landing page
+- Welcome and overview page
 - Step-by-step audit flow
 - Weighted circadian scoring
 - Results page with weakest-signal interpretation
 - Protocol page with personalized recommendations
 - Dashboard summary
-- Client-side local state only, with no auth requirement
+- Local browser persistence by default
+- Optional Supabase-backed audit history, with no auth requirement for the MVP
 
 ## Local development
 
@@ -33,12 +34,34 @@ Vercel should use the standard Next.js build path.
 
 ### Notes
 
-- No environment variables are required for this MVP.
-- Supabase is not integrated yet.
-- Questionnaire answers are stored in local browser state only.
+- No environment variables are required for the local-only version.
+- Questionnaire answers are always kept in browser state for immediate UX.
+- If Supabase settings are not present, the app falls back gracefully to local persistence only.
+
+## Optional Supabase persistence
+
+The app can save and reload recent audits through `pages/api/audits.ts` when these environment variables are set:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_AUDITS_TABLE=circadian_audits
+```
+
+Recommended table shape:
+
+- `id uuid primary key`
+- `client_id text not null`
+- `created_at timestamptz default now()`
+- `answers jsonb not null`
+- `scores jsonb not null`
+- `insight jsonb not null`
+- `protocol jsonb not null`
+
+A starter SQL file is included at `supabase/schema.sql`.
 
 ## Next product steps
 
-- Add Supabase persistence for saved audits and dashboard history
 - Add repeat-audit tracking over time
 - Add richer protocol branching and educational guidance
+- Add auth and user-specific history once the anonymous MVP flow is validated

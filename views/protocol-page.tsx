@@ -40,7 +40,7 @@ export default function ProtocolPage() {
           description="This protocol is designed as a first operational pass. It focuses attention on the weakest signal first so the system has one clear place to stabilize."
         />
         <ProtocolBlock protocol={protocol} />
-        <NavActions previousHref="/results" nextHref="/dashboard" nextLabel="View dashboard" />
+        <NavActions previousHref="/results" nextHref="/rhythm" nextLabel="Open daily rhythm" />
       </section>
     </AppShell>
   );

@@ -81,3 +81,17 @@ export type ProtocolPlan = {
   steps: ProtocolStep[];
   supportNotes: string[];
 };
+
+export type PersistedAuditRecord = {
+  id: string;
+  clientId: string;
+  createdAt: string;
+  answers: AnswerMap;
+  scores: CircadianScores;
+  insight: CircadianInsight;
+  protocol: ProtocolPlan;
+};
+
+export type PersistenceMode = "local" | "supabase";
+
+export type SaveStatus = "idle" | "saving" | "saved" | "error";

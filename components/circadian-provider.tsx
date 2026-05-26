@@ -7,20 +7,36 @@ import {
   useEffect,
   useState,
 } from "react";
+import {
+  createAuditRecord,
+  createClientId,
+  getLatestAudit,
+  LocalAuditState,
+  mergeAuditHistory,
+  STORAGE_KEY,
+} from "@/lib/audit-store";
 import { calculateScores, generateInsights } from "@/lib/scoring";
 import { generateProtocol } from "@/lib/protocol";
 import {
   AnswerMap,
   CircadianInsight,
   CircadianScores,
+  PersistedAuditRecord,
+  PersistenceMode,
   ProtocolPlan,
+  SaveStatus,
 } from "@/types/circadian";
 
 type CircadianState = {
+  clientId: string;
   answers: AnswerMap;
   scores: CircadianScores | null;
   insight: CircadianInsight | null;
   protocol: ProtocolPlan | null;
+  auditHistory: PersistedAuditRecord[];
+  persistenceMode: PersistenceMode;
+  saveStatus: SaveStatus;
+  lastSavedAt: string | null;
   isHydrated: boolean;
   hasCompletedAudit: boolean;
   setAnswer: (questionId: string, value: string) => void;
@@ -28,56 +44,165 @@ type CircadianState = {
   resetAudit: () => void;
 };
 
-const STORAGE_KEY = "foundational-flow-circadian-app-state";
-
 const CircadianContext = createContext<CircadianState | null>(null);
 
-type PersistedState = {
-  answers: AnswerMap;
-  scores: CircadianScores | null;
-  insight: CircadianInsight | null;
-  protocol: ProtocolPlan | null;
-  hasCompletedAudit: boolean;
-};
-
 export function CircadianProvider({ children }: { children: ReactNode }) {
+  const [clientId, setClientId] = useState("");
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [scores, setScores] = useState<CircadianScores | null>(null);
   const [insight, setInsight] = useState<CircadianInsight | null>(null);
   const [protocol, setProtocol] = useState<ProtocolPlan | null>(null);
+  const [auditHistory, setAuditHistory] = useState<PersistedAuditRecord[]>([]);
+  const [persistenceMode, setPersistenceMode] =
+    useState<PersistenceMode>("local");
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasCompletedAudit, setHasCompletedAudit] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+
+  const applyAuditRecord = (record: PersistedAuditRecord) => {
+    setAnswers(record.answers);
+    setScores(record.scores);
+    setInsight(record.insight);
+    setProtocol(record.protocol);
+    setHasCompletedAudit(true);
+    setLastSavedAt(record.createdAt);
+  };
 
   useEffect(() => {
     const rawState = window.localStorage.getItem(STORAGE_KEY);
 
     if (rawState) {
-      const parsedState = JSON.parse(rawState) as PersistedState;
+      const parsedState = JSON.parse(rawState) as LocalAuditState;
+      setClientId(parsedState.clientId ?? createClientId());
       setAnswers(parsedState.answers ?? {});
       setScores(parsedState.scores ?? null);
       setInsight(parsedState.insight ?? null);
       setProtocol(parsedState.protocol ?? null);
+      setAuditHistory(parsedState.auditHistory ?? []);
+      setLastSavedAt(parsedState.lastSavedAt ?? null);
       setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
+    } else {
+      setClientId(createClientId());
     }
 
     setIsHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!isHydrated) {
+    if (!isHydrated || !clientId) {
       return;
     }
 
-    const state: PersistedState = {
+    const state: LocalAuditState = {
+      clientId,
       answers,
       scores,
       insight,
       protocol,
       hasCompletedAudit,
+      auditHistory,
+      lastSavedAt,
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [answers, hasCompletedAudit, insight, isHydrated, protocol, scores]);
+  }, [answers, auditHistory, clientId, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, scores]);
+
+  useEffect(() => {
+    if (!isHydrated || !clientId) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    async function syncRemoteAudits() {
+      try {
+        const response = await fetch(
+          `/api/audits?clientId=${encodeURIComponent(clientId)}&limit=6`,
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load saved audits.");
+        }
+
+        const data = (await response.json()) as {
+          configured: boolean;
+          audits?: PersistedAuditRecord[];
+        };
+
+        if (!data.configured || isCancelled) {
+          return;
+        }
+
+        const remoteHistory = data.audits ?? [];
+        const mergedHistory = mergeAuditHistory(auditHistory, remoteHistory);
+        const latestRemote = getLatestAudit(mergedHistory);
+        const latestLocal = getLatestAudit(auditHistory);
+        const shouldApplyRemote = Boolean(
+          latestRemote &&
+            (((!hasCompletedAudit && Object.keys(answers).length === 0) ||
+              !latestLocal ||
+              new Date(latestRemote.createdAt).getTime() >
+                new Date(latestLocal.createdAt).getTime())),
+        );
+
+        setPersistenceMode("supabase");
+        setAuditHistory(mergedHistory);
+
+        if (latestRemote && shouldApplyRemote) {
+          applyAuditRecord(latestRemote);
+        }
+      } catch {
+        setPersistenceMode("local");
+      }
+    }
+
+    void syncRemoteAudits();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [answers, auditHistory, clientId, hasCompletedAudit, isHydrated]);
+
+  const persistAuditRecord = async (record: PersistedAuditRecord) => {
+    try {
+      const response = await fetch("/api/audits", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ record }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to save audit.");
+      }
+
+      const data = (await response.json()) as {
+        configured: boolean;
+        audit?: PersistedAuditRecord;
+      };
+
+      if (!data.configured) {
+        setPersistenceMode("local");
+        setSaveStatus("saved");
+        return;
+      }
+
+      setPersistenceMode("supabase");
+      setSaveStatus("saved");
+
+      if (data.audit) {
+        setLastSavedAt(data.audit.createdAt);
+        setAuditHistory((currentHistory) =>
+          mergeAuditHistory(currentHistory, [data.audit!]),
+        );
+      }
+    } catch {
+      setPersistenceMode("local");
+      setSaveStatus("error");
+    }
+  };
 
   const setAnswer = (questionId: string, value: string) => {
     setAnswers((current) => ({
@@ -87,6 +212,12 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   };
 
   const completeAudit = () => {
+    const activeClientId = clientId || createClientId();
+
+    if (!clientId) {
+      setClientId(activeClientId);
+    }
+
     const computedScores = calculateScores(answers);
     const computedInsight = generateInsights(computedScores, answers);
     const generatedProtocol = generateProtocol(
@@ -94,29 +225,48 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       computedInsight,
       answers,
     );
+    const record = createAuditRecord({
+      clientId: activeClientId,
+      answers,
+      scores: computedScores,
+      insight: computedInsight,
+      protocol: generatedProtocol,
+    });
 
-    setScores(computedScores);
-    setInsight(computedInsight);
-    setProtocol(generatedProtocol);
-    setHasCompletedAudit(true);
+    applyAuditRecord(record);
+    setAuditHistory((currentHistory) => mergeAuditHistory(currentHistory, [record]));
+    setSaveStatus("saving");
+
+    void persistAuditRecord(record);
   };
 
   const resetAudit = () => {
+    const nextClientId = createClientId();
+    setClientId(nextClientId);
     setAnswers({});
     setScores(null);
     setInsight(null);
     setProtocol(null);
+    setAuditHistory([]);
+    setLastSavedAt(null);
     setHasCompletedAudit(false);
+    setPersistenceMode("local");
+    setSaveStatus("idle");
     window.localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
     <CircadianContext.Provider
       value={{
+        clientId,
         answers,
         scores,
         insight,
         protocol,
+        auditHistory,
+        persistenceMode,
+        saveStatus,
+        lastSavedAt,
         isHydrated,
         hasCompletedAudit,
         setAnswer,

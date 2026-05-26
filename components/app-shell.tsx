@@ -9,6 +9,7 @@ const navItems = [
   { href: "/audit", label: "Audit" },
   { href: "/results", label: "Results" },
   { href: "/protocol", label: "Protocol" },
+  { href: "/rhythm", label: "Daily Rhythm" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 

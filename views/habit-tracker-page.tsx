@@ -179,7 +179,7 @@ export default function HabitTrackerPage() {
           })}
         </div>
 
-        <NavActions previousHref="/rhythm" nextHref="/dashboard" nextLabel="Back to dashboard" />
+        <NavActions previousHref="/rhythm" nextHref="/season" nextLabel="Open season mode" />
       </section>
     </AppShell>
   );

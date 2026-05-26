@@ -11,6 +11,7 @@ const navItems = [
   { href: "/protocol", label: "Protocol" },
   { href: "/rhythm", label: "Daily Rhythm" },
   { href: "/tracker", label: "Tracker" },
+  { href: "/season", label: "Season Mode" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 

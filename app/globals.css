@@ -26,6 +26,32 @@ body {
   font-family: var(--font-body);
 }
 
+.ff-glass-card {
+  border: 1px solid var(--color-line);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(244, 238, 228, 0.72));
+  box-shadow: 0 22px 48px rgba(31, 28, 24, 0.06);
+  backdrop-filter: blur(18px);
+}
+
+.ff-dark-card {
+  border: 1px solid rgba(248, 244, 236, 0.08);
+  background:
+    radial-gradient(circle at top, rgba(220, 196, 150, 0.1), transparent 48%),
+    linear-gradient(160deg, rgba(31, 28, 24, 0.98), rgba(45, 39, 32, 0.94));
+  box-shadow: 0 26px 64px rgba(31, 28, 24, 0.18);
+}
+
+.ff-soft-panel {
+  border: 1px solid var(--color-line);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(248, 244, 236, 0.88));
+}
+
+.ff-section-eyebrow {
+  letter-spacing: 0.28em;
+}
+
 * {
   box-sizing: border-box;
 }

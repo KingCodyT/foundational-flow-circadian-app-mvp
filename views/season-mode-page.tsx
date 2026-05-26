@@ -42,25 +42,25 @@ export default function SeasonModePage() {
           description="This layer adjusts the circadian plan to the kind of daylight environment you are actually living in right now."
         />
 
-        <div className="rounded-[2.25rem] border border-[var(--color-line)] bg-[linear-gradient(145deg,rgba(255,255,255,0.88),rgba(239,231,214,0.92))] p-6">
+        <div className="ff-glass-card rounded-[2.5rem] p-6 lg:p-8">
           <div className="grid gap-5 lg:grid-cols-[0.62fr_0.38fr]">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
+              <p className="ff-section-eyebrow text-xs uppercase text-[var(--color-muted)]">
                 Current mode
               </p>
-              <h2 className="mt-3 font-[family-name:var(--font-display)] text-4xl leading-tight">
+              <h2 className="mt-3 font-[family-name:var(--font-display)] text-4xl leading-tight lg:text-5xl">
                 {seasonMode.label}
               </h2>
-              <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">
+              <p className="mt-4 text-base leading-8 text-[var(--color-muted)]">
                 {seasonMode.summary}
               </p>
             </div>
-            <div className="rounded-[1.75rem] border border-[var(--color-line)] bg-white/78 px-5 py-5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
+            <div className="ff-soft-panel rounded-[1.9rem] px-5 py-5">
+              <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--color-muted)]">
                 Primary signal to protect
               </p>
               <h3 className="mt-3 text-2xl font-medium">{insight.primaryBrokenSignal.label}</h3>
-              <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">
+              <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
                 {insight.primaryReason}
               </p>
             </div>
@@ -68,7 +68,7 @@ export default function SeasonModePage() {
         </div>
 
         <div className="grid gap-5 lg:grid-cols-3">
-          <article className="rounded-[2rem] border border-[var(--color-line)] bg-white/78 p-6">
+          <article className="ff-glass-card rounded-[2.2rem] p-6">
             <p className="text-sm uppercase tracking-[0.24em] text-[var(--color-muted)]">
               Rhythm adjustments
             </p>
@@ -76,15 +76,15 @@ export default function SeasonModePage() {
               {seasonMode.rhythmAdjustments.map((item) => (
                 <div
                   key={item}
-                  className="rounded-[1.25rem] bg-[var(--color-cream)]/72 px-4 py-3"
+                  className="ff-soft-panel rounded-[1.35rem] px-4 py-3"
                 >
-                  <p className="text-sm leading-6 text-[var(--color-muted)]">{item}</p>
+                  <p className="text-sm leading-7 text-[var(--color-muted)]">{item}</p>
                 </div>
               ))}
             </div>
           </article>
 
-          <article className="rounded-[2rem] border border-[var(--color-line)] bg-[var(--color-charcoal)] p-6 text-[var(--color-cream)]">
+          <article className="ff-dark-card rounded-[2.2rem] p-6 text-[var(--color-cream)]">
             <p className="text-sm uppercase tracking-[0.24em] text-[var(--color-gold-soft)]">
               Tracker emphasis
             </p>
@@ -92,15 +92,15 @@ export default function SeasonModePage() {
               {seasonMode.trackerFocus.map((item) => (
                 <div
                   key={item}
-                  className="rounded-[1.25rem] bg-[rgba(248,244,236,0.08)] px-4 py-3"
+                  className="rounded-[1.35rem] bg-[rgba(248,244,236,0.08)] px-4 py-3"
                 >
-                  <p className="text-sm leading-6 text-[rgba(248,244,236,0.82)]">{item}</p>
+                  <p className="text-sm leading-7 text-[rgba(248,244,236,0.82)]">{item}</p>
                 </div>
               ))}
             </div>
           </article>
 
-          <article className="rounded-[2rem] border border-[var(--color-line)] bg-white/78 p-6">
+          <article className="ff-glass-card rounded-[2.2rem] p-6">
             <p className="text-sm uppercase tracking-[0.24em] text-[var(--color-muted)]">
               Food timing notes
             </p>
@@ -108,13 +108,29 @@ export default function SeasonModePage() {
               {seasonMode.foodTimingNotes.map((item) => (
                 <div
                   key={item}
-                  className="rounded-[1.25rem] bg-[var(--color-cream)]/72 px-4 py-3"
+                  className="ff-soft-panel rounded-[1.35rem] px-4 py-3"
                 >
-                  <p className="text-sm leading-6 text-[var(--color-muted)]">{item}</p>
+                  <p className="text-sm leading-7 text-[var(--color-muted)]">{item}</p>
                 </div>
               ))}
             </div>
           </article>
+        </div>
+
+        <div className="ff-glass-card rounded-[2.2rem] p-6">
+          <div className="grid gap-5 lg:grid-cols-[0.4fr_0.6fr]">
+            <div>
+              <p className="ff-section-eyebrow text-xs uppercase text-[var(--color-muted)]">
+                Why this mode matters
+              </p>
+              <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl">
+                The same habit can matter differently in a different light environment.
+              </h2>
+            </div>
+            <p className="text-sm leading-7 text-[var(--color-muted)]">
+              Season Mode helps the app feel less generic by deciding which anchors deserve the most attention right now. That means your tracker and rhythm can become more adaptive later without changing the core structure you already built.
+            </p>
+          </div>
         </div>
 
         <NavActions previousHref="/tracker" nextHref="/dashboard" nextLabel="Open dashboard" />

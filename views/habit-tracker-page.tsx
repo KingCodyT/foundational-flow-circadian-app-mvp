@@ -68,7 +68,7 @@ export default function HabitTrackerPage() {
         />
 
         <div className="grid gap-6 lg:grid-cols-[0.58fr_0.42fr]">
-          <article className="rounded-[2rem] border border-[var(--color-line)] bg-[var(--color-charcoal)] p-6 text-[var(--color-cream)]">
+          <article className="ff-dark-card rounded-[2.25rem] p-6 text-[var(--color-cream)]">
             <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-gold-soft)]">
               Today
             </p>
@@ -103,14 +103,14 @@ export default function HabitTrackerPage() {
             </p>
           </article>
 
-          <article className="rounded-[2rem] border border-[var(--color-line)] bg-white/80 p-6">
-            <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
+          <article className="ff-glass-card rounded-[2.25rem] p-6">
+            <p className="ff-section-eyebrow text-xs uppercase text-[var(--color-muted)]">
               Last 7 days
             </p>
-            <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl">
+            <h2 className="mt-3 font-[family-name:var(--font-display)] text-4xl">
               Consistency trend
             </h2>
-            <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">
+            <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
               Use this as a rhythm signal, not a productivity score. Even partial completion on the right habits is more useful than random perfect days.
             </p>
             <div className="mt-5">
@@ -126,17 +126,17 @@ export default function HabitTrackerPage() {
             return (
               <article
                 key={block.phase}
-                className="rounded-[2rem] border border-[var(--color-line)] bg-white/78 p-6"
+                className="ff-glass-card rounded-[2.2rem] p-6"
               >
                 <div className="grid gap-4 lg:grid-cols-[0.24fr_0.76fr]">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-[var(--color-muted)]">
+                    <p className="ff-section-eyebrow text-xs uppercase text-[var(--color-muted)]">
                       {block.timing}
                     </p>
-                    <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl">
+                    <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl lg:text-4xl">
                       {block.phase}
                     </h2>
-                    <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">
+                    <p className="mt-3 text-sm leading-7 text-[var(--color-muted)]">
                       {block.goal}
                     </p>
                   </div>
@@ -149,10 +149,10 @@ export default function HabitTrackerPage() {
                           key={habit.id}
                           type="button"
                           onClick={() => toggleHabit(todayKey, habit.id)}
-                          className={`flex items-start gap-4 rounded-[1.5rem] border px-4 py-4 text-left transition ${
+                          className={`flex items-start gap-4 rounded-[1.6rem] border px-4 py-4 text-left transition ${
                             isComplete
-                              ? "border-[var(--color-gold)] bg-[rgba(179,145,80,0.12)]"
-                              : "border-[var(--color-line)] bg-[var(--color-cream)]/68 hover:bg-white"
+                              ? "border-[rgba(179,145,80,0.5)] bg-[linear-gradient(145deg,rgba(179,145,80,0.18),rgba(255,255,255,0.84))] shadow-[0_10px_24px_rgba(179,145,80,0.12)]"
+                              : "border-[var(--color-line)] bg-[linear-gradient(145deg,rgba(255,255,255,0.72),rgba(248,244,236,0.9))] hover:bg-white"
                           }`}
                         >
                           <span
@@ -165,7 +165,7 @@ export default function HabitTrackerPage() {
                             {isComplete ? "✓" : ""}
                           </span>
                           <div>
-                            <p className="text-sm leading-6 text-[var(--color-charcoal)]">
+                            <p className="text-sm leading-7 text-[var(--color-charcoal)]">
                               {habit.label}
                             </p>
                           </div>
@@ -177,6 +177,22 @@ export default function HabitTrackerPage() {
               </article>
             );
           })}
+        </div>
+
+        <div className="ff-glass-card rounded-[2.2rem] p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="ff-section-eyebrow text-xs uppercase text-[var(--color-muted)]">
+                Completion philosophy
+              </p>
+              <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl">
+                The tracker is meant to lower friction, not create pressure.
+              </h2>
+            </div>
+            <div className="max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+              When the day goes sideways, protect the highest-leverage anchors first. A strong morning, a real daylight checkpoint, and a cleaner evening still move the rhythm even if the whole list is not completed.
+            </div>
+          </div>
         </div>
 
         <NavActions previousHref="/rhythm" nextHref="/season" nextLabel="Open season mode" />

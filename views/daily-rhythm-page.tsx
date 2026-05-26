@@ -155,7 +155,7 @@ export default function DailyRhythmPage() {
           </article>
         </div>
 
-        <NavActions previousHref="/protocol" nextHref="/dashboard" nextLabel="Open dashboard" />
+        <NavActions previousHref="/protocol" nextHref="/tracker" nextLabel="Open habit tracker" />
       </section>
     </AppShell>
   );

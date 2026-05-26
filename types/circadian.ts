@@ -95,3 +95,8 @@ export type PersistedAuditRecord = {
 export type PersistenceMode = "local" | "supabase";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+export type HabitHistoryEntry = {
+  date: string;
+  completedHabitIds: string[];
+};

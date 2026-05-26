@@ -10,6 +10,7 @@ const navItems = [
   { href: "/results", label: "Results" },
   { href: "/protocol", label: "Protocol" },
   { href: "/rhythm", label: "Daily Rhythm" },
+  { href: "/tracker", label: "Tracker" },
   { href: "/dashboard", label: "Dashboard" },
 ];
 

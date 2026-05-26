@@ -1,5 +1,6 @@
 import {
   AnswerMap,
+  HabitHistoryEntry,
   CircadianInsight,
   CircadianScores,
   PersistedAuditRecord,
@@ -17,6 +18,7 @@ export type LocalAuditState = {
   protocol: ProtocolPlan | null;
   hasCompletedAudit: boolean;
   auditHistory: PersistedAuditRecord[];
+  habitHistory: HabitHistoryEntry[];
   lastSavedAt: string | null;
 };
 

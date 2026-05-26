@@ -21,11 +21,13 @@ import {
   AnswerMap,
   CircadianInsight,
   CircadianScores,
+  HabitHistoryEntry,
   PersistedAuditRecord,
   PersistenceMode,
   ProtocolPlan,
   SaveStatus,
 } from "@/types/circadian";
+import { toggleHabitCompletion } from "@/lib/habit-tracker";
 
 type CircadianState = {
   clientId: string;
@@ -34,6 +36,7 @@ type CircadianState = {
   insight: CircadianInsight | null;
   protocol: ProtocolPlan | null;
   auditHistory: PersistedAuditRecord[];
+  habitHistory: HabitHistoryEntry[];
   persistenceMode: PersistenceMode;
   saveStatus: SaveStatus;
   lastSavedAt: string | null;
@@ -41,6 +44,7 @@ type CircadianState = {
   hasCompletedAudit: boolean;
   setAnswer: (questionId: string, value: string) => void;
   completeAudit: () => void;
+  toggleHabit: (date: string, habitId: string) => void;
   resetAudit: () => void;
 };
 
@@ -53,6 +57,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   const [insight, setInsight] = useState<CircadianInsight | null>(null);
   const [protocol, setProtocol] = useState<ProtocolPlan | null>(null);
   const [auditHistory, setAuditHistory] = useState<PersistedAuditRecord[]>([]);
+  const [habitHistory, setHabitHistory] = useState<HabitHistoryEntry[]>([]);
   const [persistenceMode, setPersistenceMode] =
     useState<PersistenceMode>("local");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -80,6 +85,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       setInsight(parsedState.insight ?? null);
       setProtocol(parsedState.protocol ?? null);
       setAuditHistory(parsedState.auditHistory ?? []);
+      setHabitHistory(parsedState.habitHistory ?? []);
       setLastSavedAt(parsedState.lastSavedAt ?? null);
       setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
     } else {
@@ -102,11 +108,12 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       protocol,
       hasCompletedAudit,
       auditHistory,
+      habitHistory,
       lastSavedAt,
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [answers, auditHistory, clientId, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, scores]);
+  }, [answers, auditHistory, clientId, habitHistory, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, scores]);
 
   useEffect(() => {
     if (!isHydrated || !clientId) {
@@ -240,6 +247,10 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     void persistAuditRecord(record);
   };
 
+  const toggleHabit = (date: string, habitId: string) => {
+    setHabitHistory((current) => toggleHabitCompletion(current, date, habitId));
+  };
+
   const resetAudit = () => {
     const nextClientId = createClientId();
     setClientId(nextClientId);
@@ -248,6 +259,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setInsight(null);
     setProtocol(null);
     setAuditHistory([]);
+    setHabitHistory([]);
     setLastSavedAt(null);
     setHasCompletedAudit(false);
     setPersistenceMode("local");
@@ -264,6 +276,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         insight,
         protocol,
         auditHistory,
+        habitHistory,
         persistenceMode,
         saveStatus,
         lastSavedAt,
@@ -271,6 +284,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         hasCompletedAudit,
         setAnswer,
         completeAudit,
+        toggleHabit,
         resetAudit,
       }}
     >

@@ -1,6 +1,6 @@
 # Foundational Flow Circadian App MVP
 
-This is a shareable Next.js MVP for a circadian signal audit. It walks a user through a six-part questionnaire, calculates weighted circadian scores, identifies the weakest signal, and generates a daily protocol.
+This is a shareable Next.js MVP for a circadian signal audit. It walks a user through a six-part questionnaire, calculates weighted circadian scores, identifies the weakest signal, generates a daily protocol, tracks progress across repeat audits, and translates the results into a lived daily rhythm with environmental context.
 
 ## What it includes
 
@@ -9,7 +9,11 @@ This is a shareable Next.js MVP for a circadian signal audit. It walks a user th
 - Weighted circadian scoring
 - Results page with weakest-signal interpretation
 - Protocol page with personalized recommendations
-- Dashboard summary
+- Daily Rhythm page with morning, daytime, evening, and sleep-window structure
+- Dashboard with progress tracking and recent audit history
+- Seasonal and latitude-aware environment guidance
+- Seasonal food rhythm suggestions
+- Exact weekly habit guidance
 - Local browser persistence by default
 - Optional Supabase-backed audit history, with no auth requirement for the MVP
 

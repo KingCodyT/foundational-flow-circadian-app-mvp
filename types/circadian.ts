@@ -100,3 +100,10 @@ export type HabitHistoryEntry = {
   date: string;
   completedHabitIds: string[];
 };
+
+export type EmailDeliveryStatus =
+  | "idle"
+  | "sending"
+  | "sent"
+  | "not_configured"
+  | "error";

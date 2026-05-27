@@ -8,20 +8,64 @@ import { NavActions } from "@/components/nav-actions";
 import { ScoreCard } from "@/components/score-card";
 import { SectionHeading } from "@/components/section-heading";
 import { useCircadian } from "@/components/circadian-provider";
+import { EmailDeliveryStatus } from "@/types/circadian";
 
 export default function ResultsPage() {
   const [email, setEmail] = useState("");
-  const [hasRequestedProtocol, setHasRequestedProtocol] = useState(false);
-  const { hasCompletedAudit, insight, isHydrated, scores } = useCircadian();
+  const [emailStatus, setEmailStatus] = useState<EmailDeliveryStatus>("idle");
+  const [emailMessage, setEmailMessage] = useState("");
+  const { hasCompletedAudit, insight, isHydrated, protocol, scores } = useCircadian();
 
-  const handleProtocolRequest = (event: FormEvent<HTMLFormElement>) => {
+  const handleProtocolRequest = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!email.trim()) {
+    if (!email.trim() || !scores || !insight || !protocol) {
       return;
     }
 
-    setHasRequestedProtocol(true);
+    setEmailStatus("sending");
+    setEmailMessage("");
+
+    try {
+      const response = await fetch("/api/send-protocol", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          scores,
+          insight,
+          protocol,
+        }),
+      });
+
+      const data = (await response.json()) as {
+        success: boolean;
+        configured: boolean;
+        error?: string;
+      };
+
+      if (data.success) {
+        setEmailStatus("sent");
+        setEmailMessage("Your 7-day protocol is on its way.");
+        return;
+      }
+
+      if (!data.configured) {
+        setEmailStatus("not_configured");
+        setEmailMessage(
+          "The email flow is fully wired, but provider settings have not been added yet.",
+        );
+        return;
+      }
+
+      setEmailStatus("error");
+      setEmailMessage(data.error || "We could not send the protocol right now.");
+    } catch {
+      setEmailStatus("error");
+      setEmailMessage("We could not send the protocol right now.");
+    }
   };
 
   if (!isHydrated) {
@@ -32,7 +76,7 @@ export default function ResultsPage() {
     );
   }
 
-  if (!hasCompletedAudit || !scores || !insight) {
+  if (!hasCompletedAudit || !scores || !insight || !protocol) {
     return (
       <AppShell eyebrow="Results">
         <div className="py-10">
@@ -181,14 +225,16 @@ export default function ResultsPage() {
               />
               <button
                 type="submit"
+                disabled={emailStatus === "sending"}
                 className="inline-flex items-center justify-center rounded-full bg-[var(--color-charcoal)] px-5 py-3 text-sm font-medium text-[var(--color-cream)] transition hover:bg-[var(--color-gold)] hover:text-[var(--color-charcoal)]"
               >
-                Send me the 7-day protocol
+                {emailStatus === "sending"
+                  ? "Sending..."
+                  : "Send me the 7-day protocol"}
               </button>
               <p className="text-xs leading-6 text-[var(--color-muted)]">
-                {hasRequestedProtocol
-                  ? "Captured. This is the placeholder for the future email handoff."
-                  : "Email delivery is the next product layer. This capture is currently a polished placeholder."}
+                {emailMessage ||
+                  "Email delivery is ready to be connected. Add provider settings and this handoff becomes real."}
               </p>
             </form>
           </div>

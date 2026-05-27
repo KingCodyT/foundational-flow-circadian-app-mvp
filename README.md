@@ -64,6 +64,20 @@ Recommended table shape:
 
 A starter SQL file is included at `supabase/schema.sql`.
 
+## Optional email delivery
+
+The results page is wired for a real 7-day protocol email handoff through `pages/api/send-protocol.ts`.
+
+Add these environment variables when you are ready to connect Resend:
+
+```bash
+RESEND_API_KEY=your_resend_api_key
+EMAIL_FROM=Foundational Flow <protocol@yourdomain.com>
+EMAIL_REPLY_TO=you@yourdomain.com
+```
+
+Without those variables, the app still renders the email capture UX and returns a clear not-configured state instead of failing silently.
+
 ## Next product steps
 
 - Add repeat-audit tracking over time

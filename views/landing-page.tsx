@@ -3,6 +3,14 @@ import { AppShell } from "@/components/app-shell";
 import { NavActions } from "@/components/nav-actions";
 import { SectionHeading } from "@/components/section-heading";
 
+const audience = [
+  "Poor sleep or unrefreshing nights",
+  "Low energy and afternoon crashes",
+  "Wired-at-night patterns",
+  "Inconsistent mornings",
+  "Too much screen and light chaos",
+];
+
 const principles = [
   "Assess six circadian signal domains across light, timing, and disruption load.",
   "Calculate weighted scores to identify the primary broken signal.",
@@ -22,7 +30,7 @@ export default function LandingPage() {
         <div className="space-y-8">
           <SectionHeading
             eyebrow="Welcome"
-            title="A grounded circadian overview, audit, and protocol builder in one flow."
+            title="Your body isn’t broken. Your timing signals are a dumpster fire. Let’s find the first one to fix."
             description="Foundational Flow helps you see whether your day is giving your biology a clear morning anchor, enough daytime amplitude, a real descent into darkness, and a stable recovery window. Then it turns the weakest link into a focused daily plan."
           />
           <div className="grid gap-4 sm:grid-cols-3">
@@ -43,7 +51,7 @@ export default function LandingPage() {
               href="/audit"
               className="inline-flex items-center justify-center rounded-full bg-[var(--color-charcoal)] px-6 py-3 text-sm font-medium text-[var(--color-cream)] transition hover:bg-[var(--color-gold)] hover:text-[var(--color-charcoal)]"
             >
-              Begin the welcome flow
+              Find Your Broken Signal
             </Link>
             <Link
               href="/dashboard"
@@ -83,6 +91,32 @@ export default function LandingPage() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section className="grid gap-6 pb-10 lg:grid-cols-[0.46fr_0.54fr]">
+        <article className="rounded-[2.25rem] border border-[var(--color-line)] bg-[linear-gradient(145deg,rgba(179,145,80,0.14),rgba(255,255,255,0.9))] p-7">
+          <p className="text-xs uppercase tracking-[0.34em] text-[var(--color-muted)]">
+            Who this is for
+          </p>
+          <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl leading-tight">
+            People whose days feel out of sync, even when they’re trying hard.
+          </h2>
+          <p className="mt-4 text-base leading-7 text-[var(--color-muted)]">
+            This is built for people who know something about their energy, sleep, or timing feels off, but do not yet know which signal is actually failing first.
+          </p>
+        </article>
+        <article className="rounded-[2.25rem] border border-[var(--color-line)] bg-white/80 p-7">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {audience.map((item) => (
+              <div
+                key={item}
+                className="rounded-[1.5rem] bg-[var(--color-cream)]/75 px-4 py-4"
+              >
+                <p className="text-sm leading-6 text-[var(--color-charcoal)]">{item}</p>
+              </div>
+            ))}
+          </div>
+        </article>
       </section>
 
       <section className="grid gap-6 pb-10 md:grid-cols-3">

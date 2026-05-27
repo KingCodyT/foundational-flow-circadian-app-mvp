@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { FormEvent, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { GuardedState } from "@/components/guarded-state";
 import { NavActions } from "@/components/nav-actions";
@@ -9,7 +10,19 @@ import { SectionHeading } from "@/components/section-heading";
 import { useCircadian } from "@/components/circadian-provider";
 
 export default function ResultsPage() {
+  const [email, setEmail] = useState("");
+  const [hasRequestedProtocol, setHasRequestedProtocol] = useState(false);
   const { hasCompletedAudit, insight, isHydrated, scores } = useCircadian();
+
+  const handleProtocolRequest = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!email.trim()) {
+      return;
+    }
+
+    setHasRequestedProtocol(true);
+  };
 
   if (!isHydrated) {
     return (
@@ -140,6 +153,46 @@ export default function ResultsPage() {
             Go to dashboard
           </Link>
         </div>
+
+        <section className="ff-glass-card rounded-[2.25rem] p-6 lg:p-8">
+          <div className="grid gap-6 lg:grid-cols-[0.56fr_0.44fr] lg:items-end">
+            <div>
+              <p className="ff-section-eyebrow text-xs uppercase text-[var(--color-muted)]">
+                7-day protocol
+              </p>
+              <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl leading-tight lg:text-4xl">
+                Want your 7-day protocol sent to your inbox?
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-[var(--color-muted)]">
+                This is the natural next step after results. For now, we’ll capture the intent in the experience so the handoff feels real before email delivery is wired up.
+              </p>
+            </div>
+
+            <form onSubmit={handleProtocolRequest} className="grid gap-3">
+              <label className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">
+                Email address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/80 px-4 py-3 text-sm text-[var(--color-charcoal)] outline-none transition focus:border-[rgba(179,145,80,0.5)]"
+              />
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-full bg-[var(--color-charcoal)] px-5 py-3 text-sm font-medium text-[var(--color-cream)] transition hover:bg-[var(--color-gold)] hover:text-[var(--color-charcoal)]"
+              >
+                Send me the 7-day protocol
+              </button>
+              <p className="text-xs leading-6 text-[var(--color-muted)]">
+                {hasRequestedProtocol
+                  ? "Captured. This is the placeholder for the future email handoff."
+                  : "Email delivery is the next product layer. This capture is currently a polished placeholder."}
+              </p>
+            </form>
+          </div>
+        </section>
       </section>
     </AppShell>
   );

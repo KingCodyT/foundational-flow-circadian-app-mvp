@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { GuardedState } from "@/components/guarded-state";
 import { ProgressSparkline } from "@/components/progress-sparkline";
+import { ProtocolEmailCta } from "@/components/protocol-email-cta";
 import { ScoreCard } from "@/components/score-card";
 import { SectionHeading } from "@/components/section-heading";
 import { useCircadian } from "@/components/circadian-provider";
@@ -114,6 +115,8 @@ export default function DashboardPage() {
             </p>
           </article>
         </div>
+
+        <ProtocolEmailCta compact />
 
         <div className="grid gap-6 lg:grid-cols-[0.62fr_0.38fr]">
           <article className="rounded-[2rem] border border-[var(--color-line)] bg-[linear-gradient(145deg,rgba(255,255,255,0.9),rgba(239,231,214,0.92))] p-6">

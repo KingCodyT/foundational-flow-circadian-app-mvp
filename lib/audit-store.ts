@@ -19,6 +19,8 @@ export type LocalAuditState = {
   hasCompletedAudit: boolean;
   auditHistory: PersistedAuditRecord[];
   habitHistory: HabitHistoryEntry[];
+  protocolLeadEmail: string | null;
+  protocolLeadCapturedAt: string | null;
   lastSavedAt: string | null;
 };
 

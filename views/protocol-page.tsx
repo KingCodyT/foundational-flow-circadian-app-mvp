@@ -3,6 +3,7 @@
 import { AppShell } from "@/components/app-shell";
 import { GuardedState } from "@/components/guarded-state";
 import { NavActions } from "@/components/nav-actions";
+import { ProtocolEmailCta } from "@/components/protocol-email-cta";
 import { ProtocolBlock } from "@/components/protocol-block";
 import { SectionHeading } from "@/components/section-heading";
 import { useCircadian } from "@/components/circadian-provider";
@@ -40,6 +41,7 @@ export default function ProtocolPage() {
           description="This protocol is designed as a first operational pass. It focuses attention on the weakest signal first so the system has one clear place to stabilize."
         />
         <ProtocolBlock protocol={protocol} />
+        <ProtocolEmailCta compact />
         <NavActions previousHref="/results" nextHref="/rhythm" nextLabel="Open daily rhythm" />
       </section>
     </AppShell>

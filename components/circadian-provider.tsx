@@ -37,6 +37,7 @@ type CircadianState = {
   protocol: ProtocolPlan | null;
   auditHistory: PersistedAuditRecord[];
   habitHistory: HabitHistoryEntry[];
+  protocolLeadFirstName: string | null;
   protocolLeadEmail: string | null;
   protocolLeadCapturedAt: string | null;
   persistenceMode: PersistenceMode;
@@ -47,7 +48,7 @@ type CircadianState = {
   setAnswer: (questionId: string, value: string) => void;
   completeAudit: () => void;
   toggleHabit: (date: string, habitId: string) => void;
-  recordProtocolLead: (email: string) => void;
+  recordProtocolLead: (firstName: string, email: string) => void;
   resetAudit: () => void;
 };
 
@@ -61,6 +62,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   const [protocol, setProtocol] = useState<ProtocolPlan | null>(null);
   const [auditHistory, setAuditHistory] = useState<PersistedAuditRecord[]>([]);
   const [habitHistory, setHabitHistory] = useState<HabitHistoryEntry[]>([]);
+  const [protocolLeadFirstName, setProtocolLeadFirstName] = useState<string | null>(null);
   const [protocolLeadEmail, setProtocolLeadEmail] = useState<string | null>(null);
   const [protocolLeadCapturedAt, setProtocolLeadCapturedAt] = useState<string | null>(null);
   const [persistenceMode, setPersistenceMode] =
@@ -91,6 +93,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       setProtocol(parsedState.protocol ?? null);
       setAuditHistory(parsedState.auditHistory ?? []);
       setHabitHistory(parsedState.habitHistory ?? []);
+      setProtocolLeadFirstName(parsedState.protocolLeadFirstName ?? null);
       setProtocolLeadEmail(parsedState.protocolLeadEmail ?? null);
       setProtocolLeadCapturedAt(parsedState.protocolLeadCapturedAt ?? null);
       setLastSavedAt(parsedState.lastSavedAt ?? null);
@@ -116,13 +119,14 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       hasCompletedAudit,
       auditHistory,
       habitHistory,
+      protocolLeadFirstName,
       protocolLeadEmail,
       protocolLeadCapturedAt,
       lastSavedAt,
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [answers, auditHistory, clientId, habitHistory, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, protocolLeadCapturedAt, protocolLeadEmail, scores]);
+  }, [answers, auditHistory, clientId, habitHistory, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, protocolLeadCapturedAt, protocolLeadEmail, protocolLeadFirstName, scores]);
 
   useEffect(() => {
     if (!isHydrated || !clientId) {
@@ -260,7 +264,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setHabitHistory((current) => toggleHabitCompletion(current, date, habitId));
   };
 
-  const recordProtocolLead = (email: string) => {
+  const recordProtocolLead = (firstName: string, email: string) => {
+    setProtocolLeadFirstName(firstName.trim());
     setProtocolLeadEmail(email.trim());
     setProtocolLeadCapturedAt(new Date().toISOString());
   };
@@ -274,6 +279,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setProtocol(null);
     setAuditHistory([]);
     setHabitHistory([]);
+    setProtocolLeadFirstName(null);
     setProtocolLeadEmail(null);
     setProtocolLeadCapturedAt(null);
     setLastSavedAt(null);
@@ -293,6 +299,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         protocol,
         auditHistory,
         habitHistory,
+        protocolLeadFirstName,
         protocolLeadEmail,
         protocolLeadCapturedAt,
         persistenceMode,

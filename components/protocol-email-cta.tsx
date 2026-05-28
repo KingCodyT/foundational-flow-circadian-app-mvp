@@ -9,12 +9,14 @@ export function ProtocolEmailCta({
 }: {
   compact?: boolean;
 }) {
+  const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
   const [emailStatus, setEmailStatus] = useState<EmailDeliveryStatus>("idle");
   const [emailMessage, setEmailMessage] = useState("");
   const {
     insight,
     protocol,
+    protocolLeadFirstName,
     protocolLeadEmail,
     recordProtocolLead,
     scores,
@@ -27,11 +29,11 @@ export function ProtocolEmailCta({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!email.trim()) {
+    if (!firstName.trim() || !email.trim()) {
       return;
     }
 
-    recordProtocolLead(email);
+    recordProtocolLead(firstName, email);
     setEmailStatus("sending");
     setEmailMessage("");
 
@@ -42,6 +44,7 @@ export function ProtocolEmailCta({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          firstName,
           email,
           scores,
           insight,
@@ -94,6 +97,13 @@ export function ProtocolEmailCta({
           </div>
           <form onSubmit={handleSubmit} className="grid gap-3">
             <input
+              type="text"
+              value={firstName}
+              onChange={(event) => setFirstName(event.target.value)}
+              placeholder="First name"
+              className="rounded-[1.1rem] border border-[var(--color-line)] bg-white/80 px-4 py-3 text-sm text-[var(--color-charcoal)] outline-none transition focus:border-[rgba(179,145,80,0.5)]"
+            />
+            <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -108,7 +118,8 @@ export function ProtocolEmailCta({
               {emailStatus === "sending" ? "Sending..." : "Email me the protocol"}
             </button>
             <p className="text-xs leading-6 text-[var(--color-muted)]">
-              {emailMessage || "One clean copy of the plan, sent after results."}
+              {emailMessage ||
+                `One clean copy of the plan, sent after results${protocolLeadFirstName ? ` for ${protocolLeadFirstName}` : ""}.`}
             </p>
           </form>
         </div>
@@ -132,6 +143,16 @@ export function ProtocolEmailCta({
         </div>
 
         <form onSubmit={handleSubmit} className="grid gap-3">
+          <label className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">
+            First name
+          </label>
+          <input
+            type="text"
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+            placeholder="First name"
+            className="rounded-[1.2rem] border border-[var(--color-line)] bg-white/80 px-4 py-3 text-sm text-[var(--color-charcoal)] outline-none transition focus:border-[rgba(179,145,80,0.5)]"
+          />
           <label className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">
             Email address
           </label>

@@ -29,11 +29,13 @@ export default async function handler(
   }
 
   const {
+    firstName,
     email,
     insight,
     scores,
     protocol,
   } = req.body as {
+    firstName?: string;
     email?: string;
     insight?: CircadianInsight;
     scores?: CircadianScores;
@@ -59,7 +61,7 @@ export default async function handler(
   }
 
   try {
-    const message = buildProtocolEmail({ insight, scores, protocol });
+    const message = buildProtocolEmail({ firstName, insight, scores, protocol });
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",

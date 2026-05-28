@@ -33,14 +33,20 @@ function buildNotes(protocol: ProtocolPlan) {
 }
 
 export function buildProtocolEmail(args: {
+  firstName?: string;
   insight: CircadianInsight;
   scores: CircadianScores;
   protocol: ProtocolPlan;
 }) {
   const subject = `Your 7-day protocol for ${args.insight.primaryBrokenSignal.label}`;
+  const greeting = args.firstName?.trim()
+    ? `Hi ${args.firstName.trim()},`
+    : "Hi,";
 
   const text = [
     "Foundational Flow: Your 7-day protocol",
+    "",
+    greeting,
     "",
     `Primary broken signal: ${args.insight.primaryBrokenSignal.label}`,
     `Overall Circadian Score: ${args.scores.overallCircadianScore}`,
@@ -67,11 +73,12 @@ export function buildProtocolEmail(args: {
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:720px;background:#fffdf8;border-radius:28px;overflow:hidden;border:1px solid rgba(60,51,41,0.12);">
               <tr>
                 <td style="padding:40px 40px 24px;background:linear-gradient(145deg,rgba(255,255,255,0.96),rgba(239,231,214,0.92));">
-                  <div style="font-size:12px;letter-spacing:0.3em;text-transform:uppercase;color:#7d7365;">Foundational Flow</div>
-                  <h1 style="margin:16px 0 10px;font-size:40px;line-height:1.05;font-family:'Iowan Old Style','Palatino Linotype',Georgia,serif;color:#1f1c18;">Your 7-day circadian protocol</h1>
-                  <p style="margin:0;font-size:16px;line-height:1.8;color:#6f665a;">Your body is not broken. The goal now is to repair one signal cleanly enough that the rest of the system can start to organize around it.</p>
-                </td>
-              </tr>
+                <div style="font-size:12px;letter-spacing:0.3em;text-transform:uppercase;color:#7d7365;">Foundational Flow</div>
+                <h1 style="margin:16px 0 10px;font-size:40px;line-height:1.05;font-family:'Iowan Old Style','Palatino Linotype',Georgia,serif;color:#1f1c18;">Your 7-day circadian protocol</h1>
+                <p style="margin:0 0 14px;font-size:16px;line-height:1.8;color:#6f665a;">${greeting}</p>
+                <p style="margin:0;font-size:16px;line-height:1.8;color:#6f665a;">Your body is not broken. The goal now is to repair one signal cleanly enough that the rest of the system can start to organize around it.</p>
+              </td>
+            </tr>
               <tr>
                 <td style="padding:0 40px 12px;">
                   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">

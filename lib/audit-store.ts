@@ -5,6 +5,9 @@ import {
   CircadianScores,
   PersistedAuditRecord,
   ProtocolPlan,
+  ParticipationLevel,
+  DailyProfile,
+  DailyEventState,
 } from "@/types/circadian";
 
 export const STORAGE_KEY = "foundational-flow-circadian-app-state";
@@ -23,6 +26,9 @@ export type LocalAuditState = {
   protocolLeadEmail: string | null;
   protocolLeadCapturedAt: string | null;
   lastSavedAt: string | null;
+  participationLevel?: ParticipationLevel | null;
+  dailyProfile?: DailyProfile | null;
+  eventStateByDate?: Record<string, DailyEventState> | null;
 };
 
 export function createClientId() {

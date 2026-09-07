@@ -28,6 +28,7 @@ import {
   SaveStatus,
   ParticipationLevel,
   DailyProfile,
+  DailyEventState,
 } from "@/types/circadian";
 import { toggleHabitCompletion } from "@/lib/habit-tracker";
 
@@ -49,6 +50,9 @@ type CircadianState = {
   hasCompletedAudit: boolean;
   participationLevel: ParticipationLevel | null;
   dailyProfile: DailyProfile | null;
+  eventStateByDate: Record<string, DailyEventState> | null;
+  getEventStateForDate: (dateStr: string) => DailyEventState;
+  setEventRecord: (dateStr: string, eventId: string, record: { status: "completed" | "skipped" | "missed"; at?: string }) => void;
   setAnswer: (questionId: string, value: string) => void;
   completeAudit: () => void;
   toggleHabit: (date: string, habitId: string) => void;
@@ -73,6 +77,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   const [protocolLeadCapturedAt, setProtocolLeadCapturedAt] = useState<string | null>(null);
   const [participationLevel, setParticipationLevelState] = useState<ParticipationLevel | null>(null);
   const [dailyProfile, setDailyProfileState] = useState<DailyProfile | null>(null);
+  const [eventStateByDate, setEventStateByDate] = useState<Record<string, DailyEventState> | null>(null);
   const [persistenceMode, setPersistenceMode] =
     useState<PersistenceMode>("local");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
@@ -106,6 +111,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       setProtocolLeadCapturedAt(parsedState.protocolLeadCapturedAt ?? null);
       setParticipationLevelState(parsedState.participationLevel ?? null);
       setDailyProfileState(parsedState.dailyProfile ?? null);
+      setEventStateByDate(parsedState.eventStateByDate ?? null);
       setLastSavedAt(parsedState.lastSavedAt ?? null);
       setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
     } else {
@@ -135,10 +141,11 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       lastSavedAt,
       participationLevel,
       dailyProfile,
+      eventStateByDate,
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [answers, auditHistory, clientId, habitHistory, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, protocolLeadCapturedAt, protocolLeadEmail, protocolLeadFirstName, scores, participationLevel, dailyProfile]);
+  }, [answers, auditHistory, clientId, habitHistory, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, protocolLeadCapturedAt, protocolLeadEmail, protocolLeadFirstName, scores, participationLevel, dailyProfile, eventStateByDate]);
 
   useEffect(() => {
     if (!isHydrated || !clientId) {
@@ -251,6 +258,20 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setDailyProfileState(profile);
   };
 
+  const getEventStateForDate = (dateStr: string) => {
+    return eventStateByDate?.[dateStr] ?? {};
+  };
+
+  const setEventRecord = (dateStr: string, eventId: string, record: { status: "completed" | "skipped" | "missed"; at?: string }) => {
+    setEventStateByDate((current) => {
+      const next = { ...(current ?? {}) };
+      const dayState = { ...(next[dateStr] ?? {}) };
+      dayState[eventId] = { status: record.status as any, at: record.at ?? new Date().toISOString() };
+      next[dateStr] = dayState;
+      return next;
+    });
+  };
+
   const completeAudit = () => {
     const activeClientId = clientId || createClientId();
 
@@ -335,6 +356,9 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         recordProtocolLead,
         setParticipationLevel,
         setDailyProfile,
+        eventStateByDate,
+        getEventStateForDate,
+        setEventRecord,
         resetAudit,
       }}
     >

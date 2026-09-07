@@ -107,3 +107,28 @@ export type EmailDeliveryStatus =
   | "sent"
   | "not_configured"
   | "error";
+
+export type ParticipationLevel = "BASELINE" | "GUIDED_FLOW" | "FULL_FLOW";
+
+export type DailyProfile = {
+  wakeTime: string | null; // HH:MM local
+  targetBedtime: string | null; // HH:MM local
+  locationPermissionGranted: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+};
+
+export type EventStatus =
+  | "upcoming"
+  | "active"
+  | "current"
+  | "completed"
+  | "skipped"
+  | "missed";
+
+export type EventRecord = {
+  status: EventStatus;
+  at: string; // ISO timestamp when action occurred (completed/skipped)
+};
+
+export type DailyEventState = Record<string, EventRecord>; // eventId -> EventRecord

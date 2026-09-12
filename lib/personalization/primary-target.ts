@@ -21,14 +21,17 @@ export type PrimaryCoachingTargetResult = {
   noTargetReason?: string | null;
 };
 
-// Locked biological hierarchy priority (highest first)
+// Current implemented biological hierarchy priority (highest first).
+// Earth, Water, and nnEMF are intentionally not represented here yet because
+// those domains do not yet exist in the circadian MVP signal registry.
+// Meal timing (Food) must outrank downstream optimization signals.
 const HIERARCHY_ORDER: HierarchyLayer[] = [
   HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR,
   HierarchyLayer.DAYTIME_LIGHT_ENVIRONMENT,
   HierarchyLayer.EVENING_LIGHT_DARKNESS,
   HierarchyLayer.SLEEP_OPPORTUNITY_TIMING,
-  HierarchyLayer.OPTIMIZATION,
   HierarchyLayer.MEAL_TIMING,
+  HierarchyLayer.OPTIMIZATION,
 ];
 
 export function selectPrimaryCoachingTarget(state: InitialPersonalizationState): PrimaryCoachingTargetResult {

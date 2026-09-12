@@ -34,7 +34,7 @@ export default function AuditPage() {
 
     if (isFinalStep) {
       completeAudit();
-      router.push("/results");
+      router.push("/you");
       return;
     }
 
@@ -140,7 +140,7 @@ export default function AuditPage() {
               onClick={handleNext}
               className="inline-flex items-center justify-center rounded-full bg-[var(--color-charcoal)] px-5 py-3 text-sm font-medium text-[var(--color-cream)] transition hover:bg-[var(--color-gold)] hover:text-[var(--color-charcoal)]"
             >
-              {isFinalStep ? "Calculate results" : "Next section"}
+              {isFinalStep ? "Finish assessment" : "Next section"}
             </button>
           </div>
         </div>

@@ -53,6 +53,7 @@ type CircadianState = {
   eventStateByDate: Record<string, DailyEventState> | null;
   getEventStateForDate: (dateStr: string) => DailyEventState;
   setEventRecord: (dateStr: string, eventId: string, record: { status: "completed" | "skipped" | "missed"; at?: string }) => void;
+  clearEventRecords: (eventId: string) => void;
   setAnswer: (questionId: string, value: string) => void;
   completeAudit: () => void;
   toggleHabit: (date: string, habitId: string) => void;
@@ -272,6 +273,21 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const clearEventRecords = (eventId: string) => {
+    setEventStateByDate((current) => {
+      if (!current) return current;
+
+      const next: Record<string, DailyEventState> = {};
+      for (const [date, dayState] of Object.entries(current)) {
+        const nextDay = { ...dayState };
+        delete nextDay[eventId];
+        if (Object.keys(nextDay).length > 0) next[date] = nextDay;
+      }
+
+      return Object.keys(next).length > 0 ? next : null;
+    });
+  };
+
   const completeAudit = () => {
     const activeClientId = clientId || createClientId();
 
@@ -359,6 +375,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         eventStateByDate,
         getEventStateForDate,
         setEventRecord,
+        clearEventRecords,
         resetAudit,
       }}
     >

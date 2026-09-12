@@ -38,8 +38,8 @@ const [now] = useState(() => new Date());
     () => ({
       wakeTime: dailyProfile?.wakeTime ?? null,
       targetBedtime: dailyProfile?.targetBedtime ?? null,
-      latitude: dailyProfile?.latitude ?? null,
-      longitude: dailyProfile?.longitude ?? null,
+      latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
+      longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
     }),
     [dailyProfile]
   );
@@ -113,7 +113,7 @@ if (!isHydrated) {
                   </p>
                 </details>
               ) : null}
-              {!activeEvent.userStatus ? (
+              {activeEvent.status === "current" ? (
   <button
     onClick={() =>
       setEventRecord(todayKey, activeEvent.id, {
@@ -182,6 +182,13 @@ if (!isHydrated) {
                 <p className="mt-1">
                   Sunset: {formatTime(solar.sunset)}
                 </p>
+                {solar.dayLengthMinutes === 1440 || solar.dayLengthMinutes === 0 ? (
+                  <p className="mt-2 text-sm text-[var(--color-muted)]">
+                    {solar.dayLengthMinutes === 1440
+                      ? "Continuous daylight today; there is no sunrise or sunset."
+                      : "The sun stays below the horizon today."}
+                  </p>
+                ) : null}
               </>
             ) : (
               <p className="mt-2 text-[var(--color-muted)]">

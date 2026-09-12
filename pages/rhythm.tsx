@@ -1,1 +1,1 @@
-export { default } from "@/views/daily-rhythm-page";
+export { default } from "@/views/rhythm-page";

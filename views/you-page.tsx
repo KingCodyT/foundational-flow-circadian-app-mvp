@@ -36,8 +36,9 @@ function formatSolarTime(value?: string | null) {
 
 function formatDayLength(minutes?: number | null) {
   if (minutes == null) return "—";
-  const hours = Math.floor(minutes / 60);
-  const remainder = Math.round(minutes % 60);
+  const roundedMinutes = Math.round(minutes);
+  const hours = Math.floor(roundedMinutes / 60);
+  const remainder = roundedMinutes % 60;
   return `${hours}h ${remainder}m`;
 }
 
@@ -171,7 +172,11 @@ export default function YouPage() {
           </div>
           <p className="mt-6 border-t border-[var(--color-line)] pt-5 text-sm leading-6 text-[var(--color-muted)]">
             {environment.locationAvailable
-              ? "Location is available, so today’s solar timing can adapt to where you are."
+              ? environment.dayLengthMinutes === 1440
+                ? "Your location has continuous daylight today; there is no sunrise or sunset."
+                : environment.dayLengthMinutes === 0
+                ? "At your location, the sun stays below the horizon today."
+                : "Location is available, so today’s solar timing can adapt to where you are."
               : "Location is not available yet, so solar timing is less personalized."}
           </p>
         </div>

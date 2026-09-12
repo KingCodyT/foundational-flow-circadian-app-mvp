@@ -18,9 +18,9 @@ export type DailyProfileInput = {
 };
 
 function parseTimeToDate(baseDate: Date, time?: string | null) {
-  if (!time) return null;
-  const [hh, mm] = time.split(":").map((s) => parseInt(s, 10));
-  const d = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hh || 0, mm || 0, 0);
+  if (!time || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
+  const [hh, mm] = time.split(":").map(Number);
+  const d = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hh, mm, 0);
   return d;
 }
 
@@ -42,15 +42,15 @@ function statusFor(now: Date, start: Date, end?: Date) {
 }
 
 export function buildTodaysFlow(opts: { date?: Date; now?: Date; profile?: DailyProfileInput; participationLevel?: string | null; eventStateForDate?: Record<string, { status: string; at: string }>; }): { events: FlowEvent[]; next?: FlowEvent; solar: SolarTimes | null; locationAvailable: boolean; activeEvent?: FlowEvent | undefined; progress: { completed: number; total: number; percent: number } } {
-  const date = opts.date ?? new Date();
   const now = opts.now ?? new Date();
+  const date = opts.date ?? now;
   const profile = opts.profile ?? {};
 
   const solar = getSolarTimes(date, profile.latitude ?? null, profile.longitude ?? null);
-  const locationAvailable = solar.sunrise != null && solar.sunset != null;
+  const locationAvailable = solar.solarNoon != null;
 
   // derive wake/bedtime
-  const wake = parseTimeToDate(date, profile.wakeTime) ?? addMinutes(date, 7 * 60); // default 7:00
+  const wake = parseTimeToDate(date, profile.wakeTime) ?? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 7); // default 7:00
   const bedtime = parseTimeToDate(date, profile.targetBedtime) ?? addMinutes(wake, 15 * 60); // default 22:00-ish
 
   // rules

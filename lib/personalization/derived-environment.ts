@@ -1,4 +1,4 @@
-import { getSolarTimes, SolarTimes } from "../solar";
+import { getSolarTimes, hasValidCoordinates, SolarTimes } from "../solar";
 import { DailyProfile } from "@/types/circadian";
 import { Confidence } from "./types";
 
@@ -40,7 +40,7 @@ export function buildDerivedEnvironment(opts?: { profile?: DailyProfile | null; 
   const now = opts?.now ?? new Date();
 
   const locationAvailable = Boolean(
-    profile && profile.locationPermissionGranted && profile.latitude != null && profile.longitude != null,
+    profile && profile.locationPermissionGranted && hasValidCoordinates(profile.latitude, profile.longitude),
   );
 
   const latitude = locationAvailable ? profile!.latitude! : null;
@@ -62,8 +62,9 @@ export function buildDerivedEnvironment(opts?: { profile?: DailyProfile | null; 
   const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
   // day-of-year
-  const startOfYear = new Date(date.getFullYear(), 0, 0);
-  const diff = date.getTime() - startOfYear.getTime();
+  // Calendar arithmetic must not lose an hour across daylight saving changes.
+  const startOfYear = Date.UTC(date.getFullYear(), 0, 0);
+  const diff = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - startOfYear;
   const oneDay = 1000 * 60 * 60 * 24;
   const dayOfYear = Math.floor(diff / oneDay);
 
@@ -76,8 +77,9 @@ export function buildDerivedEnvironment(opts?: { profile?: DailyProfile | null; 
     sunrise: solar.sunrise ? solar.sunrise.toISOString() : null,
     sunset: solar.sunset ? solar.sunset.toISOString() : null,
     solarNoon: solar.solarNoon ? solar.solarNoon.toISOString() : null,
-    civilDawn: solar.civilDawn ? solar.civilDawn.toISOString() : null,
-    civilDusk: solar.civilDusk ? solar.civilDusk.toISOString() : null,
+    // The current solar utility does not calculate civil twilight.
+    civilDawn: null,
+    civilDusk: null,
     dayLengthMinutes: solar.dayLengthMinutes ?? null,
     dayOfYear,
     lastCalculatedAt: now.toISOString(),

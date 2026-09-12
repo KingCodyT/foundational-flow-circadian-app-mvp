@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { AppShell } from "@/components/app-shell";
+import { FlowShell } from "@/components/flow-shell";
 import { ProgressBar } from "@/components/progress-bar";
 import { QuestionCard } from "@/components/question-card";
 import { SectionHeading } from "@/components/section-heading";
@@ -43,14 +43,14 @@ export default function AuditPage() {
 
   if (!isHydrated) {
     return (
-      <AppShell>
+      <FlowShell>
         <div className="py-20 text-[var(--color-muted)]">Loading your assessment...</div>
-      </AppShell>
+      </FlowShell>
     );
   }
 
   return (
-    <AppShell eyebrow="Circadian Assessment">
+    <FlowShell>
       <section className="grid gap-10 py-6 lg:grid-cols-[0.42fr_0.58fr] lg:py-10">
         <div className="space-y-8 lg:sticky lg:top-6 lg:self-start">
           <SectionHeading
@@ -145,6 +145,6 @@ export default function AuditPage() {
           </div>
         </div>
       </section>
-    </AppShell>
+    </FlowShell>
   );
 }

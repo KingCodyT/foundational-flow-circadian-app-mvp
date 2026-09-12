@@ -24,8 +24,8 @@ export default function ActiveStep() {
   const profileInput = useMemo(() => ({
     wakeTime: dailyProfile?.wakeTime ?? null,
     targetBedtime: dailyProfile?.targetBedtime ?? null,
-    latitude: dailyProfile?.latitude ?? null,
-    longitude: dailyProfile?.longitude ?? null,
+    latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
+    longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
   }), [dailyProfile]);
 
   const eventStateForDate = getEventStateForDate(todayKey);

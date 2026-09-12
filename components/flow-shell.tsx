@@ -20,7 +20,7 @@ export function FlowShell({
   return (
     <div className="min-h-screen bg-[var(--color-cream)] text-[var(--color-charcoal)]">
       <header className="mx-auto w-full max-w-7xl px-6 pt-6 lg:px-10">
-        <div className="flex items-center justify-between gap-6">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center sm:gap-6">
           <Link href="/now" className="space-y-1">
             <p className="text-xs uppercase tracking-[0.34em] text-[var(--color-muted)]">
               Foundational Flow

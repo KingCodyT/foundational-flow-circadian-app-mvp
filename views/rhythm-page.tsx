@@ -45,8 +45,8 @@ useEffect(() => {
     () => ({
       wakeTime: dailyProfile?.wakeTime ?? null,
       targetBedtime: dailyProfile?.targetBedtime ?? null,
-      latitude: dailyProfile?.latitude ?? null,
-      longitude: dailyProfile?.longitude ?? null,
+      latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
+      longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
     }),
     [dailyProfile]
   );
@@ -104,10 +104,10 @@ useEffect(() => {
               <div className="space-y-3">
                 {events.map((event) => {
                   const isCurrent = event.status === "current";
-                  const isPassed = event.status === "passed";
+                  const isPassed = event.status === "missed";
                   const isResolved =
-                    event.userStatus === "completed" ||
-                    event.userStatus === "skipped";
+                    event.status === "completed" ||
+                    event.status === "skipped";
 
                   return (
                     <div
@@ -207,6 +207,13 @@ useEffect(() => {
                 <span className="text-[var(--color-muted)]">Sunset </span>
                 <span className="font-medium">{formatTime(solar.sunset)}</span>
               </p>
+              {solar.dayLengthMinutes === 1440 || solar.dayLengthMinutes === 0 ? (
+                <p className="w-full text-[var(--color-muted)]">
+                  {solar.dayLengthMinutes === 1440
+                    ? "Continuous daylight today; there is no sunrise or sunset."
+                    : "The sun stays below the horizon today."}
+                </p>
+              ) : null}
             </div>
           ) : (
             <p className="mt-3 text-sm text-[var(--color-muted)]">

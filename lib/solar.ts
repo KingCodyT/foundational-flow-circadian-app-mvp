@@ -1,5 +1,6 @@
 // Basic solar timing utilities adapted from NOAA algorithms.
-// Returns times in local Date objects.
+// UTC instants for the requested local calendar date; format in the runtime timezone.
+// https://gml.noaa.gov/grad/solcalc/solareqns.PDF
 
 function toJulian(day: Date) {
   return day.getTime() / 86400000 + 2440587.5;
@@ -84,11 +85,30 @@ function calcEquationOfTime(tc: number, l0: number, e: number, m: number) {
   return radToDeg(Etime) * 4.0; // in minutes
 }
 
-function hourAngleSunrise(lat: number, solarDec: number, solarZenith = 90.833) {
+function hourAngleCosine(lat: number, solarDec: number) {
   const latRad = degToRad(lat);
   const sdRad = degToRad(solarDec);
-  const HA = Math.acos((Math.cos(degToRad(solarZenith)) - Math.sin(latRad) * Math.sin(sdRad)) / (Math.cos(latRad) * Math.cos(sdRad)));
-  return radToDeg(HA);
+  return (Math.cos(degToRad(90.833)) - Math.sin(latRad) * Math.sin(sdRad)) /
+    (Math.cos(latRad) * Math.cos(sdRad));
+}
+
+export function hasValidCoordinates(latitude?: number | null, longitude?: number | null): boolean {
+  return latitude != null && longitude != null &&
+    Number.isFinite(latitude) && Number.isFinite(longitude) &&
+    Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180;
+}
+
+function solarPosition(jd: number) {
+  const t = toJulianCentury(jd);
+  const l0 = calcGeomMeanLongSun(t);
+  const m = calcGeomMeanAnomalySun(t);
+  const e = calcObliquityCorrection(t, calcMeanObliquityOfEcliptic(t));
+  const c = calcSunEqOfCenter(t, m);
+  const lambda = calcSunApparentLong(calcSunTrueLong(l0, c), t);
+  return {
+    declination: calcSunDeclination(e, lambda),
+    equationOfTime: calcEquationOfTime(t, l0, e, m),
+  };
 }
 
 export type SolarTimes = {
@@ -99,45 +119,57 @@ export type SolarTimes = {
 };
 
 export function getSolarTimes(date: Date, latitude?: number | null, longitude?: number | null): SolarTimes {
-  if (latitude == null || longitude == null) {
+  if (!Number.isFinite(date.getTime()) || !hasValidCoordinates(latitude, longitude)) {
     return { sunrise: null, sunset: null, solarNoon: null, dayLengthMinutes: null };
   }
 
-  // Work in UTC fractional days using Julian dates
-  const jd = toJulian(new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0)));
-  const t = toJulianCentury(jd);
+  // NOAA produces minutes relative to UTC midnight, not local midnight.
+  // Do not wrap at 24 hours: eastern sunrise can be on the previous UTC day,
+  // and western sunset can be on the following UTC day.
+  const utcMidnight = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const jd = toJulian(new Date(utcMidnight));
+  const lat = latitude!;
+  const lon = longitude!;
+  let noonMinutes = 720 - 4 * lon;
+  for (let i = 0; i < 2; i++) {
+    noonMinutes = 720 - 4 * lon - solarPosition(jd + noonMinutes / 1440).equationOfTime;
+  }
+  const solarNoon = new Date(utcMidnight + noonMinutes * 60000);
+  const noonPosition = solarPosition(jd + noonMinutes / 1440);
+  const cosine = hourAngleCosine(lat, noonPosition.declination);
 
-  const L0 = calcGeomMeanLongSun(t);
-  const M = calcGeomMeanAnomalySun(t);
-  const e = calcObliquityCorrection(t, calcMeanObliquityOfEcliptic(t));
-  const C = calcSunEqOfCenter(t, M);
-  const O = calcSunTrueLong(L0, C);
-  const lambda = calcSunApparentLong(O, t);
-  const solarDec = calcSunDeclination(e, lambda);
-  const eqTime = calcEquationOfTime(t, L0, e, M);
+  // No horizon crossing during polar day/night. Never construct Invalid Date.
+  if (cosine < -1 || cosine > 1) {
+    return {
+      sunrise: null,
+      sunset: null,
+      solarNoon,
+      dayLengthMinutes: cosine < -1 ? 1440 : 0,
+    };
+  }
 
-  // solar noon (approx) in minutes from UTC
-  const lngHour = longitude / 15.0;
-  const tnoon = (720 - 4.0 * longitude - eqTime); // minutes
+  function crossing(direction: -1 | 1): Date | null {
+    let minutes = noonMinutes + direction * 4 * radToDeg(Math.acos(cosine));
+    // Refine at each event, since declination changes between rise and set.
+    for (let i = 0; i < 2; i++) {
+      const position = solarPosition(jd + minutes / 1440);
+      const eventCosine = hourAngleCosine(lat, position.declination);
+      if (eventCosine < -1 || eventCosine > 1) return null;
+      minutes = 720 - 4 * lon - position.equationOfTime +
+        direction * 4 * radToDeg(Math.acos(eventCosine));
+    }
+    return new Date(utcMidnight + minutes * 60000);
+  }
 
-  const solarNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
-  solarNoon.setMinutes(solarNoon.getMinutes() + Math.round(tnoon));
-
-  // hour angle
-  let ha = hourAngleSunrise(latitude, solarDec); // degrees
-  const delta = Math.round((ha * 4)); // minutes from solar noon to sunrise/sunset
-
-  const sunrise = new Date(solarNoon.getTime());
-  sunrise.setMinutes(sunrise.getMinutes() - delta);
-  const sunset = new Date(solarNoon.getTime());
-  sunset.setMinutes(sunset.getMinutes() + delta);
-
-  const dayLengthMinutes = (sunset.getTime() - sunrise.getTime()) / 60000;
-
+  const sunrise = crossing(-1);
+  const sunset = crossing(1);
+  const dayLengthMinutes = sunrise && sunset
+    ? (sunset.getTime() - sunrise.getTime()) / 60000
+    : null;
   return { sunrise, sunset, solarNoon, dayLengthMinutes };
 }
 
 export function formatTimeLocal(d: Date | null) {
-  if (!d) return "--:--";
+  if (!d || !Number.isFinite(d.getTime())) return "--:--";
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }

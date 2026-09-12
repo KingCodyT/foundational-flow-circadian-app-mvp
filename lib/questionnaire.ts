@@ -36,7 +36,6 @@ function makeQuestion(
   category: QuestionCategory,
   prompt: string,
   description: string,
-  weight = 1,
   options = frequencyOptions,
 ): Question {
   return {
@@ -45,7 +44,6 @@ function makeQuestion(
     prompt,
     description,
     inputType: "segmented",
-    weight,
     options: [...options],
   };
 }
@@ -55,36 +53,31 @@ export const categoryDefinitions: CategoryDefinition[] = [
     title: "Morning Light",
     subtitle: "Anchor the biological morning.",
     intention: "Strong early light tells the brain when the day begins.",
-    scoreKey: "morningSignalScore",
   },
   {
     title: "Daytime Environment",
     subtitle: "Build a bright, active daylight window.",
     intention: "The daytime signal should be bright, dynamic, and awake.",
-    scoreKey: "daylightStrengthScore",
   },
   {
     title: "Evening Light",
     subtitle: "Protect the descent into darkness.",
     intention: "Lower light exposure supports melatonin timing and depth.",
-    scoreKey: "darknessScore",
   },
   {
     title: "Sleep Timing",
     subtitle: "Stabilize sleep output and recovery.",
     intention: "Regular sleep timing helps the body trust the pattern.",
-    scoreKey: "sleepOutputScore",
   },
   {
     title: "Disruption Load",
     subtitle: "Reduce the signals that create circadian noise.",
     intention: "Travel, late meals, alcohol, and irregularity can blunt progress.",
-    scoreKey: "disruptionLoadScore",
   },
   {
     title: "Location / Season",
     subtitle: "Adapt the plan to your environment.",
-    intention: "Latitude, climate, and seasonal daylight change the protocol details.",
+    intention: "Latitude, climate, and seasonal daylight shape your daily rhythm.",
   },
 ];
 
@@ -94,7 +87,6 @@ export const questionnaire: Question[] = [
     "Morning Light",
     "How soon after waking do you get outside or into bright natural light?",
     "Early outdoor light is one of the strongest signals for circadian timing.",
-    1.4,
     [
       {
         value: "within_15",
@@ -127,7 +119,6 @@ export const questionnaire: Question[] = [
     "Morning Light",
     "How much bright morning light do you usually accumulate?",
     "Longer exposure helps reinforce the wake signal, especially in winter.",
-    1.1,
     [
       {
         value: "30_plus",
@@ -160,14 +151,12 @@ export const questionnaire: Question[] = [
     "Morning Light",
     "How often do you pair morning light with a walk or light movement?",
     "Movement can amplify the alerting effect of the morning signal.",
-    0.8,
   ),
   makeQuestion(
     "day_brightness",
     "Daytime Environment",
     "How bright is your work or daytime environment for most of the day?",
     "Indoor spaces are often much dimmer than the body expects during the day.",
-    1.3,
     [
       {
         value: "mostly_outdoors",
@@ -200,7 +189,6 @@ export const questionnaire: Question[] = [
     "Daytime Environment",
     "How often do you take midday daylight breaks outdoors?",
     "A midday light pulse can support alertness and circadian amplitude.",
-    1,
     [
       {
         value: "daily",
@@ -233,14 +221,12 @@ export const questionnaire: Question[] = [
     "Daytime Environment",
     "How regular are your daytime meals and activity blocks?",
     "Predictable daytime patterns can strengthen the body clock.",
-    0.7,
   ),
   makeQuestion(
     "evening_light_reduction",
     "Evening Light",
     "How much do you dim lights in the final 2 to 3 hours before bed?",
     "Evening darkness is a direct signal that the biological night has started.",
-    1.3,
     [
       {
         value: "deep_dim",
@@ -273,14 +259,12 @@ export const questionnaire: Question[] = [
     "Evening Light",
     "How controlled is your screen exposure late in the evening?",
     "Late screen light can delay sleep timing and reduce sleep depth.",
-    1.1,
   ),
   makeQuestion(
     "bedroom_darkness",
     "Evening Light",
     "How dark is your sleep environment once you are in bed?",
     "Residual bedroom light can fragment the darkness signal overnight.",
-    0.9,
     [
       {
         value: "blackout",
@@ -313,21 +297,18 @@ export const questionnaire: Question[] = [
     "Sleep Timing",
     "How consistent are your bedtime and wake time across the week?",
     "Regular timing is often more important than chasing perfection on any one night.",
-    1.3,
   ),
   makeQuestion(
     "sleep_duration",
     "Sleep Timing",
     "How often do you get enough total sleep for your body to feel restored?",
     "Sleep output reflects both timing quality and total opportunity.",
-    1.1,
   ),
   makeQuestion(
     "sleep_latency",
     "Sleep Timing",
     "How easily do you fall asleep once you intend to sleep?",
     "Difficulty falling asleep can indicate misaligned timing or excess stimulation.",
-    0.8,
     [
       {
         value: "easy",
@@ -360,7 +341,6 @@ export const questionnaire: Question[] = [
     "Disruption Load",
     "How often do travel, shift work, or large schedule swings affect your week?",
     "Frequent schedule changes can reduce circadian reliability.",
-    1.2,
     [
       {
         value: "rarely",
@@ -393,7 +373,6 @@ export const questionnaire: Question[] = [
     "Disruption Load",
     "How often do late meals, alcohol, or stimulants push into your evening window?",
     "These inputs can create noise even when light habits are decent.",
-    1,
     [
       {
         value: "rarely",
@@ -426,14 +405,12 @@ export const questionnaire: Question[] = [
     "Disruption Load",
     "How often do you create a true wind-down period before bed?",
     "A nervous system that never ramps down often blunts the sleep signal.",
-    0.8,
   ),
   makeQuestion(
     "season_daylight",
     "Location / Season",
     "How supportive is your current season for natural daylight exposure?",
     "Short winter days or harsh weather often require a more deliberate plan.",
-    1,
     [
       {
         value: "very_supportive",
@@ -466,7 +443,6 @@ export const questionnaire: Question[] = [
     "Location / Season",
     "How extreme is the daylight swing where you live?",
     "Higher latitude living often calls for stronger timing habits.",
-    0.9,
     [
       {
         value: "minimal",
@@ -499,7 +475,6 @@ export const questionnaire: Question[] = [
     "Location / Season",
     "How easy is it to shape your home for both bright mornings and dark evenings?",
     "Blackout shades, outdoor access, and lighting control all matter here.",
-    0.9,
   ),
 ];
 

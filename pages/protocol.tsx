@@ -1,1 +1,1 @@
-export { default } from "@/views/protocol-page";
+export { default } from "@/views/now-page";

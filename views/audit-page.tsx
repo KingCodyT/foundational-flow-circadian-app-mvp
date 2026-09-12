@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ProgressBar } from "@/components/progress-bar";
 import { QuestionCard } from "@/components/question-card";
@@ -19,6 +19,10 @@ export default function AuditPage() {
   const currentQuestions = getQuestionsForCategory(currentCategory.title);
   const isCurrentStepComplete = currentQuestions.every((question) => answers[question.id]);
   const isFinalStep = currentIndex === categoryDefinitions.length - 1;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [currentIndex]);
 
   const handleNext = () => {
     if (!isCurrentStepComplete) {

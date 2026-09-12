@@ -44,13 +44,13 @@ export default function AuditPage() {
   if (!isHydrated) {
     return (
       <AppShell>
-        <div className="py-20 text-[var(--color-muted)]">Loading your audit...</div>
+        <div className="py-20 text-[var(--color-muted)]">Loading your assessment...</div>
       </AppShell>
     );
   }
 
   return (
-    <AppShell eyebrow="Circadian Audit">
+    <AppShell eyebrow="Circadian Assessment">
       <section className="grid gap-10 py-6 lg:grid-cols-[0.42fr_0.58fr] lg:py-10">
         <div className="space-y-8 lg:sticky lg:top-6 lg:self-start">
           <SectionHeading
@@ -65,7 +65,7 @@ export default function AuditPage() {
                 Current section
               </p>
               <p className="mt-2 text-sm leading-6 text-[var(--color-charcoal)]">
-                Answer all prompts in this block, then move forward. You can revise earlier sections at any point before calculating results.
+                Answer all prompts in this block, then move forward. You can revise earlier sections at any point before finishing the assessment.
               </p>
             </div>
             <div className="mt-6 space-y-3">
@@ -104,7 +104,7 @@ export default function AuditPage() {
                 Section {currentIndex + 1} of {categoryDefinitions.length}
               </p>
               <p className="mt-1 text-sm text-[var(--color-muted)]">
-                We’re scoring this category for signal quality, consistency, and rhythm support.
+                These answers become the starting evidence for your personalization model.
               </p>
             </div>
           </div>

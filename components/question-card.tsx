@@ -57,9 +57,6 @@ export function QuestionCard({
                         : "border-[var(--color-line)] bg-transparent"
                       }`}
                     />
-                    <span className="text-[11px] uppercase tracking-[0.18em] text-[var(--color-muted)]">
-                      {option.score}/100
-                    </span>
                   </div>
                 </div>
               </button>

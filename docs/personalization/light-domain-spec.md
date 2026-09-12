@@ -6,7 +6,17 @@ This document records the approved Light-domain personalization decisions from t
 
 ## Overview
 
-This file captures the authoritative mapping between Audit questions in the Light domain and their intended personalization meaning. The Audit remains the source of user data; the rules engine (in `lib/flow-engine.ts`) will determine how to translate these signals into timed interventions. Changes recorded here are specification-only and must not be applied to the live questionnaire until coordinated with design and release.
+This file captures the authoritative mapping between Audit questions in the Light domain and their intended personalization meaning. Questionnaire answers are behavioral evidence used to initialize the personalization model; the rules engine (in `lib/flow-engine.ts`) will determine how to translate these signals into timed interventions. Changes recorded here are specification-only and must not be applied to the live questionnaire until coordinated with design and release.
+
+## Current implementation boundary
+
+Questionnaire answers initialize behavioral evidence, alongside outcome and context evidence. `QuestionOption.score` is internal option-level metadata: it supports initial coaching state, confidence through evidence availability and agreement, and target selection within the same hierarchy layer and coaching state. Preserve existing option values, thresholds, and legacy answer mappings.
+
+Personalization supports the YOU/NOW/RHYTHM experience. YOU computes coaching states, confidence labels, and the primary coaching target from assessment and daily evidence; NOW and RHYTHM provide timed guidance using the current flow engine, profile, and solar context. This does not imply that every future intervention rule below is already integrated into those views.
+
+No aggregate circadian score is calculated or presented to users. Answer choices display labels and details without numerical score badges. Section counts and completion percentages describe assessment progress only. Questionnaire weights, category score keys, and the old dashboard/protocol scoring consumers are no longer part of the architecture.
+
+The question revisions and future coaching rules below remain specifications, not authorization to change the live questionnaire or engine.
 
 ---
 
@@ -16,7 +26,7 @@ Q1 — Morning Light Timing Priority
 
 - Existing question (do not change in live app):
   - “How soon after waking do you get outside or into bright natural light?”
-- Keep the existing question and scoring.
+- Keep the existing question and internal option scores.
 - Personalization meaning:
   - Identifies **Morning Light Timing Priority**.
   - The assessment identifies the user's existing timing pattern, but the intervention timing must be computed by the rules engine using the user's `wakeTime`, location (latitude/longitude), actual sunrise, and current local solar conditions (sunrise, civil twilight, etc.).
@@ -26,7 +36,7 @@ Q2 — Morning Light Exposure Priority
 
 - Existing question (do not change in live app):
   - “How much bright morning light do you usually accumulate?”
-- Keep the existing question and scoring.
+- Keep the existing question and internal option scores.
 - Personalization meaning:
   - Identifies **Morning Light Exposure Priority** (dose/exposure weakness).
   - Q1 (timing) and Q2 (dose) are distinct signals: Q1 expresses timing weakness; Q2 expresses exposure/dose weakness. The rules engine should treat them separately when generating guidance.
@@ -36,7 +46,7 @@ Q3 — Morning Movement Optimization
 
 - Existing question (do not change in live app):
   - “How often do you pair morning light with a walk or light movement?”
-- Keep the existing question and scoring.
+- Keep the existing question and internal option scores.
 - Personalization meaning:
   - This is a **secondary optimization** signal. Movement can amplify the morning-light effect but should be layered onto an established morning-light behavior rather than presented as an equal-priority requirement for users who lack consistent morning light.
 
@@ -44,7 +54,7 @@ Q4 — Evening Light Transition Priority
 
 - Existing question (do not change in live app):
   - “How much do you dim lights in the final 2 to 3 hours before bed?”
-- Keep the existing question and scoring for now.
+- Keep the existing question and internal option scores for now.
 - Personalization meaning:
   - Identifies **Evening Light Transition Priority**.
   - Interventions should be anchored to **actual sunset/darkness** (location, season, solar timing) rather than an arbitrary countdown from bedtime. The rules engine should compute evening transition timing using solar times and bedtime together.
@@ -54,12 +64,11 @@ Q5 — Evening Artificial Light Priority (Specification wording change)
 - SPECIFICATION: Change the specification question wording (do not change the live questionnaire yet).
   - New specification wording:
     - “How often do you reduce or avoid bright screen exposure after sunset, especially as bedtime approaches?”
-- Approved answers & scoring (retain current scoring):
+- Approved answers & internal option scores (retain current scoring):
   - Consistently — 100
   - Often — 75
   - Sometimes — 45
   - Rarely — 15
-  - Weight: 1.1
 - Personalization meaning:
   - Identifies **Evening Artificial Light Priority** (screens and close-range devices).
   - This is subordinate to the broader evening-light environment (Q4). If both Q4 and Q5 are weak, the app should consolidate into a single evening-light intervention rather than produce duplicate notifications. If Q4 is strong and Q5 is weak, address screens as the remaining specific issue.
@@ -69,7 +78,7 @@ Q6 — Sleep Environment Priority (Specification wording change)
 - SPECIFICATION: Change the specification question wording (do not change the live questionnaire yet).
   - New specification wording:
     - “How dark is your bedroom while you sleep?”
-- Keep existing answers, scoring, and weight.
+- Keep existing answers and internal option scores.
 - Personalization meaning:
   - Identifies **Sleep Environment Priority** (environmental correction).
   - This is primarily a one-time environmental correction issue rather than a recurring timed-notification. Once the problem is resolved, the app should not continue to nag daily about it.
@@ -79,7 +88,7 @@ Q6 — Sleep Environment Priority (Specification wording change)
 ## GLOBAL PERSONALIZATION PRINCIPLES (Light-review)
 
 1. Assessment identifies problems; the rules engine determines today's intervention.
-2. A weak Audit score does not automatically produce a notification or intervention — biological priority and sequencing matter.
+2. Assessment evidence of a behavioral weakness does not automatically produce a notification or intervention — biological priority and sequencing matter.
 3. Related weak signals should be consolidated into the smallest number of meaningful interventions rather than many overlapping notifications.
 4. Some findings require daily timing guidance; others require one-time or occasional environmental correction.
 5. The mobile experience should behave as a circadian companion, not a checklist.
@@ -98,7 +107,7 @@ Q6 — Sleep Environment Priority (Specification wording change)
 
 ---
 
-Document created: Light-domain personalization decisions (Audit-derived). See `lib/questionnaire.ts` for the live Audit questions and scoring.
+Document created: Light-domain personalization decisions (Audit-derived). See `lib/questionnaire.ts` for the live Audit questions and internal option scores.
 
 ---
 
@@ -106,7 +115,7 @@ Document created: Light-domain personalization decisions (Audit-derived). See `l
 
 This document is now the canonical product/engineering specification for Foundational Flow personalization and coaching architecture. It preserves the question-level mappings and locked Light-domain revisions previously recorded above. The content that follows is LOCKED architecture (documentation-only) and must not be implemented without a coordinated engineering/design plan.
 
-All changes here are documentation-only. Do not modify runtime code, `lib/questionnaire.ts`, `lib/scoring.ts`, the rules engine, UI components, or scoring behavior as part of this change.
+All changes here are documentation-only. Do not modify runtime code, `lib/questionnaire.ts`, the personalization engine, the rules engine, UI components, or internal option-score behavior as part of this change.
 
 ---
 
@@ -297,10 +306,10 @@ This section lists conflicts, terminology that should be migrated, runtime behav
 LOCKED / PROVISIONAL / FUTURE IMPLEMENTATION / UNRESOLVED distinctions should guide the migration.
 
 ### Conflicts or implementation gaps observed (documentation-only):
-- `lib/questionnaire.ts` currently contains items the spec proposes to derive automatically rather than score (e.g., `season_daylight`, `location_latitude`). This conflicts with the "Derived Environment" principle and will require either deprecating those scored items or mapping them to derived fields.
-- Several live questions combine multiple behaviors into one item (e.g., `day_meal_regular` currently conflates meal timing and activity blocks; `late_meals_stimulants` conflates late meals, alcohol, and stimulants). The spec recommends splitting these concepts. Scoring logic in `lib/scoring.ts` assumes existing question IDs and options; splitting questions will require migration and mapping to maintain historical comparability.
-- `travel_schedule_variability` is presently a frequency score but the spec proposes a constraint-profile branching flow (travel, shift work, variable schedule). This structural change will require UI/UX flow updates and scoring model changes.
-- The spec emphasizes that environmental items should not be penalized; existing scoring and UI components currently surface numeric scores per category (`scoreKey`) that may be consumed elsewhere (dashboards, protocols). Careful mapping and potential adjustment to downstream consumers will be needed.
+- `lib/questionnaire.ts` currently contains items the spec proposes to derive automatically rather than ask users to estimate (e.g., `season_daylight`, `location_latitude`). The current registry retains these as legacy derived-environment evidence. Any future questionnaire retirement must preserve those mappings until an explicit answer migration is approved.
+- Several live questions combine multiple behaviors into one item (e.g., `day_meal_regular` currently conflates meal timing and activity blocks; `late_meals_stimulants` conflates late meals, alcohol, and stimulants). The spec recommends splitting these concepts. Current personalization maps existing question IDs and option values to signal evidence; splitting questions would require preserving or migrating those answer mappings.
+- `travel_schedule_variability` is presently a frequency score but the spec proposes a constraint-profile branching flow (travel, shift work, variable schedule). This proposed structural change would require UI/UX flow updates and evidence-mapping changes.
+- Environmental answers remain legacy context evidence, not a category score or behavioral penalty. Preserve the current derived-environment and legacy answer mappings; there are no aggregate-score consumers to maintain.
 - Historical behavior: prior iterations of the rules engine conflated temporal passage with user action (auto-marking missed/completed). Recent engine changes moved toward separating temporal vs user action state, but residual code paths or UI assumptions may still rely on earlier behavior. The implementation review must verify all places that consume event-state or progress counts.
 
 ### Terminology and migration items (documentation-only):
@@ -320,8 +329,8 @@ LOCKED / PROVISIONAL / FUTURE IMPLEMENTATION / UNRESOLVED distinctions should gu
 - Event→signal mapping for Today's Flow and intervention generation.
 
 ### Questions intentionally unresolved (documentation-only):
-- Migration strategy and timing for replacing scored `season_daylight` and `location_latitude` with derived environment fields.
-- Historical comparability: how to preserve or map historical user scores if question IDs change or split.
+- Migration strategy and timing for retiring the legacy `season_daylight` and `location_latitude` questions while preserving stored answers and derived-environment mappings.
+- Answer compatibility: how to preserve or map stored answer values and signal evidence if question IDs change or split.
 - Specific thresholds for "meaningful" context changes (e.g., what counts as a meaningful wake-time change?).
 
 ---
@@ -345,7 +354,6 @@ DAYTIME Q1 — Daytime Light Strength Priority
     - Good natural daylight / near windows much of the day — 75
     - Mostly indoors with limited natural daylight — 35
     - Almost entirely indoors with little natural daylight — 10
-  - Keep weight provisionally at 1.3.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Identifies **Daytime Light Strength Priority**.
@@ -359,8 +367,7 @@ DAYTIME Q2 — Daytime Outdoor Exposure Priority
 - APPROVED SPECIFICATION REVISION (spec only):
   - Change the specification wording to:
     - “How often do you get outside for natural daylight during the daytime, beyond your morning light exposure?”
-  - Keep existing answer structure and scoring provisionally (Daily / Several times weekly / Occasional / Almost never).
-  - Keep weight provisionally at 1.0.
+  - Keep existing answer structure and internal option scores provisionally (Daily / Several times weekly / Occasional / Almost never).
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Identifies **Daytime Outdoor Exposure Priority**. Interpret Q1 and Q2 together — a low Q2 should not force an intervention when Q1 is already strong.
@@ -373,7 +380,6 @@ DAYTIME Q3 — Meal Timing Regularity
   - Replace the combined concept with:
     - “How consistent is the timing of your meals from day to day?”
   - Approved provisional answers (Consistent / Often consistent / Sometimes consistent / Rarely consistent).
-  - Keep weight provisionally at 0.7.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Identifies **Meal Timing Regularity**. Do not conflate meal timing and daytime activity — separate behaviors may warrant different personalization decisions.
@@ -394,7 +400,6 @@ SLEEP Q1 — Sleep-Wake Timing Stability
     - Usually within 1 hour — 75
     - Often varies by 1–2 hours — 45
     - Frequently varies by more than 2 hours — 15
-  - Keep weight provisionally at 1.3.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Identifies **Sleep-Wake Timing Stability**. Weak scores indicate timing instability that may require higher coaching priority, but avoid rigid clock-time commands.
@@ -406,7 +411,7 @@ SLEEP Q2 — Sleep Sufficiency Priority
 - APPROVED SPECIFICATION REVISION (spec only):
   - Change the specification wording to:
     - “How often do you get enough sleep to wake feeling physically and mentally restored?”
-  - Keep existing answer structure/scoring and weight provisionally at 1.1.
+  - Keep existing answer structure and internal option scores provisionally.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Identifies **Sleep Sufficiency Priority**. Treat as an outcome/diagnostic amplifier pointing to plausible upstream causes rather than a direct command to "sleep more".
@@ -423,7 +428,6 @@ SLEEP Q3 — Sleep Initiation Signal
     - Usually 20–40 minutes — 65
     - Often 40–60 minutes — 35
     - Often more than 60 minutes — 10
-  - Keep weight provisionally at 0.8.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Identifies **Sleep Initiation Signal**. Use as an outcome/diagnostic amplifier to prioritize plausible upstream mismatches rather than inventing causes.
@@ -438,7 +442,6 @@ DISRUPTION Q1 — Schedule Constraint Profile
   - “How often do travel, shift work, or large schedule swings affect your week?”
 - APPROVED STRUCTURAL REVISION (spec only):
   - Do not treat travel, shift work, and general schedule variability as a single frequency score. The specification should identify the primary schedule constraint (travel, shift work, variable schedule, etc.) via a new conditional flow.
-  - Keep the existing weight (1.2) provisionally for historical context; do not assume this remains a scored item.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Identifies **Schedule Constraint Profile**. Treat constraints as context, not noncompliance.
@@ -461,7 +464,6 @@ DISRUPTION Q3 — Pre-Sleep Activation Signal
   - Change the concept to:
     - “How often do you feel mentally or physically wound up when you intend to sleep?”
   - Provisional answer direction: Rarely / Sometimes / Often / Very often.
-  - Keep current weight provisionally at 0.8.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Identifies **Pre-Sleep Activation Signal**. Treat as output/diagnostic information rather than a requirement for a prescribed "wind-down routine." Use to prioritize upstream mismatches as appropriate.
@@ -475,7 +477,7 @@ LOCATION / SEASON Q1 — Seasonal Daylight Context
 - Existing question (do not change in live app):
   - “How supportive is your current season for natural daylight exposure?”
 - APPROVED STRUCTURAL REVISION (spec only):
-  - Remove seasonal daylight from future behavioral scoring. Derive seasonal context automatically from location, date, and solar calculations.
+  - Keep seasonal daylight classified as environmental context, not behavioral coaching state. Derive seasonal context automatically from location, date, and solar calculations.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Becomes **Environmental Context: Seasonal Daylight**. Use derived solar data rather than subjective scoring.
@@ -485,7 +487,7 @@ LOCATION / SEASON Q2 — Latitude / Seasonal Variability Context
 - Existing question (do not change in live app):
   - “How extreme is the daylight swing where you live?”
 - APPROVED STRUCTURAL REVISION (spec only):
-  - Remove this from behavioral scoring; derive latitude/seasonal variability automatically.
+  - Keep this classified as environmental context; derive latitude/seasonal variability automatically.
   - Do NOT change the live questionnaire yet.
 - Personalization meaning:
   - Becomes **Environmental Context: Latitude / Seasonal Variability**.
@@ -548,8 +550,8 @@ Add these principles to the existing global personalization section without remo
 
 ### Notes: conflicts or ambiguities observed (documentation only)
 
-- Several specification changes propose replacing or removing concepts that currently exist in the live `lib/questionnaire.ts` data model (e.g., combining vs separating meal/activity questions, removing seasonal scoring). The timing and release plan for reconciling live questionnaire content with these spec changes is unspecified.
-- The spec sometimes asks to remove certain items from behavioral scoring (Location / Season) while leaving the live questionnaire unchanged; this creates ambiguity about when and how to deprecate those items in the scoring pipeline.
+- Several specification changes propose replacing or removing concepts that currently exist in the live `lib/questionnaire.ts` data model (e.g., combining vs separating meal/activity questions, retiring legacy seasonal questions). The timing and release plan for reconciling live questionnaire content with these spec changes is unspecified.
+- Location / Season questions remain in the live questionnaire as legacy environmental evidence. Their future retirement requires an explicit answer-migration plan; it does not require restoring aggregate scoring.
 - DISRUPTION structural revisions propose replacing one frequency-based item with a constraint-profile branching flow. This will require work to preserve historical comparability if needed.
 - The spec instructs not to change live questionnaire wording or scoring now; therefore the product/engineering team should coordinate a migration plan when ready.
 

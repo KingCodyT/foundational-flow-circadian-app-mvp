@@ -1,1 +1,1 @@
-export { default } from "@/views/todays-flow-page";
+export { default } from "@/views/now-page";

@@ -10,6 +10,9 @@ function dateKeyDaysAgo(daysAgo: number) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+const testButtonClass =
+  "rounded-full border border-[var(--color-line)] bg-white px-5 py-3 text-sm font-semibold";
+
 export default function EvidenceTestPage() {
   const {
     eventStateByDate,
@@ -63,9 +66,9 @@ export default function EvidenceTestPage() {
           </p>
 
           <div className="mt-7 flex flex-wrap gap-3">
-            <button onClick={() => addMorningEvidence(1)} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-3 text-sm font-semibold">Set 1 day</button>
-            <button onClick={() => addMorningEvidence(2)} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-3 text-sm font-semibold">Set 2 days</button>
-            <button onClick={() => addMorningEvidence(4)} className="rounded-full bg-[var(--color-charcoal)] px-5 py-3 text-sm font-semibold text-[var(--color-cream)]">Set 4 days</button>
+            <button onClick={() => addMorningEvidence(1)} className={testButtonClass}>Set 1 day</button>
+            <button onClick={() => addMorningEvidence(2)} className={testButtonClass}>Set 2 days</button>
+            <button onClick={() => addMorningEvidence(4)} className={testButtonClass}>Set 4 days</button>
             <button onClick={() => clearEventRecords("morning_light")} className="rounded-full border border-[var(--color-line)] px-5 py-3 text-sm font-semibold text-[var(--color-muted)]">Reset Morning Light evidence</button>
           </div>
 

@@ -7,6 +7,10 @@ import { useCircadian } from "@/components/circadian-provider";
 import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
 import { buildInitialPersonalizationState } from "@/lib/personalization/initial-state";
 import { assignInitialConfidence } from "@/lib/personalization/initial-confidence";
+import {
+  applyDailyEvidence,
+  summarizeDailyEvidence,
+} from "@/lib/personalization/daily-evidence";
 import { selectPrimaryCoachingTarget } from "@/lib/personalization/primary-target";
 import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
 import {
@@ -76,7 +80,14 @@ function confidenceLabel(score?: number | null) {
 }
 
 export default function YouPage() {
-  const { answers, dailyProfile, participationLevel, isHydrated, hasCompletedAudit } = useCircadian();
+  const {
+    answers,
+    dailyProfile,
+    participationLevel,
+    isHydrated,
+    hasCompletedAudit,
+    eventStateByDate,
+  } = useCircadian();
 
   const environment = useMemo(
     () => buildDerivedEnvironment({ profile: dailyProfile }),
@@ -84,9 +95,18 @@ export default function YouPage() {
   );
 
   const personalization = useMemo(() => {
-    const initial = buildInitialPersonalizationState({ answers, derivedEnvironment: environment });
-    return assignInitialConfidence(initial);
-  }, [answers, environment]);
+    const initial = buildInitialPersonalizationState({
+      answers,
+      derivedEnvironment: environment,
+    });
+    const withConfidence = assignInitialConfidence(initial);
+    return applyDailyEvidence(withConfidence, eventStateByDate);
+  }, [answers, environment, eventStateByDate]);
+
+  const dailyEvidence = useMemo(
+    () => summarizeDailyEvidence(eventStateByDate),
+    [eventStateByDate]
+  );
 
   const primaryTarget = useMemo(
     () => selectPrimaryCoachingTarget(personalization),
@@ -117,6 +137,9 @@ export default function YouPage() {
   const targetSignal = primaryTarget.signalId ? personalization.perSignal[primaryTarget.signalId] : null;
   const targetDefinition = primaryTarget.signalId ? SIGNAL_REGISTRY[primaryTarget.signalId] : null;
   const targetConfidence = confidenceLabel(targetSignal?.confidence?.score);
+  const targetDailyEvidence = primaryTarget.signalId
+    ? dailyEvidence[primaryTarget.signalId]
+    : null;
 
   if (!isHydrated) {
     return (
@@ -162,7 +185,14 @@ export default function YouPage() {
                 <span className="rounded-full border border-[var(--color-gold)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em]">{coachingLabel(primaryTarget.coachingState)}</span>
               </div>
               <p className="mt-4 max-w-2xl leading-7 text-[var(--color-muted)]">{hierarchyExplanation(primaryTarget.hierarchy)}</p>
-              {targetConfidence ? <p className="mt-5 text-sm font-semibold text-[var(--color-charcoal)]">{targetConfidence}</p> : null}
+              <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-[var(--color-charcoal)]">
+                {targetConfidence ? <p>{targetConfidence}</p> : null}
+                {targetDailyEvidence?.completedDays ? (
+                  <p>
+                    {targetDailyEvidence.completedDays} daily confirmation{targetDailyEvidence.completedDays === 1 ? "" : "s"}
+                  </p>
+                ) : null}
+              </div>
             </>
           ) : hasCompletedAudit ? (
             <>

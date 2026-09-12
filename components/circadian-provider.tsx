@@ -8,43 +8,20 @@ import {
   useState,
 } from "react";
 import {
-  createAuditRecord,
   createClientId,
-  getLatestAudit,
   LocalAuditState,
-  mergeAuditHistory,
   STORAGE_KEY,
 } from "@/lib/audit-store";
-import { calculateScores, generateInsights } from "@/lib/scoring";
-import { generateProtocol } from "@/lib/protocol";
 import {
   AnswerMap,
-  CircadianInsight,
-  CircadianScores,
-  HabitHistoryEntry,
-  PersistedAuditRecord,
-  PersistenceMode,
-  ProtocolPlan,
-  SaveStatus,
   ParticipationLevel,
   DailyProfile,
   DailyEventState,
 } from "@/types/circadian";
-import { toggleHabitCompletion } from "@/lib/habit-tracker";
 
 type CircadianState = {
   clientId: string;
   answers: AnswerMap;
-  scores: CircadianScores | null;
-  insight: CircadianInsight | null;
-  protocol: ProtocolPlan | null;
-  auditHistory: PersistedAuditRecord[];
-  habitHistory: HabitHistoryEntry[];
-  protocolLeadFirstName: string | null;
-  protocolLeadEmail: string | null;
-  protocolLeadCapturedAt: string | null;
-  persistenceMode: PersistenceMode;
-  saveStatus: SaveStatus;
   lastSavedAt: string | null;
   isHydrated: boolean;
   hasCompletedAudit: boolean;
@@ -52,12 +29,17 @@ type CircadianState = {
   dailyProfile: DailyProfile | null;
   eventStateByDate: Record<string, DailyEventState> | null;
   getEventStateForDate: (dateStr: string) => DailyEventState;
-  setEventRecord: (dateStr: string, eventId: string, record: { status: "completed" | "skipped" | "missed"; at?: string }) => void;
+  setEventRecord: (
+    dateStr: string,
+    eventId: string,
+    record: {
+      status: "completed" | "skipped" | "missed";
+      at?: string;
+    },
+  ) => void;
   clearEventRecords: (eventId: string) => void;
   setAnswer: (questionId: string, value: string) => void;
   completeAudit: () => void;
-  toggleHabit: (date: string, habitId: string) => void;
-  recordProtocolLead: (firstName: string, email: string) => void;
   setParticipationLevel: (level: ParticipationLevel | null) => void;
   setDailyProfile: (profile: DailyProfile | null) => void;
   resetAudit: () => void;
@@ -68,53 +50,33 @@ const CircadianContext = createContext<CircadianState | null>(null);
 export function CircadianProvider({ children }: { children: ReactNode }) {
   const [clientId, setClientId] = useState("");
   const [answers, setAnswers] = useState<AnswerMap>({});
-  const [scores, setScores] = useState<CircadianScores | null>(null);
-  const [insight, setInsight] = useState<CircadianInsight | null>(null);
-  const [protocol, setProtocol] = useState<ProtocolPlan | null>(null);
-  const [auditHistory, setAuditHistory] = useState<PersistedAuditRecord[]>([]);
-  const [habitHistory, setHabitHistory] = useState<HabitHistoryEntry[]>([]);
-  const [protocolLeadFirstName, setProtocolLeadFirstName] = useState<string | null>(null);
-  const [protocolLeadEmail, setProtocolLeadEmail] = useState<string | null>(null);
-  const [protocolLeadCapturedAt, setProtocolLeadCapturedAt] = useState<string | null>(null);
-  const [participationLevel, setParticipationLevelState] = useState<ParticipationLevel | null>(null);
+  const [participationLevel, setParticipationLevelState] =
+    useState<ParticipationLevel | null>(null);
   const [dailyProfile, setDailyProfileState] = useState<DailyProfile | null>(null);
-  const [eventStateByDate, setEventStateByDate] = useState<Record<string, DailyEventState> | null>(null);
-  const [persistenceMode, setPersistenceMode] =
-    useState<PersistenceMode>("local");
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [eventStateByDate, setEventStateByDate] = useState<Record<
+    string,
+    DailyEventState
+  > | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasCompletedAudit, setHasCompletedAudit] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
-
-  const applyAuditRecord = (record: PersistedAuditRecord) => {
-    setAnswers(record.answers);
-    setScores(record.scores);
-    setInsight(record.insight);
-    setProtocol(record.protocol);
-    setHasCompletedAudit(true);
-    setLastSavedAt(record.createdAt);
-  };
 
   useEffect(() => {
     const rawState = window.localStorage.getItem(STORAGE_KEY);
 
     if (rawState) {
-      const parsedState = JSON.parse(rawState) as LocalAuditState;
-      setClientId(parsedState.clientId ?? createClientId());
-      setAnswers(parsedState.answers ?? {});
-      setScores(parsedState.scores ?? null);
-      setInsight(parsedState.insight ?? null);
-      setProtocol(parsedState.protocol ?? null);
-      setAuditHistory(parsedState.auditHistory ?? []);
-      setHabitHistory(parsedState.habitHistory ?? []);
-      setProtocolLeadFirstName(parsedState.protocolLeadFirstName ?? null);
-      setProtocolLeadEmail(parsedState.protocolLeadEmail ?? null);
-      setProtocolLeadCapturedAt(parsedState.protocolLeadCapturedAt ?? null);
-      setParticipationLevelState(parsedState.participationLevel ?? null);
-      setDailyProfileState(parsedState.dailyProfile ?? null);
-      setEventStateByDate(parsedState.eventStateByDate ?? null);
-      setLastSavedAt(parsedState.lastSavedAt ?? null);
-      setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
+      try {
+        const parsedState = JSON.parse(rawState) as LocalAuditState;
+        setClientId(parsedState.clientId ?? createClientId());
+        setAnswers(parsedState.answers ?? {});
+        setParticipationLevelState(parsedState.participationLevel ?? null);
+        setDailyProfileState(parsedState.dailyProfile ?? null);
+        setEventStateByDate(parsedState.eventStateByDate ?? null);
+        setLastSavedAt(parsedState.lastSavedAt ?? null);
+        setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
+      } catch {
+        setClientId(createClientId());
+      }
     } else {
       setClientId(createClientId());
     }
@@ -123,22 +85,12 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isHydrated || !clientId) {
-      return;
-    }
+    if (!isHydrated || !clientId) return;
 
     const state: LocalAuditState = {
       clientId,
       answers,
-      scores,
-      insight,
-      protocol,
       hasCompletedAudit,
-      auditHistory,
-      habitHistory,
-      protocolLeadFirstName,
-      protocolLeadEmail,
-      protocolLeadCapturedAt,
       lastSavedAt,
       participationLevel,
       dailyProfile,
@@ -146,103 +98,16 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [answers, auditHistory, clientId, habitHistory, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, protocolLeadCapturedAt, protocolLeadEmail, protocolLeadFirstName, scores, participationLevel, dailyProfile, eventStateByDate]);
-
-  useEffect(() => {
-    if (!isHydrated || !clientId) {
-      return;
-    }
-
-    let isCancelled = false;
-
-    async function syncRemoteAudits() {
-      try {
-        const response = await fetch(
-          `/api/audits?clientId=${encodeURIComponent(clientId)}&limit=6`,
-        );
-
-        if (!response.ok) {
-          throw new Error("Unable to load saved audits.");
-        }
-
-        const data = (await response.json()) as {
-          configured: boolean;
-          audits?: PersistedAuditRecord[];
-        };
-
-        if (!data.configured || isCancelled) {
-          return;
-        }
-
-        const remoteHistory = data.audits ?? [];
-        const mergedHistory = mergeAuditHistory(auditHistory, remoteHistory);
-        const latestRemote = getLatestAudit(mergedHistory);
-        const latestLocal = getLatestAudit(auditHistory);
-        const shouldApplyRemote = Boolean(
-          latestRemote &&
-            (((!hasCompletedAudit && Object.keys(answers).length === 0) ||
-              !latestLocal ||
-              new Date(latestRemote.createdAt).getTime() >
-                new Date(latestLocal.createdAt).getTime())),
-        );
-
-        setPersistenceMode("supabase");
-        setAuditHistory(mergedHistory);
-
-        if (latestRemote && shouldApplyRemote) {
-          applyAuditRecord(latestRemote);
-        }
-      } catch {
-        setPersistenceMode("local");
-      }
-    }
-
-    void syncRemoteAudits();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [answers, auditHistory, clientId, hasCompletedAudit, isHydrated]);
-
-  const persistAuditRecord = async (record: PersistedAuditRecord) => {
-    try {
-      const response = await fetch("/api/audits", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ record }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Unable to save audit.");
-      }
-
-      const data = (await response.json()) as {
-        configured: boolean;
-        audit?: PersistedAuditRecord;
-      };
-
-      if (!data.configured) {
-        setPersistenceMode("local");
-        setSaveStatus("saved");
-        return;
-      }
-
-      setPersistenceMode("supabase");
-      setSaveStatus("saved");
-
-      if (data.audit) {
-        setLastSavedAt(data.audit.createdAt);
-        setAuditHistory((currentHistory) =>
-          mergeAuditHistory(currentHistory, [data.audit!]),
-        );
-      }
-    } catch {
-      setPersistenceMode("local");
-      setSaveStatus("error");
-    }
-  };
+  }, [
+    answers,
+    clientId,
+    dailyProfile,
+    eventStateByDate,
+    hasCompletedAudit,
+    isHydrated,
+    lastSavedAt,
+    participationLevel,
+  ]);
 
   const setAnswer = (questionId: string, value: string) => {
     setAnswers((current) => ({
@@ -263,11 +128,21 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     return eventStateByDate?.[dateStr] ?? {};
   };
 
-  const setEventRecord = (dateStr: string, eventId: string, record: { status: "completed" | "skipped" | "missed"; at?: string }) => {
+  const setEventRecord = (
+    dateStr: string,
+    eventId: string,
+    record: {
+      status: "completed" | "skipped" | "missed";
+      at?: string;
+    },
+  ) => {
     setEventStateByDate((current) => {
       const next = { ...(current ?? {}) };
       const dayState = { ...(next[dateStr] ?? {}) };
-      dayState[eventId] = { status: record.status as any, at: record.at ?? new Date().toISOString() };
+      dayState[eventId] = {
+        status: record.status,
+        at: record.at ?? new Date().toISOString(),
+      };
       next[dateStr] = dayState;
       return next;
     });
@@ -289,60 +164,19 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   };
 
   const completeAudit = () => {
-    const activeClientId = clientId || createClientId();
-
-    if (!clientId) {
-      setClientId(activeClientId);
-    }
-
-    const computedScores = calculateScores(answers);
-    const computedInsight = generateInsights(computedScores, answers);
-    const generatedProtocol = generateProtocol(
-      computedScores,
-      computedInsight,
-      answers,
-    );
-    const record = createAuditRecord({
-      clientId: activeClientId,
-      answers,
-      scores: computedScores,
-      insight: computedInsight,
-      protocol: generatedProtocol,
-    });
-
-    applyAuditRecord(record);
-    setAuditHistory((currentHistory) => mergeAuditHistory(currentHistory, [record]));
-    setSaveStatus("saving");
-
-    void persistAuditRecord(record);
-  };
-
-  const toggleHabit = (date: string, habitId: string) => {
-    setHabitHistory((current) => toggleHabitCompletion(current, date, habitId));
-  };
-
-  const recordProtocolLead = (firstName: string, email: string) => {
-    setProtocolLeadFirstName(firstName.trim());
-    setProtocolLeadEmail(email.trim());
-    setProtocolLeadCapturedAt(new Date().toISOString());
+    if (!clientId) setClientId(createClientId());
+    setHasCompletedAudit(true);
+    setLastSavedAt(new Date().toISOString());
   };
 
   const resetAudit = () => {
-    const nextClientId = createClientId();
-    setClientId(nextClientId);
+    setClientId(createClientId());
     setAnswers({});
-    setScores(null);
-    setInsight(null);
-    setProtocol(null);
-    setAuditHistory([]);
-    setHabitHistory([]);
-    setProtocolLeadFirstName(null);
-    setProtocolLeadEmail(null);
-    setProtocolLeadCapturedAt(null);
+    setParticipationLevelState(null);
+    setDailyProfileState(null);
+    setEventStateByDate(null);
     setLastSavedAt(null);
     setHasCompletedAudit(false);
-    setPersistenceMode("local");
-    setSaveStatus("idle");
     window.localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -351,31 +185,19 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       value={{
         clientId,
         answers,
-        scores,
-        insight,
-        protocol,
-        auditHistory,
-        habitHistory,
-        protocolLeadFirstName,
-        protocolLeadEmail,
-        protocolLeadCapturedAt,
-        persistenceMode,
-        saveStatus,
         lastSavedAt,
         isHydrated,
         hasCompletedAudit,
         participationLevel,
         dailyProfile,
-        setAnswer,
-        completeAudit,
-        toggleHabit,
-        recordProtocolLead,
-        setParticipationLevel,
-        setDailyProfile,
         eventStateByDate,
         getEventStateForDate,
         setEventRecord,
         clearEventRecords,
+        setAnswer,
+        completeAudit,
+        setParticipationLevel,
+        setDailyProfile,
         resetAudit,
       }}
     >

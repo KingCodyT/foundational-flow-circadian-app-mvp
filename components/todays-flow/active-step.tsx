@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { buildTodaysFlow, FlowEvent } from "@/lib/flow-engine";
 import { useCircadian } from "@/components/circadian-provider";
+import { useLiveClock } from "@/hooks/use-live-clock";
+import { localDateKey } from "@/lib/live-clock";
 import EventRow from "@/components/todays-flow/event-row";
 
 function formatWindow(e: FlowEvent) {
@@ -15,11 +17,8 @@ function formatWindow(e: FlowEvent) {
 
 export default function ActiveStep() {
   const { dailyProfile, participationLevel, eventStateByDate, getEventStateForDate, setEventRecord } = useCircadian();
-  const [now] = useState<Date>(new Date());
-  const todayKey = useMemo(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
+  const now = useLiveClock();
+  const todayKey = localDateKey(now);
 
   const profileInput = useMemo(() => ({
     wakeTime: dailyProfile?.wakeTime ?? null,

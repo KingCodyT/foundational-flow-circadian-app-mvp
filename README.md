@@ -20,7 +20,7 @@ Question option `score` values remain necessary for initial coaching-state mappi
 
 `components/circadian-provider.tsx` persists answers, assessment completion, client ID, save timestamp, daily profile/location, participation level, and dated event records in browser local storage under `foundational-flow-circadian-app-state`. The legacy audit names and storage key are retained for compatibility. No server persistence or email service is wired into the current app. No service credentials are required.
 
-Profile and participation form components remain in the repository but are not mounted by the current main views. Existing stored values are still consumed. Participation is stored and passed to the flow engine; it does not currently change the generated schedule.
+YOU exposes profile and participation controls under “Edit profile & preferences.” Saved wake/bed times immediately update the rhythm; browser location can be requested, updated, or removed without changing assessment answers. Location errors are shown inline and preserve any previously saved location. Participation is stored and passed to the flow engine; it does not currently change the generated schedule, and the control states that limitation.
 
 ## Local development
 
@@ -41,7 +41,7 @@ npm run build
 npm run start -- --hostname 127.0.0.1 --port 3001
 ```
 
-The regression tests cover solar reference times across timezones, polar day/night, invalid inputs, DST/leap-day calendar arithmetic, stable default scheduling, and persisted event statuses. `npm run lint` currently opens ESLint setup because no ESLint configuration is installed; it is not yet an unattended validation check.
+The regression tests cover solar reference times across timezones, polar day/night, invalid inputs, DST/leap-day calendar arithmetic, stable default scheduling, persisted event statuses, live clock transitions, tab resume, cleanup, and midnight evidence rollover. `npm run lint` currently opens ESLint setup because no ESLint configuration is installed; it is not yet an unattended validation check.
 
 ## Solar calculations
 
@@ -52,6 +52,8 @@ Polar day/night returns no sunrise or sunset, with 24 or 0 hours of daylight, an
 Sources: [NOAA equations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF) and [USNO reference data](https://aa.usno.navy.mil/api/rstt/oneday?date=2026-06-21&coords=37.7749,-122.4194&tz=-7).
 
 ## Navigation and scheduling
+
+NOW and RHYTHM refresh every 15 seconds and immediately when the tab regains focus or visibility. Their local date key advances at midnight, selecting that day's saved events. YOU also refreshes its solar context on a new day. Timers/listeners are removed on unmount; refreshes do not create completion evidence. NOW rechecks event eligibility and the current date when a confirmation is clicked.
 
 Assessment and main views share `FlowShell` with NOW/RHYTHM/YOU navigation, including on narrow screens. Assessment completion still navigates to YOU. The obsolete navigation shell has been removed.
 

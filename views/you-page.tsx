@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
+import DailyProfileForm from "@/components/todays-flow/daily-profile-form";
+import ParticipationSelector from "@/components/todays-flow/participation-selector";
+import { useLiveClock } from "@/hooks/use-live-clock";
+import { localDateKey } from "@/lib/live-clock";
 import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
 import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
@@ -90,9 +94,12 @@ export default function YouPage() {
     eventStateByDate,
   } = useCircadian();
 
+  const now = useLiveClock();
+  const todayKey = localDateKey(now);
+
   const environment = useMemo(
     () => buildDerivedEnvironment({ profile: dailyProfile }),
-    [dailyProfile]
+    [dailyProfile, todayKey]
   );
 
   const personalization = useMemo(() => {
@@ -179,6 +186,13 @@ export default function YouPage() {
                 : "Location is available, so today’s solar timing can adapt to where you are."
               : "Location is not available yet, so solar timing is less personalized."}
           </p>
+          <details className="mt-6 border-t border-[var(--color-line)] pt-5">
+            <summary className="cursor-pointer text-sm font-semibold">Edit profile &amp; preferences</summary>
+            <div className="mt-6 grid gap-8 lg:grid-cols-2">
+              <DailyProfileForm />
+              <ParticipationSelector />
+            </div>
+          </details>
         </div>
 
         <div className="mt-6 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">

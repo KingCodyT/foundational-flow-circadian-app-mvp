@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
 import { buildTodaysFlow } from "@/lib/flow-engine";
+import { useLiveClock } from "@/hooks/use-live-clock";
+import { localDateKey } from "@/lib/live-clock";
 
 function formatTime(date?: Date | null) {
   if (!date) return "—";
@@ -16,23 +18,15 @@ function formatTime(date?: Date | null) {
 
 export default function NowPage() {
   const {
-  dailyProfile,
-  participationLevel,
-  getEventStateForDate,
-  setEventRecord,
-  isHydrated,
-} = useCircadian();
+    dailyProfile,
+    participationLevel,
+    getEventStateForDate,
+    setEventRecord,
+    isHydrated,
+  } = useCircadian();
 
-
-const [now] = useState(() => new Date());
-  const todayKey = useMemo(() => {
-    const d = new Date();
-
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
+  const now = useLiveClock();
+  const todayKey = localDateKey(now);
 
   const profileInput = useMemo(
     () => ({
@@ -43,21 +37,16 @@ const [now] = useState(() => new Date());
     }),
     [dailyProfile]
   );
-if (!isHydrated) {
-  return (
-    <FlowShell>
-      <section className="mx-auto max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-muted)]">
-          NOW
-        </p>
-
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl tracking-[-0.03em] sm:text-5xl">
-          Getting your rhythm...
-        </h1>
-      </section>
-    </FlowShell>
-  );
-}
+  if (!isHydrated) {
+    return (
+      <FlowShell>
+        <section className="mx-auto max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-muted)]">NOW</p>
+          <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl tracking-[-0.03em] sm:text-5xl">Getting your rhythm...</h1>
+        </section>
+      </FlowShell>
+    );
+  }
   const eventStateForDate = getEventStateForDate(todayKey);
 
   const {
@@ -71,6 +60,20 @@ if (!isHydrated) {
     participationLevel,
     eventStateForDate,
   });
+
+  const completeCurrentEvent = (eventId: string) => {
+    // Recheck at click time: a timer tick or midnight may be between renders.
+    const at = new Date();
+    const dateKey = localDateKey(at);
+    const current = buildTodaysFlow({
+      now: at,
+      profile: profileInput,
+      participationLevel,
+      eventStateForDate: getEventStateForDate(dateKey),
+    });
+    if (current.events.find((event) => event.id === eventId)?.status !== "current") return;
+    setEventRecord(dateKey, eventId, { status: "completed", at: at.toISOString() });
+  };
 
   return (
     <FlowShell>
@@ -115,12 +118,7 @@ if (!isHydrated) {
               ) : null}
               {activeEvent.status === "current" ? (
   <button
-    onClick={() =>
-      setEventRecord(todayKey, activeEvent.id, {
-        status: "completed",
-        at: new Date().toISOString(),
-      })
-    }
+    onClick={() => completeCurrentEvent(activeEvent.id)}
     className="mt-6 rounded-full border border-[var(--color-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--color-charcoal)]"
   >
    {activeEvent.name === "Last Meal"

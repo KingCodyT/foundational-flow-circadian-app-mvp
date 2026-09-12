@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
 import { buildTodaysFlow } from "@/lib/flow-engine";
+import { useLiveClock } from "@/hooks/use-live-clock";
+import { localDateKey } from "@/lib/live-clock";
 
 function formatTime(date?: Date | null) {
   if (!date) return "—";
@@ -23,23 +25,14 @@ export default function RhythmPage() {
     isHydrated,
   } = useCircadian();
 
-  const [now] = useState(() => new Date());
-const currentEventRef = useRef<HTMLDivElement | null>(null);
+  const now = useLiveClock();
+  const currentEventRef = useRef<HTMLDivElement | null>(null);
 
-useEffect(() => {
-  currentEventRef.current?.scrollIntoView({
-    behavior: "smooth",
-    block: "center",
-  });
-}, [isHydrated]);
-  const todayKey = useMemo(() => {
-    const d = new Date();
-
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}-${String(d.getDate()).padStart(2, "0")}`;
-  }, []);
+  // Scroll on entry only; clock ticks should not interrupt someone reading.
+  useEffect(() => {
+    currentEventRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [isHydrated]);
+  const todayKey = localDateKey(now);
 
   const profileInput = useMemo(
     () => ({

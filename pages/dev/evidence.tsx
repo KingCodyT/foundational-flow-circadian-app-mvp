@@ -36,7 +36,9 @@ export default function EvidenceTestPage() {
     .map(([date, day]) => ({ date, at: day.morning_light.at }))
     .sort((a, b) => b.date.localeCompare(a.date));
 
-  function addMorningEvidence(totalDays: number) {
+  function setMorningEvidence(totalDays: number) {
+    clearEventRecords("morning_light");
+
     for (let daysAgo = 0; daysAgo < totalDays; daysAgo += 1) {
       const dateKey = dateKeyDaysAgo(daysAgo);
       const date = new Date();
@@ -55,21 +57,21 @@ export default function EvidenceTestPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-muted)]">Developer Test</p>
         <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl tracking-[-0.03em] sm:text-5xl">Evidence progression.</h1>
         <p className="mt-4 max-w-2xl text-lg leading-8 text-[var(--color-muted)]">
-          Temporary harness for testing repeated Morning Light evidence without changing production timing rules.
+          Temporary developer-only harness. These controls set the test to an exact number of Morning Light confirmation days; they are not part of the customer experience.
         </p>
 
         <div className="mt-10 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">Morning Light</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">Current Test State</p>
           <p className="mt-3 text-3xl font-semibold">{morningRecords.length} confirmed day{morningRecords.length === 1 ? "" : "s"}</p>
           <p className="mt-3 leading-7 text-[var(--color-muted)]">
-            For a signal that starts Developing, four distinct completed days should earn Established. This harness writes only positive completion evidence; it does not manufacture misses or failures.
+            Choose the exact evidence state you want to test. For a signal that starts Developing, four distinct completed days should earn Established.
           </p>
 
           <div className="mt-7 flex flex-wrap gap-3">
-            <button onClick={() => addMorningEvidence(1)} className={testButtonClass}>Set 1 day</button>
-            <button onClick={() => addMorningEvidence(2)} className={testButtonClass}>Set 2 days</button>
-            <button onClick={() => addMorningEvidence(4)} className={testButtonClass}>Set 4 days</button>
-            <button onClick={() => clearEventRecords("morning_light")} className="rounded-full border border-[var(--color-line)] px-5 py-3 text-sm font-semibold text-[var(--color-muted)]">Reset Morning Light evidence</button>
+            <button onClick={() => setMorningEvidence(0)} className={testButtonClass}>Test 0 days</button>
+            <button onClick={() => setMorningEvidence(1)} className={testButtonClass}>Test 1 day</button>
+            <button onClick={() => setMorningEvidence(2)} className={testButtonClass}>Test 2 days</button>
+            <button onClick={() => setMorningEvidence(4)} className={testButtonClass}>Test 4 days</button>
           </div>
 
           <div className="mt-8 border-t border-[var(--color-line)] pt-6">
@@ -94,7 +96,7 @@ export default function EvidenceTestPage() {
         </div>
 
         <p className="mt-6 text-sm leading-6 text-[var(--color-muted)]">
-          Temporary developer-only route. Remove after progression and target handoff are verified.
+          Real users never see this route. In the production app, evidence accumulates naturally from their daily interactions.
         </p>
       </section>
     </FlowShell>

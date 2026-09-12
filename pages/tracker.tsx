@@ -1,1 +1,1 @@
-export { default } from "@/views/habit-tracker-page";
+export { default } from "@/views/you-page";

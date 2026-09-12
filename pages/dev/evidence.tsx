@@ -11,7 +11,12 @@ function dateKeyDaysAgo(daysAgo: number) {
 }
 
 export default function EvidenceTestPage() {
-  const { eventStateByDate, setEventRecord, isHydrated } = useCircadian();
+  const {
+    eventStateByDate,
+    setEventRecord,
+    clearEventRecords,
+    isHydrated,
+  } = useCircadian();
 
   if (!isHydrated) {
     return (
@@ -23,9 +28,10 @@ export default function EvidenceTestPage() {
     );
   }
 
-  const morningConfirmations = Object.values(eventStateByDate ?? {}).filter(
-    (day) => day?.morning_light?.status === "completed",
-  ).length;
+  const morningRecords = Object.entries(eventStateByDate ?? {})
+    .filter(([, day]) => day?.morning_light?.status === "completed")
+    .map(([date, day]) => ({ date, at: day.morning_light.at }))
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   function addMorningEvidence(totalDays: number) {
     for (let daysAgo = 0; daysAgo < totalDays; daysAgo += 1) {
@@ -51,7 +57,7 @@ export default function EvidenceTestPage() {
 
         <div className="mt-10 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">Morning Light</p>
-          <p className="mt-3 text-3xl font-semibold">{morningConfirmations} confirmed days</p>
+          <p className="mt-3 text-3xl font-semibold">{morningRecords.length} confirmed day{morningRecords.length === 1 ? "" : "s"}</p>
           <p className="mt-3 leading-7 text-[var(--color-muted)]">
             For a signal that starts Developing, four distinct completed days should earn Established. This harness writes only positive completion evidence; it does not manufacture misses or failures.
           </p>
@@ -60,6 +66,23 @@ export default function EvidenceTestPage() {
             <button onClick={() => addMorningEvidence(1)} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-3 text-sm font-semibold">Set 1 day</button>
             <button onClick={() => addMorningEvidence(2)} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-3 text-sm font-semibold">Set 2 days</button>
             <button onClick={() => addMorningEvidence(4)} className="rounded-full bg-[var(--color-charcoal)] px-5 py-3 text-sm font-semibold text-[var(--color-cream)]">Set 4 days</button>
+            <button onClick={() => clearEventRecords("morning_light")} className="rounded-full border border-[var(--color-line)] px-5 py-3 text-sm font-semibold text-[var(--color-muted)]">Reset Morning Light evidence</button>
+          </div>
+
+          <div className="mt-8 border-t border-[var(--color-line)] pt-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">Contributing dates</p>
+            {morningRecords.length > 0 ? (
+              <div className="mt-4 space-y-2">
+                {morningRecords.map((record) => (
+                  <div key={record.date} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--color-line)] bg-white/70 px-4 py-3 text-sm">
+                    <span className="font-semibold">{record.date}</span>
+                    <span className="text-[var(--color-muted)]">{new Date(record.at).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-[var(--color-muted)]">No Morning Light completion evidence is currently stored.</p>
+            )}
           </div>
 
           <div className="mt-8 border-t border-[var(--color-line)] pt-6">

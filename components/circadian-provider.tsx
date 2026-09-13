@@ -15,6 +15,10 @@ import {
 } from "@/lib/audit-store";
 import { getRuntimeTimeZone } from "@/lib/live-clock";
 import {
+  FoodTimingAction,
+  FoodTimingEvidence,
+} from "@/lib/personalization/circadian-food-timing";
+import {
   DEFAULT_NOTIFICATION_PERSISTENCE_STATE,
   NotificationPersistenceState,
   pruneNotificationPersistenceState,
@@ -41,6 +45,7 @@ type CircadianState = {
   participationLevel: ParticipationLevel | null;
   dailyProfile: DailyProfile | null;
   eventStateByDate: Record<string, DailyEventState> | null;
+  foodTimingEvidenceByDate: Record<string, FoodTimingEvidence[]> | null;
   previousContextSnapshot: {
     timeZone?: string | null;
     latitude?: number | null;
@@ -61,6 +66,7 @@ type CircadianState = {
   } | null;
   notificationState: NotificationPersistenceState;
   getEventStateForDate: (dateStr: string) => DailyEventState;
+  getFoodTimingEvidenceForDate: (dateStr: string) => FoodTimingEvidence[];
   setEventRecord: (
     dateStr: string,
     eventId: string,
@@ -68,6 +74,11 @@ type CircadianState = {
       status: "completed" | "skipped" | "missed";
       at?: string;
     },
+  ) => void;
+  recordFoodTimingAction: (
+    dateStr: string,
+    action: FoodTimingAction,
+    at?: string,
   ) => void;
   clearEventRecords: (eventId: string) => void;
   setScheduledNotification: (record: ScheduledNotificationRecord | null) => void;
@@ -94,6 +105,10 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   const [eventStateByDate, setEventStateByDate] = useState<Record<
     string,
     DailyEventState
+  > | null>(null);
+  const [foodTimingEvidenceByDate, setFoodTimingEvidenceByDate] = useState<Record<
+    string,
+    FoodTimingEvidence[]
   > | null>(null);
   const [previousContextSnapshot, setPreviousContextSnapshot] = useState<{
     timeZone?: string | null;
@@ -131,6 +146,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         setParticipationLevelState(parsedState.participationLevel ?? null);
         setDailyProfileState(normalizeDailyProfile(parsedState.dailyProfile ?? null, fallbackTimeZone));
         setEventStateByDate(parsedState.eventStateByDate ?? null);
+        setFoodTimingEvidenceByDate(parsedState.foodTimingEvidenceByDate ?? null);
         setPreviousContextSnapshot(parsedState.previousContextSnapshot ?? null);
         setCurrentContextSnapshot(parsedState.currentContextSnapshot ?? null);
         setNotificationState(
@@ -161,6 +177,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       participationLevel,
       dailyProfile,
       eventStateByDate,
+      foodTimingEvidenceByDate,
       previousContextSnapshot,
       currentContextSnapshot,
       notificationState: pruneNotificationPersistenceState(notificationState),
@@ -172,6 +189,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     clientId,
     dailyProfile,
     eventStateByDate,
+    foodTimingEvidenceByDate,
     hasCompletedAudit,
     isHydrated,
     lastSavedAt,
@@ -213,6 +231,10 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     return eventStateByDate?.[dateStr] ?? {};
   };
 
+  const getFoodTimingEvidenceForDate = (dateStr: string) => {
+    return foodTimingEvidenceByDate?.[dateStr] ?? [];
+  };
+
   const setEventRecord = (
     dateStr: string,
     eventId: string,
@@ -229,6 +251,27 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         at: record.at ?? new Date().toISOString(),
       };
       next[dateStr] = dayState;
+      return next;
+    });
+  };
+
+  const recordFoodTimingAction = (
+    dateStr: string,
+    action: FoodTimingAction,
+    at?: string,
+  ) => {
+    const timestamp = at ?? new Date().toISOString();
+    const id =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `food-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    setFoodTimingEvidenceByDate((current) => {
+      const next = { ...(current ?? {}) };
+      next[dateStr] = [
+        ...(next[dateStr] ?? []),
+        { id, action, at: timestamp, source: "USER" },
+      ];
       return next;
     });
   };
@@ -295,6 +338,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setParticipationLevelState(null);
     setDailyProfileState(null);
     setEventStateByDate(null);
+    setFoodTimingEvidenceByDate(null);
     setPreviousContextSnapshot(null);
     setCurrentContextSnapshot(null);
     setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
@@ -314,11 +358,14 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         participationLevel,
         dailyProfile,
         eventStateByDate,
+        foodTimingEvidenceByDate,
         previousContextSnapshot,
         currentContextSnapshot,
         notificationState,
         getEventStateForDate,
+        getFoodTimingEvidenceForDate,
         setEventRecord,
+        recordFoodTimingAction,
         clearEventRecords,
         setScheduledNotification,
         recordDeliveredNotification,

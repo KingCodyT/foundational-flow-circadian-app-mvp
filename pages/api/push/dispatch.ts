@@ -28,22 +28,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(503).json({ error: "web_push_not_configured" });
   }
 
-  const { clientId, notificationId } = req.body ?? {};
-  if (!validClientId(clientId) || typeof notificationId !== "string") {
+  const { clientId, notificationId, scheduleRevision } = req.body ?? {};
+  if (
+    !validClientId(clientId) ||
+    typeof notificationId !== "string" ||
+    typeof scheduleRevision !== "string" ||
+    !scheduleRevision
+  ) {
     return res.status(400).json({ error: "invalid_dispatch_request" });
   }
 
   try {
     const schedule = await getServerPushSchedule(clientId, notificationId);
 
-    // Cancellation and stale replacement both resolve to a quiet NOOP. QStash
-    // may still deliver a previously published callback, but the durable store
-    // remains authoritative about whether the interrupt is still wanted.
+    // The durable schedule is the current delivery intent. Cancellation removes
+    // it; replacement changes its revision. Either condition makes an older
+    // delayed callback a quiet NOOP rather than a zombie notification.
     if (!schedule) return res.status(204).end();
+    if (schedule.scheduleRevision !== scheduleRevision) {
+      return res.status(204).end();
+    }
 
+    const now = Date.now();
     const scheduledAt = new Date(schedule.scheduledFor).getTime();
-    if (Number.isFinite(scheduledAt) && scheduledAt - Date.now() > 15_000) {
+    if (Number.isFinite(scheduledAt) && scheduledAt - now > 15_000) {
       return res.status(425).json({ error: "dispatch_arrived_too_early" });
+    }
+
+    // Future coaching is valid only inside the biological opportunity that
+    // approved it. A delayed retry after that window closes is discarded.
+    if (schedule.validUntil) {
+      const validUntil = new Date(schedule.validUntil).getTime();
+      if (!Number.isFinite(validUntil) || now > validUntil) {
+        await completeServerPushSchedule(schedule);
+        return res.status(204).end();
+      }
     }
 
     const subscription = await getPushSubscription(clientId);

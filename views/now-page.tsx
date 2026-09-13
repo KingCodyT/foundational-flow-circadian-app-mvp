@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { FlowShell } from "@/components/flow-shell";
+import { FutureNotificationPlannerBridge } from "@/components/future-notification-planner-bridge";
 import { useCircadian } from "@/components/circadian-provider";
 import { buildTodaysFlow } from "@/lib/flow-engine";
 import { useLiveClock } from "@/hooks/use-live-clock";
@@ -147,6 +148,13 @@ export default function NowPage() {
 
   return (
     <FlowShell>
+      <FutureNotificationPlannerBridge
+        day1={currentPersonalization}
+        futureEvent={next}
+        derivedEnvironment={environment}
+        reconsideration={reconsideration}
+        now={now}
+      />
       <section className="mx-auto max-w-3xl">
         <div className="flex items-end justify-between gap-6">
           <div>

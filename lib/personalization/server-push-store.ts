@@ -15,6 +15,8 @@ export type ServerPushScheduleRecord = {
   clientId: string;
   notificationId: string;
   scheduledFor: string;
+  scheduleRevision: string;
+  validUntil: string | null;
   notification: {
     id: string;
     targetSignalId: string | null;
@@ -23,6 +25,7 @@ export type ServerPushScheduleRecord = {
     title: string;
     body: string;
     scheduledFor: string;
+    validUntil?: string | null;
   };
   createdAt: string;
 };

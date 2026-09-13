@@ -7,6 +7,16 @@ import {
 
 export const STORAGE_KEY = "foundational-flow-circadian-app-state";
 
+export type ContextSnapshotState = {
+  timeZone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  wakeTime?: string | null;
+  targetBedtime?: string | null;
+  dayLengthMinutes?: number | null;
+  capturedAt?: string | null;
+};
+
 export type LocalAuditState = {
   clientId: string;
   answers: AnswerMap;
@@ -15,6 +25,8 @@ export type LocalAuditState = {
   participationLevel?: ParticipationLevel | null;
   dailyProfile?: DailyProfile | null;
   eventStateByDate?: Record<string, DailyEventState> | null;
+  previousContextSnapshot?: ContextSnapshotState | null;
+  currentContextSnapshot?: ContextSnapshotState | null;
 };
 
 export function createClientId() {

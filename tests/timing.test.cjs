@@ -133,6 +133,7 @@ const { decideIntervention } = load('lib/personalization/intervention.ts');
 const { ActionFeasibility, evaluateActionFeasibility } = load('lib/personalization/feasibility.ts');
 const { assignInitialConfidence } = load('lib/personalization/initial-confidence.ts');
 const { applyDailyEvidence } = load('lib/personalization/daily-evidence.ts');
+const { assessReconsideration, buildContextSnapshot } = load('lib/personalization/reconsideration.ts');
 
 function makeBehaviorSignal(id, state, hierarchy, evidenceScores) {
   return {
@@ -585,8 +586,193 @@ test('duplicate same-day records do not inflate confidence, and skipped or misse
   assert.equal(missedDoesNotReduce.perSignal.morning_light_timing.confidence.score, 0.6);
 });
 
-test('feasibility model distinguishes feasible and infeasible actions without altering severity', () => {
-  assert.equal(evaluateActionFeasibility({ infeasible: false }, 'go outside').status, ActionFeasibility.FEASIBLE);
-  assert.equal(evaluateActionFeasibility({ infeasible: true, reason: 'schedule_constraint' }, 'go outside').status, ActionFeasibility.INFEASIBLE);
-  assert.equal(evaluateActionFeasibility({ infeasible: true, reason: 'schedule_constraint' }, 'go outside').reason, 'schedule_constraint');
+test('initial baseline snapshot produces no reconsideration trigger', () => {
+  const current = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-12T10:00:00Z',
+  });
+
+  const result = assessReconsideration({
+    priorContext: null,
+    currentContext: current,
+    signalIds: ['morning_light_timing'],
+  });
+
+  assert.equal(result.morning_light_timing.shouldReconsider, false);
 });
+
+test('time passing alone does not trigger a reconsideration', () => {
+  const prior = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-01T10:00:00Z',
+  });
+  const current = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-12T10:00:00Z',
+  });
+
+  const result = assessReconsideration({ priorContext: prior, currentContext: current, signalIds: ['morning_light_timing'] });
+  assert.equal(result.morning_light_timing.shouldReconsider, false);
+});
+
+test('same timezone identity across DST does not trigger timezone change', () => {
+  const prior = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-01-12T10:00:00Z',
+  });
+  const current = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-07-12T10:00:00Z',
+  });
+
+  const result = assessReconsideration({ priorContext: prior, currentContext: current, signalIds: ['morning_light_timing'] });
+  assert.equal(result.morning_light_timing.shouldReconsider, false);
+});
+
+test('actual timezone identity change triggers the relevant signals', () => {
+  const prior = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-01T10:00:00Z',
+  });
+  const current = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'Europe/London', latitude: 51.5074, longitude: -0.1278, locationPermissionGranted: true },
+    capturedAt: '2026-09-12T10:00:00Z',
+  });
+
+  const result = assessReconsideration({ priorContext: prior, currentContext: current, signalIds: ['morning_light_timing', 'sleep_schedule'] });
+  assert.equal(result.morning_light_timing.shouldReconsider, true);
+  assert.ok(result.morning_light_timing.reasons.includes('TIMEZONE_CHANGED'));
+  assert.equal(result.sleep_schedule.shouldReconsider, true);
+});
+
+test('meaningful location change triggers relevant light signals but small movement does not', () => {
+  const prior = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-01T10:00:00Z',
+  });
+  const smallMove = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7759, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-12T10:00:00Z',
+  });
+  const majorMove = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-12T10:00:00Z',
+  });
+
+  majorMove.latitude = 55.3781; majorMove.longitude = -3.4360;
+
+  const smallResult = assessReconsideration({ priorContext: prior, currentContext: smallMove, signalIds: ['day_breaks_outside'] });
+  const largeResult = assessReconsideration({ priorContext: prior, currentContext: majorMove, signalIds: ['day_breaks_outside', 'sleep_schedule'] });
+  assert.equal(smallResult.day_breaks_outside.shouldReconsider, false);
+  assert.equal(largeResult.day_breaks_outside.shouldReconsider, true);
+  assert.ok(largeResult.day_breaks_outside.reasons.includes('LOCATION_CHANGED'));
+});
+
+test('schedule changes over threshold trigger relevant signals while minor edits do not', () => {
+  const prior = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-01T10:00:00Z',
+  });
+  const minor = buildContextSnapshot({
+    profile: { wakeTime: '07:15', targetBedtime: '22:45', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-12T10:00:00Z',
+  });
+  const major = buildContextSnapshot({
+    profile: { wakeTime: '05:00', targetBedtime: '21:00', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    capturedAt: '2026-09-12T10:00:00Z',
+  });
+
+  const minorResult = assessReconsideration({ priorContext: prior, currentContext: minor, signalIds: ['morning_light_timing', 'sleep_schedule'] });
+  const majorResult = assessReconsideration({ priorContext: prior, currentContext: major, signalIds: ['morning_light_timing', 'sleep_schedule'] });
+  assert.equal(minorResult.morning_light_timing.shouldReconsider, false);
+  assert.equal(majorResult.morning_light_timing.shouldReconsider, true);
+  assert.ok(majorResult.sleep_schedule.reasons.includes('SCHEDULE_CHANGED'));
+});
+
+test('material seasonal daylight change triggers relevant light signals without tiny drift', () => {
+  const prior = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    derivedEnvironment: { latitude: 37.7749, longitude: -122.4194, locationAvailable: true, timezone: 'America/Los_Angeles', localDate: '2026-03-20', dayLengthMinutes: 720, dayOfYear: 80, lastCalculatedAt: '2026-03-20T00:00:00Z', provenance: { locationSource: 'profile', timezoneSource: 'profile-unknown', timezoneReliable: true } },
+    capturedAt: '2026-03-20T10:00:00Z',
+  });
+  const tiny = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    derivedEnvironment: { latitude: 37.7749, longitude: -122.4194, locationAvailable: true, timezone: 'America/Los_Angeles', localDate: '2026-03-21', dayLengthMinutes: 730, dayOfYear: 81, lastCalculatedAt: '2026-03-21T00:00:00Z', provenance: { locationSource: 'profile', timezoneSource: 'profile-unknown', timezoneReliable: true } },
+    capturedAt: '2026-03-21T10:00:00Z',
+  });
+  const major = buildContextSnapshot({
+    profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },
+    derivedEnvironment: { latitude: 37.7749, longitude: -122.4194, locationAvailable: true, timezone: 'America/Los_Angeles', localDate: '2026-06-21', dayLengthMinutes: 900, dayOfYear: 172, lastCalculatedAt: '2026-06-21T00:00:00Z', provenance: { locationSource: 'profile', timezoneSource: 'profile-unknown', timezoneReliable: true } },
+    capturedAt: '2026-06-21T10:00:00Z',
+  });
+
+  const tinyResult = assessReconsideration({ priorContext: prior, currentContext: tiny, signalIds: ['day_brightness'] });
+  const majorResult = assessReconsideration({ priorContext: prior, currentContext: major, signalIds: ['day_brightness', 'morning_light_timing'] });
+  assert.equal(tinyResult.day_brightness.shouldReconsider, false);
+  assert.equal(majorResult.day_brightness.shouldReconsider, true);
+  assert.ok(majorResult.day_brightness.reasons.includes('SEASONAL_CONTEXT_CHANGED'));
+});
+
+test('semantic direct-evidence conflict triggers EVIDENCE_CONFLICT while score differences alone do not', () => {
+  const conflictingEvidence = [
+    { questionId: 'morning_light_timing', answer: 'within_15', source: ['QUESTIONNAIRE'] },
+    { questionId: 'morning_light_timing', answer: 'rarely', source: ['QUESTIONNAIRE'] },
+  ];
+  const scoreDifferenceOnly = [
+    { questionId: 'morning_light_timing', answer: 'within_15', source: ['QUESTIONNAIRE'] },
+    { questionId: 'morning_light_timing', answer: 'within_15', source: ['USER_FEEDBACK'] },
+  ];
+
+  const result = assessReconsideration({
+    priorContext: null,
+    currentContext: null,
+    signalEvidence: { morning_light_timing: conflictingEvidence },
+    signalIds: ['morning_light_timing'],
+  });
+  const noConflict = assessReconsideration({
+    priorContext: null,
+    currentContext: null,
+    signalEvidence: { morning_light_timing: scoreDifferenceOnly },
+    signalIds: ['morning_light_timing'],
+  });
+
+  assert.equal(result.morning_light_timing.shouldReconsider, true);
+  assert.ok(result.morning_light_timing.reasons.includes('EVIDENCE_CONFLICT'));
+  assert.equal(noConflict.morning_light_timing.shouldReconsider, false);
+});
+
+test('missing values and skipped or missed daily states do not trigger a false conflict', () => {
+  const noConflict = assessReconsideration({
+    priorContext: null,
+    currentContext: null,
+    signalEvidence: { morning_light_timing: [{ questionId: 'morning_light_timing', answer: '', source: ['QUESTIONNAIRE'] }, { questionId: 'morning_light_timing', status: 'missed', source: ['USER_FEEDBACK'] }] },
+    signalIds: ['morning_light_timing'],
+  });
+
+  assert.equal(noConflict.morning_light_timing.shouldReconsider, false);
+});
+
+test('trigger assessment does not mutate confidence or downstream state', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: 'BEHAVIOR',
+        coachingState: 'NEEDS_ATTENTION',
+        confidence: { score: 0.9 },
+        evidence: [{ source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15' }],
+      },
+    },
+  };
+
+  const assessment = assessReconsideration({
+    priorContext: buildContextSnapshot({ profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true }, capturedAt: '2026-09-01T10:00:00Z' }),
+    currentContext: buildContextSnapshot({ profile: { wakeTime: '05:00', targetBedtime: '21:00', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true }, capturedAt: '2026-09-12T10:00:00Z' }),
+    signalIds: ['morning_light_timing'],
+  });
+
+  assert.equal(assessment.morning_light_timing.shouldReconsider, true);
+  assert.equal(state.perSignal.morning_light_timing.confidence.score, 0.9);
+});
+

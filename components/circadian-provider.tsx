@@ -30,6 +30,24 @@ type CircadianState = {
   participationLevel: ParticipationLevel | null;
   dailyProfile: DailyProfile | null;
   eventStateByDate: Record<string, DailyEventState> | null;
+  previousContextSnapshot: {
+    timeZone?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    wakeTime?: string | null;
+    targetBedtime?: string | null;
+    dayLengthMinutes?: number | null;
+    capturedAt?: string | null;
+  } | null;
+  currentContextSnapshot: {
+    timeZone?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    wakeTime?: string | null;
+    targetBedtime?: string | null;
+    dayLengthMinutes?: number | null;
+    capturedAt?: string | null;
+  } | null;
   getEventStateForDate: (dateStr: string) => DailyEventState;
   setEventRecord: (
     dateStr: string,
@@ -59,6 +77,24 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     string,
     DailyEventState
   > | null>(null);
+  const [previousContextSnapshot, setPreviousContextSnapshot] = useState<{
+    timeZone?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    wakeTime?: string | null;
+    targetBedtime?: string | null;
+    dayLengthMinutes?: number | null;
+    capturedAt?: string | null;
+  } | null>(null);
+  const [currentContextSnapshot, setCurrentContextSnapshot] = useState<{
+    timeZone?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+    wakeTime?: string | null;
+    targetBedtime?: string | null;
+    dayLengthMinutes?: number | null;
+    capturedAt?: string | null;
+  } | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasCompletedAudit, setHasCompletedAudit] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -75,6 +111,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         setParticipationLevelState(parsedState.participationLevel ?? null);
         setDailyProfileState(normalizeDailyProfile(parsedState.dailyProfile ?? null, fallbackTimeZone));
         setEventStateByDate(parsedState.eventStateByDate ?? null);
+        setPreviousContextSnapshot(parsedState.previousContextSnapshot ?? null);
+        setCurrentContextSnapshot(parsedState.currentContextSnapshot ?? null);
         setLastSavedAt(parsedState.lastSavedAt ?? null);
         setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
       } catch {
@@ -98,6 +136,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       participationLevel,
       dailyProfile,
       eventStateByDate,
+      previousContextSnapshot,
+      currentContextSnapshot,
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -110,6 +150,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     isHydrated,
     lastSavedAt,
     participationLevel,
+    previousContextSnapshot,
+    currentContextSnapshot,
   ]);
 
   const setAnswer = (questionId: string, value: string) => {
@@ -124,7 +166,20 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   };
 
   const setDailyProfile = (profile: DailyProfile | null) => {
-    setDailyProfileState(normalizeDailyProfile(profile, getRuntimeTimeZone()));
+    const runtimeTimeZone = getRuntimeTimeZone();
+    const normalized = normalizeDailyProfile(profile, runtimeTimeZone);
+    const nextCurrentContextSnapshot = {
+      timeZone: normalized?.timeZone ?? null,
+      latitude: normalized?.latitude ?? null,
+      longitude: normalized?.longitude ?? null,
+      wakeTime: normalized?.wakeTime ?? null,
+      targetBedtime: normalized?.targetBedtime ?? null,
+      dayLengthMinutes: null,
+      capturedAt: new Date().toISOString(),
+    };
+    setPreviousContextSnapshot((current) => current ?? nextCurrentContextSnapshot);
+    setCurrentContextSnapshot(nextCurrentContextSnapshot);
+    setDailyProfileState(normalized);
   };
 
   const getEventStateForDate = (dateStr: string) => {
@@ -194,6 +249,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         participationLevel,
         dailyProfile,
         eventStateByDate,
+        previousContextSnapshot,
+        currentContextSnapshot,
         getEventStateForDate,
         setEventRecord,
         clearEventRecords,

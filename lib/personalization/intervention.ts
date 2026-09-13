@@ -1,6 +1,7 @@
 import { PrimaryCoachingTargetResult } from "./primary-target";
 import { DerivedEnvironment } from "./derived-environment";
 import { CoachingState } from "./types";
+import { ActionFeasibility, evaluateActionFeasibility } from "./feasibility";
 
 export type InterventionDecisionInput = {
   primary: PrimaryCoachingTargetResult | null;
@@ -124,13 +125,51 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
   const preferredAction = input.preferredAction ?? (input.contextEvidence && (input.contextEvidence as any).preferredAction) ?? null;
   const fallbackAction = input.fallbackAction ?? (input.contextEvidence && (input.contextEvidence as any).fallbackAction) ?? null;
   const adaptedAction = input.adaptedAction ?? fallbackAction ?? null;
+  const preferredActionFeasibility = evaluateActionFeasibility(input.contextEvidence, preferredAction);
+
+  if (preferredActionFeasibility.status === ActionFeasibility.INFEASIBLE) {
+    if (fallbackAction) {
+      return {
+        level: 2,
+        targetSignalId: primary.signalId,
+        reason: "adapted_feasible_action_due_to_constraint",
+        biologicallyRelevantNow: biologicallyRelevantNow,
+        actionableNow: true,
+        interruptionEligible: false,
+        preferredAction,
+        fallbackAction,
+        adaptedAction: fallbackAction,
+        supportingContext: {
+          derivedEnvironment: input.derivedEnvironment ?? null,
+          contextEvidence: input.contextEvidence ?? null,
+          outcomeEvidence: input.outcomeEvidence ?? null,
+        },
+        eventWindow: input.eventWindow ?? null,
+      };
+    }
+
+    return {
+      level: 0,
+      targetSignalId: primary.signalId,
+      reason: "no_actionable_path_for_target",
+      biologicallyRelevantNow: biologicallyRelevantNow,
+      actionableNow: false,
+      interruptionEligible: false,
+      preferredAction,
+      fallbackAction,
+      adaptedAction: null,
+      supportingContext: {
+        derivedEnvironment: input.derivedEnvironment ?? null,
+        contextEvidence: input.contextEvidence ?? null,
+        outcomeEvidence: input.outcomeEvidence ?? null,
+      },
+      eventWindow: input.eventWindow ?? null,
+      noInterventionReason: "infeasible_action_no_fallback",
+    };
+  }
 
   let actionableNow = true;
   if (input.actionabilityOverride === false) actionableNow = false;
-  // If context evidence contains explicit 'infeasible' flag, consider not actionable unless a known fallback is available.
-  if (input.contextEvidence && (input.contextEvidence as any).infeasible === true) {
-    actionableNow = Boolean(fallbackAction) || false;
-  }
 
   // If coaching state is ESTABLISHED, prefer silence or quiet context
   if (coachingState === CoachingState.ESTABLISHED) {

@@ -244,7 +244,23 @@ test('outcome and context evidence cannot manufacture a severe behavioral target
   assert.equal(result.signalId, 'morning_light_timing');
 });
 
-test('constraint adaptation preserves biological truth and prefers feasible fallback', () => {
+test('NEEDS_ATTENTION + feasible preferred action retains normal Level 3 behavior', () => {
+  const primary = { signalId: 'morning_light_timing', coachingState: CoachingState.NEEDS_ATTENTION, hierarchy: HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, severity: EvidenceSeverity.MILD, reason: 'target' };
+  const decision = decideIntervention({
+    primary,
+    eventWindow: { start: new Date(Date.now() - 60000).toISOString(), end: new Date(Date.now() + 60000).toISOString() },
+    contextEvidence: { infeasible: false, reason: 'schedule_ok' },
+    preferredAction: 'go outside for 20 minutes',
+    fallbackAction: 'use a bright indoor light break',
+  });
+
+  assert.equal(decision.level, 3);
+  assert.equal(decision.actionableNow, true);
+  assert.equal(decision.interruptionEligible, true);
+  assert.equal(decision.targetSignalId, 'morning_light_timing');
+});
+
+test('NEEDS_ATTENTION + infeasible preferred action + fallback uses adapted Level 2 guidance', () => {
   const primary = { signalId: 'morning_light_timing', coachingState: CoachingState.NEEDS_ATTENTION, hierarchy: HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, severity: EvidenceSeverity.MILD, reason: 'target' };
   const decision = decideIntervention({
     primary,
@@ -258,10 +274,28 @@ test('constraint adaptation preserves biological truth and prefers feasible fall
   assert.equal(decision.noInterventionReason, undefined);
   assert.equal(decision.level, 2);
   assert.equal(decision.actionableNow, true);
+  assert.equal(decision.interruptionEligible, false);
+  assert.equal(decision.adaptedAction, 'use a bright indoor light break');
   assert.equal(decision.reason, 'adapted_feasible_action_due_to_constraint');
 });
 
-test('constraint adaptation silences when no meaningful fallback exists', () => {
+test('DEVELOPING + infeasible preferred action + fallback stays adapted and not more intense than Level 2', () => {
+  const primary = { signalId: 'morning_light_timing', coachingState: CoachingState.DEVELOPING, hierarchy: HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, severity: EvidenceSeverity.MILD, reason: 'target' };
+  const decision = decideIntervention({
+    primary,
+    eventWindow: { start: new Date(Date.now() - 60000).toISOString(), end: new Date(Date.now() + 60000).toISOString() },
+    contextEvidence: { infeasible: true, reason: 'schedule_constraint', fallbackAction: 'use a bright indoor light break' },
+    preferredAction: 'go outside for 20 minutes',
+    fallbackAction: 'use a bright indoor light break',
+  });
+
+  assert.equal(decision.level, 2);
+  assert.equal(decision.interruptionEligible, false);
+  assert.equal(decision.actionableNow, true);
+  assert.equal(decision.adaptedAction, 'use a bright indoor light break');
+});
+
+test('constraint adaptation preserves biological truth and severity when infeasible with no fallback', () => {
   const primary = { signalId: 'morning_light_timing', coachingState: CoachingState.NEEDS_ATTENTION, hierarchy: HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, severity: EvidenceSeverity.MILD, reason: 'target' };
   const decision = decideIntervention({
     primary,
@@ -273,6 +307,26 @@ test('constraint adaptation silences when no meaningful fallback exists', () => 
   assert.equal(decision.targetSignalId, 'morning_light_timing');
   assert.equal(decision.level, 0);
   assert.equal(decision.noInterventionReason, 'infeasible_action_no_fallback');
+  assert.equal(decision.actionableNow, false);
+  assert.equal(decision.interruptionEligible, false);
+  assert.equal(decision.adaptedAction, null);
+  assert.equal(primary.severity, EvidenceSeverity.MILD);
+  assert.equal(primary.coachingState, CoachingState.NEEDS_ATTENTION);
+});
+
+test('constraint adaptation does not change targetSignalId or coaching state when adapting the action', () => {
+  const primary = { signalId: 'morning_light_timing', coachingState: CoachingState.NEEDS_ATTENTION, hierarchy: HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, severity: EvidenceSeverity.MODERATE, reason: 'target' };
+  const decision = decideIntervention({
+    primary,
+    eventWindow: { start: new Date(Date.now() - 60000).toISOString(), end: new Date(Date.now() + 60000).toISOString() },
+    contextEvidence: { infeasible: true, reason: 'schedule_constraint', fallbackAction: 'use a bright indoor light break' },
+    preferredAction: 'go outside for 20 minutes',
+    fallbackAction: 'use a bright indoor light break',
+  });
+
+  assert.equal(decision.targetSignalId, primary.signalId);
+  assert.equal(primary.coachingState, CoachingState.NEEDS_ATTENTION);
+  assert.equal(primary.severity, EvidenceSeverity.MODERATE);
 });
 
 test('feasibility model distinguishes feasible and infeasible actions without altering severity', () => {

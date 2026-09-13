@@ -7,6 +7,7 @@ export type DailyEvidenceSummary = {
   completedDays: number;
   lastCompletedAt?: string;
   eventIds: string[];
+  completedDates: string[];
 };
 
 const EVENT_SIGNAL_MAP: Record<string, string[]> = {
@@ -34,9 +35,13 @@ export function summarizeDailyEvidence(
           signalId,
           completedDays: 0,
           eventIds: [],
+          completedDates: [],
         };
 
-        existing.completedDays += 1;
+        if (!existing.completedDates.includes(date)) {
+          existing.completedDays += 1;
+          existing.completedDates.push(date);
+        }
         if (!existing.eventIds.includes(eventId)) existing.eventIds.push(eventId);
 
         if (
@@ -53,6 +58,10 @@ export function summarizeDailyEvidence(
 
   return summaries;
 }
+
+const HIGH = 0.9;
+const MODERATE = 0.6;
+const LOW = 0.15;
 
 function stateFromRepeatedEvidence(
   current: CoachingState | undefined,
@@ -72,6 +81,22 @@ function stateFromRepeatedEvidence(
   }
 
   return current;
+}
+
+function reviseConfidenceFromDailyEvidence(
+  current: InitialPersonalizationState["perSignal"][string]["confidence"],
+  completedDays: number,
+) {
+  if (!current || completedDays < 2) return current;
+
+  const currentScore = current.score ?? LOW;
+  if (currentScore >= HIGH) return current;
+
+  const revisedScore = currentScore >= MODERATE ? HIGH : MODERATE;
+  return {
+    ...current,
+    score: Math.min(revisedScore, HIGH),
+  };
 }
 
 export function applyDailyEvidence(
@@ -106,18 +131,23 @@ export function applyDailyEvidence(
       source: [SignalSourceType.USER_FEEDBACK],
     }));
 
+    const revisedConfidence = reviseConfidenceFromDailyEvidence(
+      signal.confidence,
+      summary.completedDays,
+    );
+
     const updated: InitialSignalState = {
       ...signal,
       coachingState: nextState,
       evidence: [...signal.evidence, ...dailyEvidence],
       notes,
-      confidence: signal.confidence
+      confidence: revisedConfidence
         ? {
-            ...signal.confidence,
+            ...revisedConfidence,
             lastEvidenceAt:
-              summary.lastCompletedAt ?? signal.confidence.lastEvidenceAt,
+              summary.lastCompletedAt ?? revisedConfidence.lastEvidenceAt,
           }
-        : signal.confidence,
+        : revisedConfidence,
     };
 
     perSignal[signalId] = updated;

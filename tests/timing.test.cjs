@@ -132,6 +132,7 @@ const { SignalClassification, HierarchyLayer, CoachingState } = load('lib/person
 const { decideIntervention } = load('lib/personalization/intervention.ts');
 const { ActionFeasibility, evaluateActionFeasibility } = load('lib/personalization/feasibility.ts');
 const { assignInitialConfidence } = load('lib/personalization/initial-confidence.ts');
+const { applyDailyEvidence } = load('lib/personalization/daily-evidence.ts');
 
 function makeBehaviorSignal(id, state, hierarchy, evidenceScores) {
   return {
@@ -497,6 +498,91 @@ test('confidence does not depend on severity bands or score-band agreement', () 
 
   const next = assignInitialConfidence(state);
   assert.equal(next.perSignal.morning_light_timing.confidence.score, 0.9);
+});
+
+test('initial MODERATE confidence remains moderate after one supporting completion and may rise only with repeated distinct-day support', () => {
+  const base = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        confidence: { score: 0.6, lastEvidenceAt: '2026-09-09T08:00:00Z' },
+        evidence: [{ source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' }],
+      },
+    },
+  };
+
+  const withOneSupport = applyDailyEvidence(base, {
+    '2026-09-10': { morning_light: { status: 'completed', at: '2026-09-10T08:00:00Z' } },
+  });
+  assert.equal(withOneSupport.perSignal.morning_light_timing.confidence.score, 0.6);
+
+  const withRepeatedSupport = applyDailyEvidence(base, {
+    '2026-09-10': { morning_light: { status: 'completed', at: '2026-09-10T08:00:00Z' } },
+    '2026-09-11': { morning_light: { status: 'completed', at: '2026-09-11T08:00:00Z' } },
+  });
+  assert.equal(withRepeatedSupport.perSignal.morning_light_timing.confidence.score, 0.9);
+});
+
+test('initial LOW confidence does not become HIGH from one completion, but repeated distinct-day support can raise it to MODERATE', () => {
+  const base = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        confidence: { score: 0.15, lastEvidenceAt: '2026-09-09T08:00:00Z' },
+        evidence: [{ source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'rarely', answerScore: 10, optionLabel: 'Rarely' }],
+      },
+    },
+  };
+
+  const withOneSupport = applyDailyEvidence(base, {
+    '2026-09-10': { morning_light: { status: 'completed', at: '2026-09-10T08:00:00Z' } },
+  });
+  assert.equal(withOneSupport.perSignal.morning_light_timing.confidence.score, 0.15);
+
+  const withDistinctSupport = applyDailyEvidence(base, {
+    '2026-09-10': { morning_light: { status: 'completed', at: '2026-09-10T08:00:00Z' } },
+    '2026-09-11': { morning_light: { status: 'completed', at: '2026-09-11T08:00:00Z' } },
+  });
+  assert.equal(withDistinctSupport.perSignal.morning_light_timing.confidence.score, 0.6);
+});
+
+test('duplicate same-day records do not inflate confidence, and skipped or missed states do not become fake negative evidence', () => {
+  const base = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        confidence: { score: 0.6, lastEvidenceAt: '2026-09-09T08:00:00Z' },
+        evidence: [{ source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' }],
+      },
+    },
+  };
+
+  const duplicates = applyDailyEvidence(base, {
+    '2026-09-10': {
+      morning_light: { status: 'completed', at: '2026-09-10T08:00:00Z' },
+      morning_light_backup: { status: 'completed', at: '2026-09-10T08:45:00Z' },
+    },
+  });
+  assert.equal(duplicates.perSignal.morning_light_timing.confidence.score, 0.6);
+
+  const skippedDoesNotReduce = applyDailyEvidence(base, {
+    '2026-09-10': { morning_light: { status: 'skipped', at: '2026-09-10T08:00:00Z' } },
+  });
+  assert.equal(skippedDoesNotReduce.perSignal.morning_light_timing.confidence.score, 0.6);
+
+  const missedDoesNotReduce = applyDailyEvidence(base, {
+    '2026-09-10': { morning_light: { status: 'missed', at: '2026-09-10T08:00:00Z' } },
+  });
+  assert.equal(missedDoesNotReduce.perSignal.morning_light_timing.confidence.score, 0.6);
 });
 
 test('feasibility model distinguishes feasible and infeasible actions without altering severity', () => {

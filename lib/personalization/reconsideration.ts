@@ -65,7 +65,8 @@ function timeDifferenceMinutes(valueA?: string | null, valueB?: string | null): 
   const a = parseClockMinutes(valueA);
   const b = parseClockMinutes(valueB);
   if (a == null || b == null) return null;
-  return Math.abs(a - b);
+  const rawDifference = Math.abs(a - b);
+  return Math.min(rawDifference, 24 * 60 - rawDifference);
 }
 
 function toRadians(value: number) {

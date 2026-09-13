@@ -689,6 +689,28 @@ test('schedule changes over threshold trigger relevant signals while minor edits
   assert.ok(majorResult.sleep_schedule.reasons.includes('SCHEDULE_CHANGED'));
 });
 
+test('midnight-crossing schedule deltas use circular clock distance and preserve same-day behavior', () => {
+  const midnightCrossing = assessReconsideration({
+    priorContext: buildContextSnapshot({ profile: { wakeTime: '23:30', targetBedtime: '23:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true }, capturedAt: '2026-09-01T10:00:00Z' }),
+    currentContext: buildContextSnapshot({ profile: { wakeTime: '00:15', targetBedtime: '00:15', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true }, capturedAt: '2026-09-12T10:00:00Z' }),
+    signalIds: ['sleep_schedule'],
+  });
+  const thresholdCrossing = assessReconsideration({
+    priorContext: buildContextSnapshot({ profile: { wakeTime: '23:00', targetBedtime: '23:00', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true }, capturedAt: '2026-09-01T10:00:00Z' }),
+    currentContext: buildContextSnapshot({ profile: { wakeTime: '00:30', targetBedtime: '00:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true }, capturedAt: '2026-09-12T10:00:00Z' }),
+    signalIds: ['sleep_schedule'],
+  });
+  const sameDay = assessReconsideration({
+    priorContext: buildContextSnapshot({ profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true }, capturedAt: '2026-09-01T10:00:00Z' }),
+    currentContext: buildContextSnapshot({ profile: { wakeTime: '07:30', targetBedtime: '22:45', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true }, capturedAt: '2026-09-12T10:00:00Z' }),
+    signalIds: ['sleep_schedule'],
+  });
+
+  assert.equal(midnightCrossing.sleep_schedule.shouldReconsider, false);
+  assert.equal(thresholdCrossing.sleep_schedule.shouldReconsider, true);
+  assert.equal(sameDay.sleep_schedule.shouldReconsider, false);
+});
+
 test('material seasonal daylight change triggers relevant light signals without tiny drift', () => {
   const prior = buildContextSnapshot({
     profile: { wakeTime: '07:00', targetBedtime: '22:30', timeZone: 'America/Los_Angeles', latitude: 37.7749, longitude: -122.4194, locationPermissionGranted: true },

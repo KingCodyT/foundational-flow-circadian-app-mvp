@@ -81,10 +81,6 @@ export function planFutureNotification(
     return noPlan("event_beyond_planning_horizon");
   }
 
-  // Planning evaluates the already-known future biological opportunity at the
-  // time it begins. This does not make the opportunity current now and does not
-  // change the selected target. It asks the existing coaching stack what it
-  // would approve if nothing else changed before that known event starts.
   const projectedEvent: FlowEvent = {
     ...futureEvent,
     status: "current",
@@ -105,9 +101,6 @@ export function planFutureNotification(
     now: opportunityAt,
   });
 
-  // Future v1 schedules only ordinary Level 3 coaching notifications tied to a
-  // known circadian event. Contextual alerts depend on disruptions that cannot
-  // be safely projected ahead of time.
   if (
     !orchestration.shouldDeliver ||
     !orchestration.payload ||
@@ -125,6 +118,7 @@ export function planFutureNotification(
   });
   if (!memory.allowDelivery) return noPlan("cooldown_active");
 
+  const eventEnd = projectedEvent.end ?? projectedEvent.start;
   return {
     notification: {
       id: futureNotificationId(projectedEvent, orchestration.payload.targetSignalId),
@@ -134,6 +128,7 @@ export function planFutureNotification(
       title: orchestration.payload.title,
       body: orchestration.payload.body,
       scheduledFor: opportunityAt.toISOString(),
+      validUntil: eventEnd.toISOString(),
     },
     reason: "planned",
     evaluatedAt: now.toISOString(),

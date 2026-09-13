@@ -129,6 +129,8 @@ test('malformed wake times use a stable default', () => {
 const { EvidenceSeverity, classifyEvidenceSeverity, deriveSignalSeverity } = load('lib/personalization/severity.ts');
 const { selectPrimaryCoachingTarget } = load('lib/personalization/primary-target.ts');
 const { SignalClassification, HierarchyLayer, CoachingState } = load('lib/personalization/types.ts');
+const { decideIntervention } = load('lib/personalization/intervention.ts');
+const { ActionFeasibility, evaluateActionFeasibility } = load('lib/personalization/feasibility.ts');
 
 function makeBehaviorSignal(id, state, hierarchy, evidenceScores) {
   return {
@@ -240,4 +242,41 @@ test('outcome and context evidence cannot manufacture a severe behavioral target
 
   const result = selectPrimaryCoachingTarget(state);
   assert.equal(result.signalId, 'morning_light_timing');
+});
+
+test('constraint adaptation preserves biological truth and prefers feasible fallback', () => {
+  const primary = { signalId: 'morning_light_timing', coachingState: CoachingState.NEEDS_ATTENTION, hierarchy: HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, severity: EvidenceSeverity.MILD, reason: 'target' };
+  const decision = decideIntervention({
+    primary,
+    eventWindow: { start: new Date(Date.now() - 60000).toISOString(), end: new Date(Date.now() + 60000).toISOString() },
+    contextEvidence: { infeasible: true, reason: 'schedule_constraint', fallbackAction: 'use a bright indoor light break' },
+    preferredAction: 'go outside for 20 minutes',
+    fallbackAction: 'use a bright indoor light break',
+  });
+
+  assert.equal(decision.targetSignalId, 'morning_light_timing');
+  assert.equal(decision.noInterventionReason, undefined);
+  assert.equal(decision.level, 2);
+  assert.equal(decision.actionableNow, true);
+  assert.equal(decision.reason, 'adapted_feasible_action_due_to_constraint');
+});
+
+test('constraint adaptation silences when no meaningful fallback exists', () => {
+  const primary = { signalId: 'morning_light_timing', coachingState: CoachingState.NEEDS_ATTENTION, hierarchy: HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, severity: EvidenceSeverity.MILD, reason: 'target' };
+  const decision = decideIntervention({
+    primary,
+    eventWindow: { start: new Date(Date.now() - 60000).toISOString(), end: new Date(Date.now() + 60000).toISOString() },
+    contextEvidence: { infeasible: true, reason: 'schedule_constraint' },
+    preferredAction: 'go outside for 20 minutes',
+  });
+
+  assert.equal(decision.targetSignalId, 'morning_light_timing');
+  assert.equal(decision.level, 0);
+  assert.equal(decision.noInterventionReason, 'infeasible_action_no_fallback');
+});
+
+test('feasibility model distinguishes feasible and infeasible actions without altering severity', () => {
+  assert.equal(evaluateActionFeasibility({ infeasible: false }, 'go outside').status, ActionFeasibility.FEASIBLE);
+  assert.equal(evaluateActionFeasibility({ infeasible: true, reason: 'schedule_constraint' }, 'go outside').status, ActionFeasibility.INFEASIBLE);
+  assert.equal(evaluateActionFeasibility({ infeasible: true, reason: 'schedule_constraint' }, 'go outside').reason, 'schedule_constraint');
 });

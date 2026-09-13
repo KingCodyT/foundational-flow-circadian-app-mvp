@@ -8,6 +8,10 @@ export type InterventionDecisionInput = {
   // context/constraint evidence and outcome evidence are passed through for traceability
   contextEvidence?: Record<string, any> | null;
   outcomeEvidence?: Record<string, any> | null;
+  // optional action metadata: preferred action vs feasible alternative when a known constraint blocks the ideal action
+  preferredAction?: string | null;
+  fallbackAction?: string | null;
+  adaptedAction?: string | null;
   // optional explicit event window (ISO strings) indicating biologically relevant timing
   eventWindow?: { start?: string | null; end?: string | null } | null;
   // optional explicit flag indicating a material contextual disruption (caller must detect)
@@ -25,6 +29,9 @@ export type InterventionDecision = {
   biologicallyRelevantNow: boolean;
   actionableNow: boolean;
   interruptionEligible: boolean;
+  preferredAction?: string | null;
+  fallbackAction?: string | null;
+  adaptedAction?: string | null;
   supportingContext?: {
     derivedEnvironment?: DerivedEnvironment | null;
     contextEvidence?: Record<string, any> | null;
@@ -113,11 +120,17 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
   // Determine biological relevance conservatively: only mark true when an eventWindow is provided and now is inside it.
   const biologicallyRelevantNow = inEventWindow;
 
-  // Determine actionability: override if explicit provided; otherwise assume actionable unless contextEvidence indicates infeasible (caller-detected)
+  // Determine actionability: preserve the biological objective while adapting the action to known constraints.
+  const preferredAction = input.preferredAction ?? (input.contextEvidence && (input.contextEvidence as any).preferredAction) ?? null;
+  const fallbackAction = input.fallbackAction ?? (input.contextEvidence && (input.contextEvidence as any).fallbackAction) ?? null;
+  const adaptedAction = input.adaptedAction ?? fallbackAction ?? null;
+
   let actionableNow = true;
   if (input.actionabilityOverride === false) actionableNow = false;
-  // If context evidence contains explicit 'infeasible' flag, consider not actionable
-  if (input.contextEvidence && (input.contextEvidence as any).infeasible === true) actionableNow = false;
+  // If context evidence contains explicit 'infeasible' flag, consider not actionable unless a known fallback is available.
+  if (input.contextEvidence && (input.contextEvidence as any).infeasible === true) {
+    actionableNow = Boolean(fallbackAction) || false;
+  }
 
   // If coaching state is ESTABLISHED, prefer silence or quiet context
   if (coachingState === CoachingState.ESTABLISHED) {
@@ -140,22 +153,46 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
   }
 
   // For DEVELOPING or NEEDS_ATTENTION
-  // If not actionable, avoid Level 3; prefer Level 1 or 2
+  // A known infeasible preferred action may still yield a meaningful adapted action.
+  // If the action is impossible and there is no supported fallback, preserve the biological objective and silence.
   if (!actionableNow) {
+    if (adaptedAction) {
+      return {
+        level: 2,
+        targetSignalId: primary.signalId,
+        reason: "adapted_feasible_action_due_to_constraint",
+        biologicallyRelevantNow: biologicallyRelevantNow,
+        actionableNow: true,
+        interruptionEligible: false,
+        preferredAction,
+        fallbackAction,
+        adaptedAction,
+        supportingContext: {
+          derivedEnvironment: input.derivedEnvironment ?? null,
+          contextEvidence: input.contextEvidence ?? null,
+          outcomeEvidence: input.outcomeEvidence ?? null,
+        },
+        eventWindow: input.eventWindow ?? null,
+      };
+    }
+
     return {
-      level: 2,
+      level: 0,
       targetSignalId: primary.signalId,
-      reason: "not_actionable_now_fallback_guidance",
+      reason: "no_actionable_path_for_target",
       biologicallyRelevantNow: biologicallyRelevantNow,
       actionableNow: false,
       interruptionEligible: false,
+      preferredAction,
+      fallbackAction,
+      adaptedAction: null,
       supportingContext: {
         derivedEnvironment: input.derivedEnvironment ?? null,
         contextEvidence: input.contextEvidence ?? null,
         outcomeEvidence: input.outcomeEvidence ?? null,
       },
       eventWindow: input.eventWindow ?? null,
-      noInterventionReason: "infeasible_action",
+      noInterventionReason: "infeasible_action_no_fallback",
     };
   }
 
@@ -171,6 +208,9 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
         biologicallyRelevantNow: true,
         actionableNow: true,
         interruptionEligible: true,
+        preferredAction,
+        fallbackAction,
+        adaptedAction: adaptedAction ?? preferredAction ?? null,
         supportingContext: {
           derivedEnvironment: input.derivedEnvironment ?? null,
           contextEvidence: input.contextEvidence ?? null,
@@ -188,6 +228,9 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
         biologicallyRelevantNow: true,
         actionableNow: true,
         interruptionEligible: false,
+        preferredAction,
+        fallbackAction,
+        adaptedAction: adaptedAction ?? preferredAction ?? null,
         supportingContext: {
           derivedEnvironment: input.derivedEnvironment ?? null,
           contextEvidence: input.contextEvidence ?? null,
@@ -207,6 +250,9 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
       biologicallyRelevantNow: false,
       actionableNow: true,
       interruptionEligible: false,
+      preferredAction,
+      fallbackAction,
+      adaptedAction: adaptedAction ?? preferredAction ?? null,
       supportingContext: {
         derivedEnvironment: input.derivedEnvironment ?? null,
         contextEvidence: input.contextEvidence ?? null,
@@ -224,6 +270,9 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
     biologicallyRelevantNow: biologicallyRelevantNow,
     actionableNow: actionableNow,
     interruptionEligible: false,
+    preferredAction,
+    fallbackAction,
+    adaptedAction: adaptedAction ?? preferredAction ?? null,
     supportingContext: {
       derivedEnvironment: input.derivedEnvironment ?? null,
       contextEvidence: input.contextEvidence ?? null,

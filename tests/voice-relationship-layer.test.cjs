@@ -29,7 +29,7 @@ function decision({
       coachingState: state,
       adaptedAction,
       reconsideration,
-      decision: { reason: decisionReason },
+      originalDecision: { reason: decisionReason },
     },
   };
 }

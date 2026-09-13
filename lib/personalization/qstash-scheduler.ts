@@ -6,6 +6,7 @@ export async function scheduleQStashDispatch(input: {
   destination: string;
   clientId: string;
   notificationId: string;
+  scheduleRevision: string;
   scheduledFor: string;
 }) {
   const token = process.env.QSTASH_TOKEN;
@@ -28,12 +29,13 @@ export async function scheduleQStashDispatch(input: {
         "Upstash-Method": "POST",
         "Upstash-Not-Before": String(notBefore),
         "Upstash-Retries": "3",
-        "Upstash-Deduplication-Id": `${input.clientId}:${input.notificationId}:${notBefore}`,
+        "Upstash-Deduplication-Id": `${input.clientId}:${input.notificationId}:${input.scheduleRevision}`,
         "Upstash-Forward-Authorization": `Bearer ${dispatchSecret}`,
       },
       body: JSON.stringify({
         clientId: input.clientId,
         notificationId: input.notificationId,
+        scheduleRevision: input.scheduleRevision,
       }),
     },
   );

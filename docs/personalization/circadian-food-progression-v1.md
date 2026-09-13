@@ -24,7 +24,9 @@ These are conservative v1 internal progression guards. They are not client-facin
 
 ## Alignment observable
 
-v1 uses last-meal relationship to biological night as its narrow progression observable: at least two hours before target sleep and not after sunset when sunset context is available.
+v1 uses last-meal separation from target sleep as its narrow progression observable: at least two hours before target sleep.
+
+Sunset remains useful biological context, but it is not a binary meal cutoff. A meal after sunset may still count as aligned when it is well separated from target sleep. This avoids turning seasonal or latitude-driven sunset changes into false failure signals.
 
 This is intentionally narrower than future Food Engine physiology. It does not score food quality, calories, macros, fasting duration, or meal composition.
 

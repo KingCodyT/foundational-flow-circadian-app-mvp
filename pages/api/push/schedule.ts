@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { scheduleQStashDispatch } from "@/lib/personalization/qstash-scheduler";
 import {
   cancelServerPushSchedule,
   saveServerPushSchedule,
@@ -15,9 +16,21 @@ function validNotification(value: any) {
       typeof value.title === "string" &&
       typeof value.body === "string" &&
       typeof value.scheduledFor === "string" &&
-      (value.channel === "NOTIFICATION" || value.channel === "CONTEXTUAL_ALERT") &&
+      (value.channel === "NOTIFICATION" ||
+        value.channel === "CONTEXTUAL_ALERT") &&
       Number.isFinite(new Date(value.scheduledFor).getTime()),
   );
+}
+
+function appOrigin(req: NextApiRequest) {
+  if (process.env.APP_ORIGIN) return process.env.APP_ORIGIN.replace(/\/$/, "");
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const protocol = Array.isArray(forwardedProto)
+    ? forwardedProto[0]
+    : forwardedProto ?? "https";
+  const host = req.headers.host;
+  if (!host) throw new Error("missing_app_origin");
+  return `${protocol}://${host}`;
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -33,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: "invalid_notification" });
       }
 
-      await saveServerPushSchedule({
+      const record = {
         clientId,
         notificationId: notification.id,
         scheduledFor: notification.scheduledFor,
@@ -47,7 +60,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           scheduledFor: notification.scheduledFor,
         },
         createdAt: new Date().toISOString(),
-      });
+      } as const;
+
+      await saveServerPushSchedule(record);
+
+      try {
+        await scheduleQStashDispatch({
+          destination: `${appOrigin(req)}/api/push/dispatch`,
+          clientId,
+          notificationId: notification.id,
+          scheduledFor: notification.scheduledFor,
+        });
+      } catch (error) {
+        await cancelServerPushSchedule(clientId, notification.id);
+        throw error;
+      }
 
       return res.status(204).end();
     }
@@ -57,6 +84,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (typeof notificationId !== "string" || !notificationId) {
         return res.status(400).json({ error: "invalid_notification_id" });
       }
+
+      // Removing the authoritative schedule is sufficient cancellation. A
+      // delayed QStash callback that later arrives will see no record and NOOP.
       await cancelServerPushSchedule(clientId, notificationId);
       return res.status(204).end();
     }
@@ -64,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Allow", "POST, DELETE");
     return res.status(405).json({ error: "method_not_allowed" });
   } catch (error) {
-    console.error("push_schedule_store_failed", error);
-    return res.status(503).json({ error: "push_store_unavailable" });
+    console.error("push_schedule_failed", error);
+    return res.status(503).json({ error: "push_scheduler_unavailable" });
   }
 }

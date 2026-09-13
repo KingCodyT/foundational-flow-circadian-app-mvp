@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { randomUUID } from "crypto";
 import { scheduleQStashDispatch } from "@/lib/personalization/qstash-scheduler";
 import {
   cancelServerPushSchedule,
@@ -10,15 +11,17 @@ function validClientId(value: unknown): value is string {
 }
 
 function validNotification(value: any) {
+  const scheduledFor = value?.scheduledFor ? new Date(value.scheduledFor).getTime() : NaN;
+  const validUntil = value?.validUntil ? new Date(value.validUntil).getTime() : null;
   return Boolean(
     value &&
       typeof value.id === "string" &&
       typeof value.title === "string" &&
       typeof value.body === "string" &&
       typeof value.scheduledFor === "string" &&
-      (value.channel === "NOTIFICATION" ||
-        value.channel === "CONTEXTUAL_ALERT") &&
-      Number.isFinite(new Date(value.scheduledFor).getTime()),
+      (value.channel === "NOTIFICATION" || value.channel === "CONTEXTUAL_ALERT") &&
+      Number.isFinite(scheduledFor) &&
+      (validUntil === null || (Number.isFinite(validUntil) && validUntil >= scheduledFor)),
   );
 }
 
@@ -46,10 +49,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: "invalid_notification" });
       }
 
+      // Every accepted plan gets a new revision. A delayed callback from an
+      // older plan cannot deliver merely because it shares the same ID.
+      const scheduleRevision = randomUUID();
       const record = {
         clientId,
         notificationId: notification.id,
         scheduledFor: notification.scheduledFor,
+        scheduleRevision,
+        validUntil: notification.validUntil ?? null,
         notification: {
           id: notification.id,
           targetSignalId: notification.targetSignalId ?? null,
@@ -58,6 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           title: notification.title,
           body: notification.body,
           scheduledFor: notification.scheduledFor,
+          validUntil: notification.validUntil ?? null,
         },
         createdAt: new Date().toISOString(),
       } as const;
@@ -69,6 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           destination: `${appOrigin(req)}/api/push/dispatch`,
           clientId,
           notificationId: notification.id,
+          scheduleRevision,
           scheduledFor: notification.scheduledFor,
         });
       } catch (error) {
@@ -85,8 +95,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: "invalid_notification_id" });
       }
 
-      // Removing the authoritative schedule is sufficient cancellation. A
-      // delayed QStash callback that later arrives will see no record and NOOP.
       await cancelServerPushSchedule(clientId, notificationId);
       return res.status(204).end();
     }

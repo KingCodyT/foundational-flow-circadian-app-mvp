@@ -4,6 +4,7 @@ import {
   deletePushSubscription,
   getDueServerPushSchedules,
   getPushSubscription,
+  saveServerPushDelivery,
 } from "@/lib/personalization/server-push-store";
 import { sendWebPush, webPushConfigured } from "@/lib/personalization/web-push-server";
 
@@ -39,6 +40,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const result = await sendWebPush(subscription, schedule.notification);
       if (result.ok) {
+        await saveServerPushDelivery(schedule.clientId, {
+          id: schedule.notification.id,
+          targetSignalId: schedule.notification.targetSignalId,
+          eventId: schedule.notification.eventId,
+          channel: schedule.notification.channel,
+          deliveredAt: new Date().toISOString(),
+        });
         await completeServerPushSchedule(schedule);
         sent += 1;
         continue;

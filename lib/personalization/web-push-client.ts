@@ -1,4 +1,7 @@
-import { ScheduledNotificationRecord } from "./notification-runtime";
+import {
+  DeliveredNotificationRecord,
+  ScheduledNotificationRecord,
+} from "./notification-runtime";
 
 function urlBase64ToUint8Array(value: string) {
   const padding = "=".repeat((4 - (value.length % 4)) % 4);
@@ -46,10 +49,7 @@ export async function ensureWebPushSubscription(
   const response = await fetch("/api/push/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      clientId,
-      subscription: subscription.toJSON(),
-    }),
+    body: JSON.stringify({ clientId, subscription: subscription.toJSON() }),
   });
 
   return response.ok ? "SUBSCRIBED" : "SERVER_UNAVAILABLE";
@@ -64,7 +64,6 @@ export async function syncServerPushSchedule(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ clientId, notification }),
   });
-
   return response.ok;
 }
 
@@ -77,6 +76,16 @@ export async function cancelServerPushSchedule(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ clientId, notificationId }),
   });
-
   return response.ok;
+}
+
+export async function fetchServerPushDeliveries(
+  clientId: string,
+): Promise<DeliveredNotificationRecord[]> {
+  const response = await fetch(`/api/push/deliveries?clientId=${encodeURIComponent(clientId)}`);
+  if (!response.ok) return [];
+  const payload = (await response.json()) as {
+    deliveries?: DeliveredNotificationRecord[];
+  };
+  return Array.isArray(payload.deliveries) ? payload.deliveries : [];
 }

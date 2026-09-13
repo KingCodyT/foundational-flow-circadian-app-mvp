@@ -10,6 +10,7 @@ import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
 import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
 import { assembleDay1Personalization } from "@/lib/personalization/day1";
 import { applyDailyEvidence } from "@/lib/personalization/daily-evidence";
+import { applyCircadianFoodCoachingEvidence } from "@/lib/personalization/circadian-food-signal-integration";
 import { selectPrimaryCoachingTarget } from "@/lib/personalization/primary-target";
 import {
   buildFoodJourneyPrompt,
@@ -34,6 +35,7 @@ export default function NowPage() {
     dailyProfile,
     participationLevel,
     eventStateByDate,
+    foodTimingEvidenceByDate,
     previousContextSnapshot,
     getEventStateForDate,
     getFoodTimingEvidenceForDate,
@@ -72,14 +74,26 @@ export default function NowPage() {
       },
       eventStateByDate,
     );
-    const primaryCoachingTarget = selectPrimaryCoachingTarget(withDailyEvidence);
+    const withFoodEvidence = applyCircadianFoodCoachingEvidence(withDailyEvidence, {
+      evidenceByDate: foodTimingEvidenceByDate,
+      profile: profileInput,
+      participationLevel,
+    });
+    const primaryCoachingTarget = selectPrimaryCoachingTarget(withFoodEvidence);
     return {
       ...initialDay1,
-      signalStates: withDailyEvidence.perSignal,
-      derivedEnvironment: withDailyEvidence.derivedEnvironment ?? environment,
+      signalStates: withFoodEvidence.perSignal,
+      derivedEnvironment: withFoodEvidence.derivedEnvironment ?? environment,
       primaryCoachingTarget,
     };
-  }, [answers, environment, eventStateByDate]);
+  }, [
+    answers,
+    environment,
+    eventStateByDate,
+    foodTimingEvidenceByDate,
+    participationLevel,
+    profileInput,
+  ]);
 
   const reconsideration = useMemo(() => {
     const currentContext = buildContextSnapshot({

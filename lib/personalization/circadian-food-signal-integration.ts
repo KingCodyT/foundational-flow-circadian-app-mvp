@@ -2,8 +2,9 @@ import { buildTodaysFlow, DailyProfileInput } from "@/lib/flow-engine";
 import { FoodTimingEvidence } from "./circadian-food-timing";
 import { buildFoodJourneySnapshot } from "./circadian-food-journey";
 import { interpretFoodTimingPattern } from "./circadian-food-coaching";
+import { progressCircadianFoodTiming } from "./circadian-food-progression";
 import { InitialPersonalizationState, InitialSignalState } from "./initial-state";
-import { CoachingState, SignalSourceType } from "./types";
+import { SignalSourceType } from "./types";
 
 export type ApplyFoodTimingEvidenceInput = {
   evidenceByDate?: Record<string, FoodTimingEvidence[]> | null;
@@ -39,63 +40,67 @@ function buildObservedDays(input: ApplyFoodTimingEvidenceInput) {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function coachingStateFromRepeatedMismatch(current?: CoachingState) {
-  if (current === CoachingState.NEEDS_ATTENTION) return current;
-  return CoachingState.DEVELOPING;
-}
-
 /**
- * Bridges Circadian Food Coaching v1 into the existing signal architecture.
- * It does not choose the primary target or intervention level. Repeated direct
- * food-timing evidence may reopen or strengthen an existing Meal Timing signal;
- * hierarchy, severity override, intervention eligibility, Voice, and delivery
- * remain owned by their existing modules.
+ * Bridges Circadian Food evidence into the existing signal architecture.
+ * Food progression may revise an existing Meal Timing coaching state, but it
+ * never chooses the primary target, severity, intervention level, Voice, or
+ * delivery. Those remain owned by the existing Foundational Flow architecture.
  */
 export function applyCircadianFoodCoachingEvidence(
   state: InitialPersonalizationState,
   input: ApplyFoodTimingEvidenceInput,
 ): InitialPersonalizationState {
-  const interpretation = interpretFoodTimingPattern(buildObservedDays(input));
-  if (!interpretation.shouldContributeEvidence || !interpretation.signalId) return state;
+  const observedDays = buildObservedDays(input);
+  const interpretation = interpretFoodTimingPattern(observedDays);
 
-  const current = state.perSignal[interpretation.signalId];
-  if (!current) return state;
+  const candidateSignalIds = new Set<string>();
+  if (interpretation.signalId) candidateSignalIds.add(interpretation.signalId);
+  candidateSignalIds.add("last_meal_timing");
 
-  const nextState = coachingStateFromRepeatedMismatch(current.coachingState);
-  const notes = [...(current.notes ?? [])];
-  const patternNote = `circadian_food_${interpretation.pattern.toLowerCase()}_${interpretation.qualifyingDays}_days`;
-  if (!notes.includes(patternNote)) notes.push(patternNote);
+  let nextState = state;
 
-  if (current.coachingState !== nextState) {
-    notes.push(
-      `reopened_by_repeated_direct_food_timing_evidence_${current.coachingState ?? "unknown"}_to_${nextState}`,
-    );
+  for (const signalId of candidateSignalIds) {
+    const current = nextState.perSignal[signalId];
+    if (!current) continue;
+
+    const progression = progressCircadianFoodTiming(current.coachingState, observedDays);
+    const notes = [...(current.notes ?? [])];
+
+    if (interpretation.shouldContributeEvidence && interpretation.signalId === signalId) {
+      const patternNote = `circadian_food_${interpretation.pattern.toLowerCase()}_${interpretation.qualifyingDays}_days`;
+      if (!notes.includes(patternNote)) notes.push(patternNote);
+    }
+
+    if (progression.changed) {
+      notes.push(`circadian_food_progression_${progression.reason}_${current.coachingState ?? "unknown"}_to_${progression.nextState}`);
+    }
+
+    const directEvidence = interpretation.shouldContributeEvidence && interpretation.signalId === signalId
+      ? Array.from({ length: interpretation.qualifyingDays }, () => ({
+          source: [SignalSourceType.USER_FEEDBACK],
+        }))
+      : [];
+
+    const updated: InitialSignalState = {
+      ...current,
+      coachingState: progression.nextState,
+      evidence: [...current.evidence, ...directEvidence],
+      notes: notes.length > 0 ? notes : current.notes,
+      confidence: directEvidence.length > 0 && current.confidence
+        ? { ...current.confidence, lastEvidenceAt: state.generatedAt }
+        : current.confidence,
+    };
+
+    nextState = {
+      ...nextState,
+      perSignal: {
+        ...nextState.perSignal,
+        [signalId]: updated,
+      },
+    };
   }
 
-  const directEvidence = Array.from({ length: interpretation.qualifyingDays }, () => ({
-    source: [SignalSourceType.USER_FEEDBACK],
-  }));
-
-  const updated: InitialSignalState = {
-    ...current,
-    coachingState: nextState,
-    evidence: [...current.evidence, ...directEvidence],
-    notes,
-    confidence: current.confidence
-      ? {
-          ...current.confidence,
-          lastEvidenceAt: state.generatedAt,
-        }
-      : current.confidence,
-  };
-
-  return {
-    ...state,
-    perSignal: {
-      ...state.perSignal,
-      [interpretation.signalId]: updated,
-    },
-  };
+  return nextState;
 }
 
 export default applyCircadianFoodCoachingEvidence;

@@ -15,6 +15,7 @@ import {
   applyDailyEvidence,
   summarizeDailyEvidence,
 } from "@/lib/personalization/daily-evidence";
+import { applyCircadianFoodCoachingEvidence } from "@/lib/personalization/circadian-food-signal-integration";
 import { selectPrimaryCoachingTarget } from "@/lib/personalization/primary-target";
 import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
 import {
@@ -92,11 +93,23 @@ export default function YouPage() {
     isHydrated,
     hasCompletedAudit,
     eventStateByDate,
+    foodTimingEvidenceByDate,
   } = useCircadian();
 
   const now = useLiveClock();
   const profileTimeZone = dailyProfile?.timeZone ?? null;
   const todayKey = localDateKey(now, profileTimeZone);
+
+  const profileInput = useMemo(
+    () => ({
+      wakeTime: dailyProfile?.wakeTime ?? null,
+      targetBedtime: dailyProfile?.targetBedtime ?? null,
+      timeZone: dailyProfile?.timeZone ?? null,
+      latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
+      longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
+    }),
+    [dailyProfile]
+  );
 
   const environment = useMemo(
     () => buildDerivedEnvironment({ profile: dailyProfile }),
@@ -109,8 +122,20 @@ export default function YouPage() {
       derivedEnvironment: environment,
     });
     const withConfidence = assignInitialConfidence(initial);
-    return applyDailyEvidence(withConfidence, eventStateByDate);
-  }, [answers, environment, eventStateByDate]);
+    const withDailyEvidence = applyDailyEvidence(withConfidence, eventStateByDate);
+    return applyCircadianFoodCoachingEvidence(withDailyEvidence, {
+      evidenceByDate: foodTimingEvidenceByDate,
+      profile: profileInput,
+      participationLevel,
+    });
+  }, [
+    answers,
+    environment,
+    eventStateByDate,
+    foodTimingEvidenceByDate,
+    participationLevel,
+    profileInput,
+  ]);
 
   const dailyEvidence = useMemo(
     () => summarizeDailyEvidence(eventStateByDate),

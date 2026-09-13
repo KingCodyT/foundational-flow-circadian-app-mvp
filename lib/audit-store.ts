@@ -24,3 +24,12 @@ export function createClientId() {
 
   return `client-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
+
+export function normalizeDailyProfile(profile?: DailyProfile | null, fallbackTimeZone?: string | null): DailyProfile | null {
+  if (!profile) return profile ?? null;
+
+  return {
+    ...profile,
+    timeZone: profile.timeZone || fallbackTimeZone || null,
+  };
+}

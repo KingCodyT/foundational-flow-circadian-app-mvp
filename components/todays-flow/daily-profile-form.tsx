@@ -2,12 +2,14 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useCircadian } from "@/components/circadian-provider";
+import { getRuntimeTimeZone } from "@/lib/live-clock";
 import { hasValidCoordinates } from "@/lib/solar";
 
 export default function DailyProfileForm() {
   const { dailyProfile, setDailyProfile } = useCircadian();
   const savedWakeTime = dailyProfile?.wakeTime ?? "07:00";
   const savedBedtime = dailyProfile?.targetBedtime ?? "22:00";
+  const savedTimeZone = dailyProfile?.timeZone ?? getRuntimeTimeZone() ?? "UTC";
   const [wakeTime, setWakeTime] = useState(savedWakeTime);
   const [targetBedtime, setTargetBedtime] = useState(savedBedtime);
   const [locating, setLocating] = useState(false);
@@ -56,6 +58,7 @@ export default function DailyProfileForm() {
       setDailyProfile({
         wakeTime: dailyProfile?.wakeTime ?? null,
         targetBedtime: dailyProfile?.targetBedtime ?? null,
+        timeZone: dailyProfile?.timeZone ?? savedTimeZone,
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
         locationPermissionGranted: true,
@@ -75,6 +78,7 @@ export default function DailyProfileForm() {
     setDailyProfile({
       wakeTime: dailyProfile?.wakeTime ?? null,
       targetBedtime: dailyProfile?.targetBedtime ?? null,
+      timeZone: dailyProfile?.timeZone ?? savedTimeZone,
       latitude: null,
       longitude: null,
       locationPermissionGranted: false,
@@ -98,6 +102,8 @@ export default function DailyProfileForm() {
         </div>
         <button type="submit" disabled={saved} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-2.5 text-sm font-semibold disabled:opacity-60">{saved ? "Profile saved ✓" : "Save profile"}</button>
         <div className="space-y-3">
+          <p className="text-sm font-semibold">Profile timezone</p>
+          <p className="text-sm leading-6 text-[var(--color-muted)]">{savedTimeZone}</p>
           <p className="text-sm font-semibold">Location (optional)</p>
           <p className="text-sm leading-6 text-[var(--color-muted)]">{hasLocation ? "A location is saved for sunrise and sunset timing." : "Use your location to personalize sunrise and sunset timing. It stays in this browser."}</p>
           <div className="flex flex-wrap gap-3">

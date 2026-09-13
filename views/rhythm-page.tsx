@@ -6,15 +6,11 @@ import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
 import { buildTodaysFlow } from "@/lib/flow-engine";
 import { useLiveClock } from "@/hooks/use-live-clock";
-import { localDateKey } from "@/lib/live-clock";
+import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
 
-function formatTime(date?: Date | null) {
+function formatTime(date?: Date | null, timeZone?: string | null) {
   if (!date) return "—";
-
-  return date.toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatTimeInZone(date, timeZone);
 }
 
 export default function RhythmPage() {
@@ -26,18 +22,20 @@ export default function RhythmPage() {
   } = useCircadian();
 
   const now = useLiveClock();
+  const profileTimeZone = dailyProfile?.timeZone ?? null;
   const currentEventRef = useRef<HTMLDivElement | null>(null);
 
   // Scroll on entry only; clock ticks should not interrupt someone reading.
   useEffect(() => {
     currentEventRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [isHydrated]);
-  const todayKey = localDateKey(now);
+  const todayKey = localDateKey(now, profileTimeZone);
 
   const profileInput = useMemo(
     () => ({
       wakeTime: dailyProfile?.wakeTime ?? null,
       targetBedtime: dailyProfile?.targetBedtime ?? null,
+      timeZone: dailyProfile?.timeZone ?? null,
       latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
       longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
     }),
@@ -151,7 +149,7 @@ export default function RhythmPage() {
                           </div>
 
                           <p className="shrink-0 text-sm font-medium text-[var(--color-muted)]">
-                            {formatTime(event.start)}
+                            {formatTime(event.start, profileTimeZone)}
                           </p>
                         </div>
 
@@ -193,12 +191,12 @@ export default function RhythmPage() {
             <div className="mt-4 flex flex-wrap gap-x-10 gap-y-2 text-sm">
               <p>
                 <span className="text-[var(--color-muted)]">Sunrise </span>
-                <span className="font-medium">{formatTime(solar.sunrise)}</span>
+                <span className="font-medium">{formatTime(solar.sunrise, profileTimeZone)}</span>
               </p>
 
               <p>
                 <span className="text-[var(--color-muted)]">Sunset </span>
-                <span className="font-medium">{formatTime(solar.sunset)}</span>
+                <span className="font-medium">{formatTime(solar.sunset, profileTimeZone)}</span>
               </p>
               {solar.dayLengthMinutes === 1440 || solar.dayLengthMinutes === 0 ? (
                 <p className="w-full text-[var(--color-muted)]">

@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const load = require('./load-typescript.cjs');
 const { getSolarTimes, formatTimeLocal } = load('lib/solar.ts');
 const { buildTodaysFlow } = load('lib/flow-engine.ts');
+const { normalizeDailyProfile } = load('lib/audit-store.ts');
+const { localDateKey } = load('lib/live-clock.ts');
 const { buildDerivedEnvironment } = load('lib/personalization/derived-environment.ts');
 
 function inTimezone(timezone, run) {
@@ -101,6 +103,20 @@ test('valid profile times and terminal evidence remain authoritative', () => {
       assert.notEqual(flow.next?.id, morning.id);
     }
   }
+});
+
+test('stored profile timezone is preserved and hydrated safely', () => {
+  const profile = { wakeTime: '07:00', targetBedtime: '22:00', locationPermissionGranted: true, latitude: 37.7749, longitude: -122.4194 };
+  const withSaved = normalizeDailyProfile(profile, 'America/Los_Angeles');
+  assert.equal(withSaved.timeZone, 'America/Los_Angeles');
+  assert.equal(withSaved.wakeTime, '07:00');
+
+  const existing = normalizeDailyProfile({ ...profile, timeZone: 'Europe/London' }, 'America/Los_Angeles');
+  assert.equal(existing.timeZone, 'Europe/London');
+  assert.equal(existing.locationPermissionGranted, true);
+
+  const dayKey = localDateKey(new Date('2026-09-12T00:30:00Z'), 'America/Los_Angeles');
+  assert.equal(dayKey, '2026-09-11');
 });
 
 test('malformed wake times use a stable default', () => {

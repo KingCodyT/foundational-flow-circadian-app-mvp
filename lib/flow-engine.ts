@@ -13,6 +13,7 @@ export type FlowEvent = {
 export type DailyProfileInput = {
   wakeTime?: string | null; // 'HH:MM'
   targetBedtime?: string | null; // 'HH:MM'
+  timeZone?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 };

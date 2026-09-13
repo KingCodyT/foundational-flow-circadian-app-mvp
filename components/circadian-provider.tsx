@@ -10,8 +10,10 @@ import {
 import {
   createClientId,
   LocalAuditState,
+  normalizeDailyProfile,
   STORAGE_KEY,
 } from "@/lib/audit-store";
+import { getRuntimeTimeZone } from "@/lib/live-clock";
 import {
   AnswerMap,
   ParticipationLevel,
@@ -67,10 +69,11 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     if (rawState) {
       try {
         const parsedState = JSON.parse(rawState) as LocalAuditState;
+        const fallbackTimeZone = getRuntimeTimeZone();
         setClientId(parsedState.clientId ?? createClientId());
         setAnswers(parsedState.answers ?? {});
         setParticipationLevelState(parsedState.participationLevel ?? null);
-        setDailyProfileState(parsedState.dailyProfile ?? null);
+        setDailyProfileState(normalizeDailyProfile(parsedState.dailyProfile ?? null, fallbackTimeZone));
         setEventStateByDate(parsedState.eventStateByDate ?? null);
         setLastSavedAt(parsedState.lastSavedAt ?? null);
         setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
@@ -121,7 +124,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   };
 
   const setDailyProfile = (profile: DailyProfile | null) => {
-    setDailyProfileState(profile);
+    setDailyProfileState(normalizeDailyProfile(profile, getRuntimeTimeZone()));
   };
 
   const getEventStateForDate = (dateStr: string) => {

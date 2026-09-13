@@ -38,6 +38,7 @@ export type ParticipationLevel = "BASELINE" | "GUIDED_FLOW" | "FULL_FLOW";
 export type DailyProfile = {
   wakeTime: string | null; // HH:MM local
   targetBedtime: string | null; // HH:MM local
+  timeZone?: string | null; // IANA timezone for the user's saved biological context
   locationPermissionGranted: boolean;
   latitude?: number | null;
   longitude?: number | null;

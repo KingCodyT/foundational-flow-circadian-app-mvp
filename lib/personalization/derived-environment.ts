@@ -7,7 +7,7 @@ export type DerivedEnvironment = {
   longitude?: number | null;
   // Whether we had explicit coordinates available from the user's profile
   locationAvailable: boolean;
-  // Timezone reported by the runtime environment (IANA string) — see provenance below
+  // The saved profile timezone is authoritative when present; the runtime timezone remains contextual evidence.
   timezone?: string | null;
   // Local date string for the environment in YYYY-MM-DD (derived from the provided date)
   localDate: string;
@@ -49,9 +49,8 @@ export function buildDerivedEnvironment(opts?: { profile?: DailyProfile | null; 
   // Reuse existing solar calculation module. It returns local Date objects when available.
   const solar = getSolarTimes(date, latitude ?? null, longitude ?? null);
 
-  // Runtime/system timezone (IANA) — browsers/hosts provide this via Intl. This is the best
-  // available value without calling external timezone lookup services.
-  const tz = (() => {
+  // Saved profile timezone is authoritative when available. Runtime timezone remains useful context evidence.
+  const tz = profile?.timeZone || (() => {
     try {
       return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
     } catch (e) {
@@ -85,11 +84,10 @@ export function buildDerivedEnvironment(opts?: { profile?: DailyProfile | null; 
     lastCalculatedAt: now.toISOString(),
     provenance: {
       locationSource: locationAvailable ? "profile" : "none",
-      timezoneSource: tz ? "system" : "profile-unknown",
-      // Without an external timezone lookup from coordinates, the timezone cannot be
-      // objectively guaranteed to match the provided lat/lon; mark as unreliable when
-      // coordinates are present but no authoritative TZ mapping was done.
-      timezoneReliable: locationAvailable ? false : Boolean(tz),
+      timezoneSource: profile?.timeZone ? "profile-unknown" : tz ? "system" : "profile-unknown",
+      // The saved profile timezone is treated as the authoritative biological choice when present.
+      // Runtime timezone still helps explain context, but it does not silently overwrite the saved profile.
+      timezoneReliable: Boolean(profile?.timeZone || tz),
       confidence: {
         score: locationAvailable ? 0.9 : 0.3,
         lastEvidenceAt: locationAvailable ? now.toISOString() : undefined,

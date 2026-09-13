@@ -5,7 +5,7 @@ import { useMemo } from "react";
 import DailyProfileForm from "@/components/todays-flow/daily-profile-form";
 import ParticipationSelector from "@/components/todays-flow/participation-selector";
 import { useLiveClock } from "@/hooks/use-live-clock";
-import { localDateKey } from "@/lib/live-clock";
+import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
 import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
 import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
@@ -23,19 +23,19 @@ import {
   SignalClassification,
 } from "@/lib/personalization/types";
 
-function formatProfileTime(value?: string | null) {
+function formatProfileTime(value?: string | null, timeZone?: string | null) {
   if (!value) return "Not set";
   const [hour, minute] = value.split(":").map(Number);
   const date = new Date();
   date.setHours(hour, minute, 0, 0);
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return formatTimeInZone(date, timeZone);
 }
 
-function formatSolarTime(value?: string | null) {
+function formatSolarTime(value?: string | null, timeZone?: string | null) {
   if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return formatTimeInZone(date, timeZone);
 }
 
 function formatDayLength(minutes?: number | null) {
@@ -95,7 +95,8 @@ export default function YouPage() {
   } = useCircadian();
 
   const now = useLiveClock();
-  const todayKey = localDateKey(now);
+  const profileTimeZone = dailyProfile?.timeZone ?? null;
+  const todayKey = localDateKey(now, profileTimeZone);
 
   const environment = useMemo(
     () => buildDerivedEnvironment({ profile: dailyProfile }),
@@ -170,11 +171,12 @@ export default function YouPage() {
         <div className="mt-10 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">What I Understand About You</p>
           <div className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-            <ProfileFact label="Wake time" value={formatProfileTime(dailyProfile?.wakeTime)} />
-            <ProfileFact label="Sleep window" value={formatProfileTime(dailyProfile?.targetBedtime)} />
+            <ProfileFact label="Wake time" value={formatProfileTime(dailyProfile?.wakeTime, profileTimeZone)} />
+            <ProfileFact label="Sleep window" value={formatProfileTime(dailyProfile?.targetBedtime, profileTimeZone)} />
+            <ProfileFact label="Timezone" value={dailyProfile?.timeZone ?? "Not set"} />
             <ProfileFact label="Guidance level" value={participationLabel(participationLevel)} />
-            <ProfileFact label="Sunrise" value={formatSolarTime(environment.sunrise)} />
-            <ProfileFact label="Sunset" value={formatSolarTime(environment.sunset)} />
+            <ProfileFact label="Sunrise" value={formatSolarTime(environment.sunrise, profileTimeZone)} />
+            <ProfileFact label="Sunset" value={formatSolarTime(environment.sunset, profileTimeZone)} />
             <ProfileFact label="Day length" value={formatDayLength(environment.dayLengthMinutes)} />
           </div>
           <p className="mt-6 border-t border-[var(--color-line)] pt-5 text-sm leading-6 text-[var(--color-muted)]">

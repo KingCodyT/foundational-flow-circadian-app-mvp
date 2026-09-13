@@ -5,15 +5,11 @@ import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
 import { buildTodaysFlow } from "@/lib/flow-engine";
 import { useLiveClock } from "@/hooks/use-live-clock";
-import { localDateKey } from "@/lib/live-clock";
+import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
 
-function formatTime(date?: Date | null) {
+function formatTime(date?: Date | null, timeZone?: string | null) {
   if (!date) return "—";
-
-  return date.toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatTimeInZone(date, timeZone);
 }
 
 export default function NowPage() {
@@ -26,12 +22,14 @@ export default function NowPage() {
   } = useCircadian();
 
   const now = useLiveClock();
-  const todayKey = localDateKey(now);
+  const profileTimeZone = dailyProfile?.timeZone ?? null;
+  const todayKey = localDateKey(now, profileTimeZone);
 
   const profileInput = useMemo(
     () => ({
       wakeTime: dailyProfile?.wakeTime ?? null,
       targetBedtime: dailyProfile?.targetBedtime ?? null,
+      timeZone: dailyProfile?.timeZone ?? null,
       latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
       longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
     }),
@@ -87,7 +85,7 @@ export default function NowPage() {
         </h1>
 
         <p className="mt-4 text-lg text-[var(--color-muted)]">
-          {formatTime(now)}
+          {formatTime(now, profileTimeZone)}
         </p>
 
         <div className="mt-10 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">
@@ -163,7 +161,7 @@ export default function NowPage() {
             </p>
 
             <p className="mt-1 text-sm text-[var(--color-muted)]">
-              {next ? formatTime(next.start) : "You’re good for now."}
+              {next ? formatTime(next.start, profileTimeZone) : "You’re good for now."}
             </p>
           </div>
 
@@ -175,10 +173,10 @@ export default function NowPage() {
             {locationAvailable && solar ? (
               <>
                 <p className="mt-2">
-                  Sunrise: {formatTime(solar.sunrise)}
+                  Sunrise: {formatTime(solar.sunrise, profileTimeZone)}
                 </p>
                 <p className="mt-1">
-                  Sunset: {formatTime(solar.sunset)}
+                  Sunset: {formatTime(solar.sunset, profileTimeZone)}
                 </p>
                 {solar.dayLengthMinutes === 1440 || solar.dayLengthMinutes === 0 ? (
                   <p className="mt-2 text-sm text-[var(--color-muted)]">

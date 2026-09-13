@@ -53,6 +53,27 @@ test('approved orchestration with permission produces one schedule command', () 
   assert.equal(result.command.notification.eventId, 'morning_light');
 });
 
+test('runtime obeys cooldown restraint without inventing a new decision', () => {
+  const result = planNotificationRuntime({
+    orchestration: orchestration(),
+    permission: 'GRANTED',
+    memory: {
+      allowDelivery: false,
+      reason: 'cooldown_active',
+      evaluatedAt: now.toISOString(),
+      lastDeliveredAt: '2026-09-13T14:30:00.000Z',
+      cooldownMinutes: 90,
+      remainingCooldownMinutes: 60,
+    },
+    now,
+  });
+
+  assert.deepEqual(result.command, {
+    type: 'NOOP',
+    reason: 'cooldown_active',
+  });
+});
+
 test('runtime does not schedule when permission is not granted', () => {
   const result = planNotificationRuntime({
     orchestration: orchestration(),

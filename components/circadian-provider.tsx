@@ -15,6 +15,17 @@ import {
 } from "@/lib/audit-store";
 import { getRuntimeTimeZone } from "@/lib/live-clock";
 import {
+  DEFAULT_NOTIFICATION_PERSISTENCE_STATE,
+  NotificationPersistenceState,
+  pruneNotificationPersistenceState,
+  setMaterialChangeKey,
+  upsertDeliveredNotification,
+} from "@/lib/personalization/notification-persistence";
+import {
+  DeliveredNotificationRecord,
+  ScheduledNotificationRecord,
+} from "@/lib/personalization/notification-runtime";
+import {
   AnswerMap,
   ParticipationLevel,
   DailyProfile,
@@ -48,6 +59,7 @@ type CircadianState = {
     dayLengthMinutes?: number | null;
     capturedAt?: string | null;
   } | null;
+  notificationState: NotificationPersistenceState;
   getEventStateForDate: (dateStr: string) => DailyEventState;
   setEventRecord: (
     dateStr: string,
@@ -58,6 +70,12 @@ type CircadianState = {
     },
   ) => void;
   clearEventRecords: (eventId: string) => void;
+  setScheduledNotification: (record: ScheduledNotificationRecord | null) => void;
+  recordDeliveredNotification: (record: DeliveredNotificationRecord) => void;
+  setNotificationMaterialChangeKey: (
+    identity: string,
+    materialChangeKey: string | null,
+  ) => void;
   setAnswer: (questionId: string, value: string) => void;
   completeAudit: () => void;
   setParticipationLevel: (level: ParticipationLevel | null) => void;
@@ -95,6 +113,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     dayLengthMinutes?: number | null;
     capturedAt?: string | null;
   } | null>(null);
+  const [notificationState, setNotificationState] =
+    useState<NotificationPersistenceState>(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasCompletedAudit, setHasCompletedAudit] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -113,13 +133,18 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         setEventStateByDate(parsedState.eventStateByDate ?? null);
         setPreviousContextSnapshot(parsedState.previousContextSnapshot ?? null);
         setCurrentContextSnapshot(parsedState.currentContextSnapshot ?? null);
+        setNotificationState(
+          pruneNotificationPersistenceState(parsedState.notificationState ?? null),
+        );
         setLastSavedAt(parsedState.lastSavedAt ?? null);
         setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
       } catch {
         setClientId(createClientId());
+        setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
       }
     } else {
       setClientId(createClientId());
+      setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
     }
 
     setIsHydrated(true);
@@ -138,6 +163,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       eventStateByDate,
       previousContextSnapshot,
       currentContextSnapshot,
+      notificationState: pruneNotificationPersistenceState(notificationState),
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -149,6 +175,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     hasCompletedAudit,
     isHydrated,
     lastSavedAt,
+    notificationState,
     participationLevel,
     previousContextSnapshot,
     currentContextSnapshot,
@@ -221,6 +248,41 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const setScheduledNotification = (record: ScheduledNotificationRecord | null) => {
+    setNotificationState((current) => ({
+      ...current,
+      scheduledNotification: record,
+    }));
+  };
+
+  const recordDeliveredNotification = (record: DeliveredNotificationRecord) => {
+    setNotificationState((current) => ({
+      ...current,
+      scheduledNotification:
+        current.scheduledNotification?.id === record.id
+          ? null
+          : current.scheduledNotification,
+      deliveredNotifications: upsertDeliveredNotification(
+        current.deliveredNotifications,
+        record,
+      ),
+    }));
+  };
+
+  const setNotificationMaterialChangeKey = (
+    identity: string,
+    materialChangeKey: string | null,
+  ) => {
+    setNotificationState((current) => ({
+      ...current,
+      materialChangeKeys: setMaterialChangeKey(
+        current.materialChangeKeys,
+        identity,
+        materialChangeKey,
+      ),
+    }));
+  };
+
   const completeAudit = () => {
     if (!clientId) setClientId(createClientId());
     setHasCompletedAudit(true);
@@ -233,6 +295,9 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setParticipationLevelState(null);
     setDailyProfileState(null);
     setEventStateByDate(null);
+    setPreviousContextSnapshot(null);
+    setCurrentContextSnapshot(null);
+    setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
     setLastSavedAt(null);
     setHasCompletedAudit(false);
     window.localStorage.removeItem(STORAGE_KEY);
@@ -251,9 +316,13 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         eventStateByDate,
         previousContextSnapshot,
         currentContextSnapshot,
+        notificationState,
         getEventStateForDate,
         setEventRecord,
         clearEventRecords,
+        setScheduledNotification,
+        recordDeliveredNotification,
+        setNotificationMaterialChangeKey,
         setAnswer,
         completeAudit,
         setParticipationLevel,

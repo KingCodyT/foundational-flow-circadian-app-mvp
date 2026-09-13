@@ -11,6 +11,7 @@ export type ScheduledNotificationRecord = {
   title: string;
   body: string;
   scheduledFor: string;
+  validUntil?: string | null;
 };
 
 export type DeliveredNotificationRecord = {
@@ -111,8 +112,6 @@ export function planNotificationRuntime(
   const scheduled = input.scheduled ?? null;
   const payload = input.orchestration.payload;
 
-  // Runtime does not override upstream intelligence. If orchestration withdraws
-  // delivery, cancel any previously scheduled interrupt for this slot.
   if (!input.orchestration.shouldDeliver || !payload) {
     if (scheduled) {
       return {
@@ -131,8 +130,6 @@ export function planNotificationRuntime(
     };
   }
 
-  // Delivery memory can make the system quieter, but it cannot create or upgrade
-  // an interrupt. Runtime only obeys the upstream restraint decision.
   if (input.memory && !input.memory.allowDelivery) {
     return {
       command: { type: "NOOP", reason: "cooldown_active" },
@@ -140,7 +137,6 @@ export function planNotificationRuntime(
     };
   }
 
-  // Permission state is a runtime/platform concern, not a biological decision.
   if (input.permission !== "GRANTED") {
     return {
       command: { type: "NOOP", reason: "permission_not_granted" },

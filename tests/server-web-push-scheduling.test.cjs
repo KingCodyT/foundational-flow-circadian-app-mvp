@@ -4,6 +4,7 @@ const load = require('./load-typescript.cjs');
 
 const store = load('lib/personalization/server-push-store.ts');
 const push = load('lib/personalization/web-push-server.ts');
+const qstash = load('lib/personalization/qstash-scheduler.ts');
 
 function withEnv(values, fn) {
   const previous = {};
@@ -65,5 +66,23 @@ test('VAPID public key is exposed only when both VAPID keys exist', () => {
       assert.equal(push.webPushConfigured(), true);
       assert.equal(push.getVapidPublicKey(), 'public-key');
     },
+  );
+});
+
+test('one-shot scheduler requires both QStash token and dispatch secret', () => {
+  withEnv(
+    {
+      QSTASH_TOKEN: 'token',
+      PUSH_DISPATCH_SECRET: null,
+    },
+    () => assert.equal(qstash.qstashConfigured(), false),
+  );
+
+  withEnv(
+    {
+      QSTASH_TOKEN: 'token',
+      PUSH_DISPATCH_SECRET: 'secret',
+    },
+    () => assert.equal(qstash.qstashConfigured(), true),
   );
 });

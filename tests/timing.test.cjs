@@ -125,3 +125,119 @@ test('malformed wake times use a stable default', () => {
     assert.equal(flow.events.find(e => e.id === 'morning_light').start.getHours(), 7);
   }
 });
+
+const { EvidenceSeverity, classifyEvidenceSeverity, deriveSignalSeverity } = load('lib/personalization/severity.ts');
+const { selectPrimaryCoachingTarget } = load('lib/personalization/primary-target.ts');
+const { SignalClassification, HierarchyLayer, CoachingState } = load('lib/personalization/types.ts');
+
+function makeBehaviorSignal(id, state, hierarchy, evidenceScores) {
+  return {
+    id,
+    classification: SignalClassification.BEHAVIOR,
+    coachingState: state,
+    hierarchy,
+    evidence: evidenceScores.map((score) => ({ source: ['QUESTIONNAIRE'], answerScore: score, questionId: `q_${id}` })),
+  };
+}
+
+test('severity mapping is bounded and semantic, not raw-ranking', () => {
+  assert.equal(classifyEvidenceSeverity(100), EvidenceSeverity.MILD);
+  assert.equal(classifyEvidenceSeverity(75), EvidenceSeverity.MILD);
+  assert.equal(classifyEvidenceSeverity(55), EvidenceSeverity.MODERATE);
+  assert.equal(classifyEvidenceSeverity(40), EvidenceSeverity.MODERATE);
+  assert.equal(classifyEvidenceSeverity(35), EvidenceSeverity.SEVERE);
+  assert.equal(classifyEvidenceSeverity(10), EvidenceSeverity.SEVERE);
+  assert.equal(deriveSignalSeverity(makeBehaviorSignal('x', CoachingState.NEEDS_ATTENTION, HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, [80, 40])).band, EvidenceSeverity.MODERATE);
+});
+
+test('same-severity or same-layer candidates keep hierarchy authority', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: makeBehaviorSignal('morning_light_timing', CoachingState.NEEDS_ATTENTION, HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, [70]),
+      evening_light_reduction: makeBehaviorSignal('evening_light_reduction', CoachingState.NEEDS_ATTENTION, HierarchyLayer.EVENING_LIGHT_DARKNESS, [65]),
+    },
+  };
+
+  const result = selectPrimaryCoachingTarget(state);
+  assert.equal(result.signalId, 'morning_light_timing');
+});
+
+test('downstream severe may leapfrog mild upstream target in v1', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: makeBehaviorSignal('morning_light_timing', CoachingState.NEEDS_ATTENTION, HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, [72]),
+      sleep_schedule: makeBehaviorSignal('sleep_schedule', CoachingState.NEEDS_ATTENTION, HierarchyLayer.SLEEP_OPPORTUNITY_TIMING, [15]),
+    },
+  };
+
+  const result = selectPrimaryCoachingTarget(state);
+  assert.equal(result.signalId, 'sleep_schedule');
+});
+
+test('upstream moderate remains authoritative over downstream severe', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: makeBehaviorSignal('morning_light_timing', CoachingState.NEEDS_ATTENTION, HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, [55]),
+      sleep_schedule: makeBehaviorSignal('sleep_schedule', CoachingState.NEEDS_ATTENTION, HierarchyLayer.SLEEP_OPPORTUNITY_TIMING, [15]),
+    },
+  };
+
+  const result = selectPrimaryCoachingTarget(state);
+  assert.equal(result.signalId, 'morning_light_timing');
+});
+
+test('upstream mild remains authoritative over downstream moderate', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: makeBehaviorSignal('morning_light_timing', CoachingState.NEEDS_ATTENTION, HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, [70]),
+      sleep_schedule: makeBehaviorSignal('sleep_schedule', CoachingState.NEEDS_ATTENTION, HierarchyLayer.SLEEP_OPPORTUNITY_TIMING, [45]),
+    },
+  };
+
+  const result = selectPrimaryCoachingTarget(state);
+  assert.equal(result.signalId, 'morning_light_timing');
+});
+
+test('upstream severe remains authoritative over downstream severe', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: makeBehaviorSignal('morning_light_timing', CoachingState.NEEDS_ATTENTION, HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, [25]),
+      sleep_schedule: makeBehaviorSignal('sleep_schedule', CoachingState.NEEDS_ATTENTION, HierarchyLayer.SLEEP_OPPORTUNITY_TIMING, [15]),
+    },
+  };
+
+  const result = selectPrimaryCoachingTarget(state);
+  assert.equal(result.signalId, 'morning_light_timing');
+});
+
+test('established signals stay excluded from coaching selection', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: makeBehaviorSignal('morning_light_timing', CoachingState.ESTABLISHED, HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, [100]),
+      sleep_schedule: makeBehaviorSignal('sleep_schedule', CoachingState.NEEDS_ATTENTION, HierarchyLayer.SLEEP_OPPORTUNITY_TIMING, [15]),
+    },
+  };
+
+  const result = selectPrimaryCoachingTarget(state);
+  assert.equal(result.signalId, 'sleep_schedule');
+});
+
+test('outcome and context evidence cannot manufacture a severe behavioral target', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      sleep_duration: { id: 'sleep_duration', classification: SignalClassification.OUTCOME, coachingState: CoachingState.NEEDS_ATTENTION, evidence: [{ source: ['QUESTIONNAIRE'], answerScore: 15, questionId: 'sleep_duration' }] },
+      bedroom_darkness: { id: 'bedroom_darkness', classification: SignalClassification.CONTEXT_CONSTRAINT, coachingState: undefined, evidence: [{ source: ['QUESTIONNAIRE'], answerScore: 10, questionId: 'bedroom_darkness' }] },
+      morning_light_timing: makeBehaviorSignal('morning_light_timing', CoachingState.NEEDS_ATTENTION, HierarchyLayer.MORNING_LIGHT_CIRCADIAN_ANCHOR, [70]),
+    },
+  };
+
+  const result = selectPrimaryCoachingTarget(state);
+  assert.equal(result.signalId, 'morning_light_timing');
+});

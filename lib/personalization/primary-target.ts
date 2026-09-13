@@ -5,11 +5,13 @@ import {
   CoachingState,
 } from "./types";
 import { InitialPersonalizationState, InitialSignalState } from "./initial-state";
+import { EvidenceSeverity, deriveSignalSeverity } from "./severity";
 
 export type PrimaryCoachingTargetResult = {
   signalId: string | null;
   coachingState?: CoachingState;
   hierarchy?: HierarchyLayer | null;
+  severity?: EvidenceSeverity | null;
   // assessment severity metadata when available (min score among evidence)
   severityScore?: number | null;
   // Supporting evidence arrays (shallow copies of evidence entries)
@@ -38,7 +40,7 @@ export function selectPrimaryCoachingTarget(state: InitialPersonalizationState):
   const perSignal = state.perSignal ?? {};
 
   // Collect eligible behavioral signals (NEEDS_ATTENTION or DEVELOPING)
-  const eligible: { id: string; signal: InitialSignalState; registryOrder: number; hierarchy?: HierarchyLayer | null; }[] = [];
+  const eligible: { id: string; signal: InitialSignalState; registryOrder: number; hierarchy?: HierarchyLayer | null; severityBand: EvidenceSeverity | null; severityScore: number | null; }[] = [];
 
   const registryKeys = Object.keys(SIGNAL_REGISTRY);
 
@@ -51,7 +53,15 @@ export function selectPrimaryCoachingTarget(state: InitialPersonalizationState):
     if (sig.classification !== SignalClassification.BEHAVIOR) continue;
 
     if (sig.coachingState === CoachingState.NEEDS_ATTENTION || sig.coachingState === CoachingState.DEVELOPING) {
-      eligible.push({ id, signal: sig, registryOrder, hierarchy: def.hierarchy ?? null });
+      const derived = deriveSignalSeverity(sig);
+      eligible.push({
+        id,
+        signal: sig,
+        registryOrder,
+        hierarchy: def.hierarchy ?? null,
+        severityBand: derived.band,
+        severityScore: derived.score,
+      });
     }
   }
 
@@ -72,31 +82,29 @@ export function selectPrimaryCoachingTarget(state: InitialPersonalizationState):
     const needs = inLayer.filter((e) => e.signal.coachingState === CoachingState.NEEDS_ATTENTION);
     const candidates = needs.length > 0 ? needs : inLayer.filter((e) => e.signal.coachingState === CoachingState.DEVELOPING);
 
-    // If single candidate, pick it
-    if (candidates.length === 1) {
-      const chosen = candidates[0];
-      return buildResultForChosen(chosen, state);
+    const chosen = chooseBestCandidateInLayer(candidates);
+    if (!chosen) continue;
+
+    // v1 conservative override: a downstream SEVERE eligible behavioral target may leapfrog an upstream MILD eligible target.
+    const currentSeverity = chosen.severityBand;
+    if (currentSeverity === EvidenceSeverity.MILD) {
+      const downstreamSevere = eligible.filter((candidate) => {
+        if (candidate.id === chosen.id) return false;
+        if (candidate.severityBand !== EvidenceSeverity.SEVERE) return false;
+        const currentIndex = HIERARCHY_ORDER.indexOf(layer);
+        const candidateIndex = candidate.hierarchy ? HIERARCHY_ORDER.indexOf(candidate.hierarchy) : -1;
+        return candidateIndex > currentIndex;
+      });
+
+      if (downstreamSevere.length > 0) {
+        const comparable = chooseBestCandidateInLayer(
+          downstreamSevere.filter((c) => c.signal.coachingState === CoachingState.NEEDS_ATTENTION || c.signal.coachingState === CoachingState.DEVELOPING),
+        );
+        if (comparable) return buildResultForChosen(comparable, state);
+      }
     }
 
-    // Multiple candidates in same layer and same coachingState: use severity/answer-band metadata when available.
-    // Compute a severity score per candidate: prefer lower numeric answerScore (worse) -> select the worst one.
-    const withSeverity = candidates.map((c) => ({
-      ...c,
-      severity: computeMinAnswerScore(c.signal),
-    }));
-
-    // Filter those that have numeric severity
-    const haveSeverity = withSeverity.filter((w) => w.severity != null);
-    if (haveSeverity.length > 0) {
-      // choose the one with smallest severity (most severe)
-      haveSeverity.sort((a, b) => (a.severity! - b.severity!));
-      const chosen = haveSeverity[0];
-      return buildResultForChosen(chosen, state);
-    }
-
-    // No severity to break tie: deterministic registry order
-    candidates.sort((a, b) => a.registryOrder - b.registryOrder);
-    return buildResultForChosen(candidates[0], state);
+    return buildResultForChosen(chosen, state);
   }
 
   // If none matched the hierarchy order (signals without hierarchy), fall back to registry order among eligible
@@ -105,21 +113,41 @@ export function selectPrimaryCoachingTarget(state: InitialPersonalizationState):
   return buildResultForChosen(chosen, state);
 }
 
+const SEVERITY_WEIGHT: Record<EvidenceSeverity, number> = {
+  [EvidenceSeverity.SEVERE]: 3,
+  [EvidenceSeverity.MODERATE]: 2,
+  [EvidenceSeverity.MILD]: 1,
+};
+
+function chooseBestCandidateInLayer(candidates: { id: string; signal: InitialSignalState; registryOrder: number; hierarchy?: HierarchyLayer | null; severityBand: EvidenceSeverity | null; severityScore: number | null; }[]) {
+  if (candidates.length === 0) return null;
+  if (candidates.length === 1) return candidates[0];
+
+  const ordered = [...candidates].sort((a, b) => {
+    const aWeight = a.severityBand ? SEVERITY_WEIGHT[a.severityBand] ?? 0 : 0;
+    const bWeight = b.severityBand ? SEVERITY_WEIGHT[b.severityBand] ?? 0 : 0;
+    const bandDiff = bWeight - aWeight;
+    if (bandDiff !== 0) return bandDiff;
+    return a.registryOrder - b.registryOrder;
+  });
+
+  return ordered[0];
+}
+
 function computeMinAnswerScore(sig: InitialSignalState): number | null {
   const scores: number[] = [];
   for (const ev of sig.evidence ?? []) {
     if (ev.answerScore != null) scores.push(ev.answerScore);
   }
   if (scores.length === 0) return null;
-  // severity: lower score means worse (e.g., 10 is worse than 80), so return min
   return Math.min(...scores);
 }
 
-function buildResultForChosen(chosen: { id: string; signal: InitialSignalState; registryOrder: number; hierarchy?: HierarchyLayer | null }, state: InitialPersonalizationState) {
+function buildResultForChosen(chosen: { id: string; signal: InitialSignalState; registryOrder: number; hierarchy?: HierarchyLayer | null; severityBand: EvidenceSeverity | null; severityScore: number | null }, state: InitialPersonalizationState) {
   const { id, signal } = chosen;
-  const severity = computeMinAnswerScore(signal);
+  const severity = chosen.severityScore ?? computeMinAnswerScore(signal);
+  const severityBand = chosen.severityBand ?? deriveSignalSeverity(signal).band ?? null;
 
-  // Collect supporting outcome/context/derived evidence (shallow selections)
   const supportingOutcomeEvidence: Record<string, InitialSignalState> = {};
   const contextConstraintEvidence: Record<string, InitialSignalState> = {};
   const derivedEnvironmentEvidence: Record<string, InitialSignalState> = {};
@@ -134,6 +162,7 @@ function buildResultForChosen(chosen: { id: string; signal: InitialSignalState; 
     signalId: id,
     coachingState: signal.coachingState,
     hierarchy: chosen.hierarchy ?? null,
+    severity: severityBand,
     severityScore: severity ?? null,
     supportingOutcomeEvidence: Object.keys(supportingOutcomeEvidence).length > 0 ? supportingOutcomeEvidence : undefined,
     contextConstraintEvidence: Object.keys(contextConstraintEvidence).length > 0 ? contextConstraintEvidence : undefined,

@@ -23,6 +23,7 @@ export type NowCoachingDecision = {
   activeEvent: FlowEvent | null;
   activeEventSupportsTarget: boolean;
   shouldSurfacePersonalizedGuidance: boolean;
+  shouldSurfacePassiveContext: boolean;
 };
 
 export function eventSupportsSignal(
@@ -78,11 +79,21 @@ export function assembleNowCoachingDecision(opts: {
       candidate.disposition !== "SILENT",
   );
 
+  // Passive context is biological orientation, not coaching. An unrelated
+  // active circadian event may be shown quietly without changing the selected
+  // coaching target or borrowing the event's guidance as a recommendation.
+  const shouldSurfacePassiveContext = Boolean(
+    activeEvent &&
+      !shouldSurfacePersonalizedGuidance &&
+      (candidate.finalLevel === 1 || !activeEventSupportsTarget),
+  );
+
   return {
     candidate,
     activeEvent,
     activeEventSupportsTarget,
     shouldSurfacePersonalizedGuidance,
+    shouldSurfacePassiveContext,
   };
 }
 

@@ -2,6 +2,9 @@ import { Day1PersonalizationResult } from "./day1";
 import { InterventionDecisionInput, decideIntervention, InterventionDecision } from "./intervention";
 import evaluateInterventionEligibility, { InterventionEligibilityInput, InterventionEligibilityResult } from "./intervention-eligibility";
 import { DerivedEnvironment } from "./derived-environment";
+import { Confidence, CoachingState } from "./types";
+import { SignalReconsideration } from "./reconsideration";
+import { EvidenceSeverity } from "./severity";
 
 export type InterventionCandidateDisposition =
   | "SILENT"
@@ -16,7 +19,7 @@ export type InterventionCandidateInput = {
   phase3aInput?: InterventionDecisionInput | null;
   // Optional current derivedEnvironment (day1 may include one)
   derivedEnvironment?: DerivedEnvironment | null;
-  // Optional explicit now
+  // Optional explicit now. One resolved moment is passed through decision + eligibility.
   now?: Date | null;
   // Optional recent intervention metadata to be forwarded
   recentIntervention?: { lastAt?: string; type?: string; isRecent?: boolean } | null;
@@ -25,6 +28,8 @@ export type InterventionCandidateInput = {
   // Optional context / outcome evidence
   contextEvidence?: Record<string, any> | null;
   outcomeEvidence?: Record<string, any> | null;
+  // Reconsideration is metadata only. It must not mutate target, confidence, severity, state, or intensity.
+  reconsideration?: Record<string, SignalReconsideration> | null;
 };
 
 export type InterventionCandidate = {
@@ -32,6 +37,11 @@ export type InterventionCandidate = {
   disposition: InterventionCandidateDisposition;
   targetSignalId: string | null;
   primaryCoachingTarget: Day1PersonalizationResult["primaryCoachingTarget"] | null;
+  coachingState?: CoachingState | null;
+  confidence?: Confidence | null;
+  severity?: EvidenceSeverity | null;
+  severityScore?: number | null;
+  reconsideration?: SignalReconsideration | null;
   originalDecision: InterventionDecision;
   eligibility: InterventionEligibilityResult;
   finalLevel: 0 | 1 | 2 | 3 | 4;
@@ -42,6 +52,7 @@ export type InterventionCandidate = {
   biologicallyRelevantNow: boolean;
   actionableNow: boolean;
   interruptionEligible: boolean;
+  adaptedAction?: string | null;
   supportingContext?: {
     derivedEnvironment?: DerivedEnvironment | null;
     contextEvidence?: Record<string, any> | null;
@@ -74,34 +85,46 @@ function mapLevelToDisposition(level: number): InterventionCandidateDisposition 
 export function assembleInterventionCandidate(input: InterventionCandidateInput): InterventionCandidate {
   const now = input.now ?? new Date();
   const day1 = input.day1;
+  const derivedEnvironment = input.derivedEnvironment ?? day1.derivedEnvironment ?? null;
 
-  // Build Phase 3A input: prefer provided, otherwise create minimal one using day1 primary target and derivedEnvironment
-  const phase3aInput: InterventionDecisionInput = input.phase3aInput ?? {
-    primary: day1.primaryCoachingTarget as any ?? null,
-    derivedEnvironment: input.derivedEnvironment ?? day1.derivedEnvironment ?? null,
+  const defaultDecisionInput: InterventionDecisionInput = {
+    primary: day1.primaryCoachingTarget ?? null,
+    derivedEnvironment,
     contextEvidence: input.contextEvidence ?? null,
     outcomeEvidence: input.outcomeEvidence ?? null,
     eventWindow: null,
     materialDisruption: false,
     recentIntervention: input.recentIntervention ?? null,
     actionabilityOverride: input.actionabilityOverride ?? null,
+    now,
+  };
+
+  // Prefer caller-provided Phase 3A detail, but force one authoritative moment through the full pipeline.
+  const phase3aInput: InterventionDecisionInput = {
+    ...defaultDecisionInput,
+    ...(input.phase3aInput ?? {}),
+    now,
   };
 
   // 1) Run Phase 3A decision function (pure)
   const decision = decideIntervention(phase3aInput);
 
-  // 2) Prepare Phase 3B input: include coachingState and confidence when available for traceability
-  const coachingState = (day1.primaryCoachingTarget && (day1.primaryCoachingTarget as any).coachingState) ?? null;
-  const confidenceScore = (day1.primaryCoachingTarget && (day1.primaryCoachingTarget as any).confidence && (day1.primaryCoachingTarget as any).confidence.score) ?? null;
+  // 2) Resolve selected signal metadata from the signal state, not from raw score or target shape.
+  const targetSignalId = decision.targetSignalId ?? day1.primaryCoachingTarget?.signalId ?? null;
+  const targetSignalState = targetSignalId ? day1.signalStates[targetSignalId] ?? null : null;
+  const coachingState = targetSignalState?.coachingState ?? day1.primaryCoachingTarget?.coachingState ?? null;
+  const confidence = targetSignalState?.confidence ?? null;
+  const confidenceScore = confidence?.score ?? null;
+  const reconsideration = targetSignalId ? input.reconsideration?.[targetSignalId] ?? null : null;
 
   const eligibilityInput: InterventionEligibilityInput = {
     decision,
     now,
-    derivedEnvironment: input.derivedEnvironment ?? day1.derivedEnvironment ?? null,
+    derivedEnvironment,
     contextEvidence: input.contextEvidence ?? null,
     outcomeEvidence: input.outcomeEvidence ?? null,
-    coachingState: coachingState ?? null,
-    confidenceScore: confidenceScore ?? null,
+    coachingState,
+    confidenceScore,
     recentIntervention: input.recentIntervention ?? null,
     actionabilityOverride: input.actionabilityOverride ?? null,
   };
@@ -110,8 +133,8 @@ export function assembleInterventionCandidate(input: InterventionCandidateInput)
   const eligibility = evaluateInterventionEligibility(eligibilityInput);
 
   // 4) Normalize final level and disposition following locked rules
-  const originalLevel = eligibility.originalLevel as 0|1|2|3|4;
-  let finalLevel = eligibility.finalLevel as 0|1|2|3|4;
+  const originalLevel = eligibility.originalLevel as 0 | 1 | 2 | 3 | 4;
+  let finalLevel = eligibility.finalLevel as 0 | 1 | 2 | 3 | 4;
   let disposition = mapLevelToDisposition(finalLevel);
 
   // If SUPPRESS, enforce finalLevel=0 and disposition SILENT, preserve suppression reason
@@ -120,11 +143,16 @@ export function assembleInterventionCandidate(input: InterventionCandidateInput)
     disposition = "SILENT";
   }
 
-  const candidate: InterventionCandidate = {
-    generatedAt: new Date().toISOString(),
+  return {
+    generatedAt: now.toISOString(),
     disposition,
-    targetSignalId: decision.targetSignalId ?? null,
+    targetSignalId,
     primaryCoachingTarget: day1.primaryCoachingTarget ?? null,
+    coachingState,
+    confidence,
+    severity: day1.primaryCoachingTarget?.severity ?? null,
+    severityScore: day1.primaryCoachingTarget?.severityScore ?? null,
+    reconsideration,
     originalDecision: decision,
     eligibility,
     finalLevel,
@@ -135,8 +163,9 @@ export function assembleInterventionCandidate(input: InterventionCandidateInput)
     biologicallyRelevantNow: eligibility.biologicallyRelevantNow,
     actionableNow: eligibility.actionableNow,
     interruptionEligible: eligibility.interruptionEligible,
+    adaptedAction: decision.adaptedAction ?? null,
     supportingContext: {
-      derivedEnvironment: input.derivedEnvironment ?? day1.derivedEnvironment ?? null,
+      derivedEnvironment,
       contextEvidence: input.contextEvidence ?? null,
       outcomeEvidence: input.outcomeEvidence ?? null,
     },
@@ -146,8 +175,6 @@ export function assembleInterventionCandidate(input: InterventionCandidateInput)
       legacyMappingsUsed: day1.source?.legacyMappingsUsed ?? [],
     },
   };
-
-  return candidate;
 }
 
 export default assembleInterventionCandidate;

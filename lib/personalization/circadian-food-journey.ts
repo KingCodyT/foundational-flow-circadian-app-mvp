@@ -59,6 +59,36 @@ export type FoodJourneyPrompt = {
   secondaryLabel: string;
 };
 
+export type FoodJourneySurfaceMode = "FULL" | "CAPTURE_ONLY" | "HIDDEN";
+
+const FOOD_OWNED_EVENTS = new Set(["first_meal", "last_meal"]);
+const STRONGER_BIOLOGICAL_OWNER_EVENTS = new Set([
+  "morning_light",
+  "sunset",
+  "dim_house",
+  "digital_sunset",
+  "sleep_window",
+]);
+const FOOD_SIGNAL_IDS = new Set(["meal_timing_regularity", "last_meal_timing"]);
+
+/**
+ * Food should be available without becoming a permanent second coaching card.
+ * Stronger circadian moments own the foreground. Food gets the full surface in
+ * its own moments or when Food is the selected primary target; otherwise NOW
+ * keeps only a compact evidence-capture affordance.
+ */
+export function getFoodJourneySurfaceMode(input: {
+  activeEventId?: string | null;
+  primarySignalId?: string | null;
+}): FoodJourneySurfaceMode {
+  if (input.activeEventId && STRONGER_BIOLOGICAL_OWNER_EVENTS.has(input.activeEventId)) {
+    return "HIDDEN";
+  }
+  if (input.activeEventId && FOOD_OWNED_EVENTS.has(input.activeEventId)) return "FULL";
+  if (input.primarySignalId && FOOD_SIGNAL_IDS.has(input.primarySignalId)) return "FULL";
+  return "CAPTURE_ONLY";
+}
+
 /**
  * Communication-only framing for the evidence capture surface. This does not
  * classify timing as good/bad, choose a coaching target, or alter intervention

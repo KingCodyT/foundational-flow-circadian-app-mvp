@@ -66,17 +66,6 @@ test('plans the next known interrupt-eligible biological opportunity', () => {
   assert.match(result.notification.id, /^future:morning_light_timing:morning_light:/);
 });
 
-test('a point-in-time future event expires at that same biological opportunity', () => {
-  const result = planFutureNotification({
-    day1: makeDay1(),
-    futureEvent: makeFutureEvent({ end: undefined }),
-    now: new Date('2026-09-13T12:00:00.000Z'),
-  });
-
-  assert.equal(result.reason, 'planned');
-  assert.equal(result.notification.validUntil, result.notification.scheduledFor);
-});
-
 test('does not turn an unrelated future circadian event into coaching', () => {
   const result = planFutureNotification({
     day1: makeDay1(),

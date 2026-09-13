@@ -9,7 +9,6 @@ export type FoodTimingPattern =
   | "INSUFFICIENT_EVIDENCE"
   | "ALIGNED_OR_VARIABLE"
   | "LATE_LAST_MEAL_PATTERN"
-  | "LATE_FIRST_MEAL_PATTERN"
   | "LATE_EATING_DAY_PATTERN";
 
 export type FoodTimingCoachingInterpretation = {
@@ -17,7 +16,7 @@ export type FoodTimingCoachingInterpretation = {
   observedDays: number;
   qualifyingDays: number;
   shouldContributeEvidence: boolean;
-  signalId: "last_meal_timing" | "meal_timing_regularity" | null;
+  signalId: "last_meal_timing" | null;
   reason: string;
 };
 
@@ -32,20 +31,13 @@ function lateLastMeal(snapshot: CircadianFoodTimingSnapshot) {
   return minutesBeforeSleep >= 0 && minutesBeforeSleep < 120;
 }
 
-function lateFirstMeal(snapshot: CircadianFoodTimingSnapshot) {
-  const minutesFromWake = snapshot.firstMeal?.minutesFromWake;
-  if (minutesFromWake == null) return false;
-  // A repeated first meal well into the biological day is interpreted as a pattern,
-  // never as a command to eat breakfast or shorten a fasting window.
-  return minutesFromWake > 360;
-}
-
 function eatingDayDriftsLate(snapshot: CircadianFoodTimingSnapshot) {
-  const first = snapshot.firstMeal;
   const last = snapshot.lastMeal;
-  if (!first || !last) return false;
+  if (!last) return false;
   const lastAfterSunset = last.minutesFromSunset != null && last.minutesFromSunset > 0;
   const closeToSleep = lateLastMeal(snapshot);
+  // Sunset is contextual evidence only. It can describe the pattern when a meal
+  // is also close to target sleep, but sunset alone never makes a meal "late."
   return lastAfterSunset && closeToSleep;
 }
 
@@ -54,6 +46,9 @@ function eatingDayDriftsLate(snapshot: CircadianFoodTimingSnapshot) {
  * choose intervention level, write coaching copy, or prescribe a meal schedule.
  * It converts repeated direct meal evidence into a signal the existing coaching
  * architecture may consider. One unusual day is intentionally quiet.
+ *
+ * First-meal timing remains observational in v1. We do not infer that a delayed
+ * first meal is a problem, a lack of regularity, or a reason to prescribe breakfast.
  */
 export function interpretFoodTimingPattern(days: FoodTimingDay[]): FoodTimingCoachingInterpretation {
   const observed = days.filter((day) => day.snapshot.mealCount > 0);
@@ -69,7 +64,6 @@ export function interpretFoodTimingPattern(days: FoodTimingDay[]): FoodTimingCoa
   }
 
   const lateLast = observed.filter((day) => lateLastMeal(day.snapshot)).length;
-  const lateFirst = observed.filter((day) => lateFirstMeal(day.snapshot)).length;
   const lateDay = observed.filter((day) => eatingDayDriftsLate(day.snapshot)).length;
 
   if (lateDay >= REPEATED_PATTERN_DAYS) {
@@ -91,17 +85,6 @@ export function interpretFoodTimingPattern(days: FoodTimingDay[]): FoodTimingCoa
       shouldContributeEvidence: true,
       signalId: "last_meal_timing",
       reason: "repeated_last_meal_close_to_target_sleep",
-    };
-  }
-
-  if (lateFirst >= REPEATED_PATTERN_DAYS) {
-    return {
-      pattern: "LATE_FIRST_MEAL_PATTERN",
-      observedDays: observed.length,
-      qualifyingDays: lateFirst,
-      shouldContributeEvidence: true,
-      signalId: "meal_timing_regularity",
-      reason: "repeated_first_meal_late_in_biological_day",
     };
   }
 

@@ -1,4 +1,5 @@
 import { NotificationOrchestrationResult, NotificationPayload } from "./notification-orchestration";
+import { NotificationDeliveryMemoryDecision } from "./notification-memory";
 
 export type NotificationPermissionState = "GRANTED" | "DENIED" | "PROMPT" | "UNAVAILABLE";
 
@@ -39,12 +40,14 @@ export type NotificationRuntimeCommand =
         | "permission_not_granted"
         | "nothing_to_schedule"
         | "already_scheduled"
-        | "already_delivered";
+        | "already_delivered"
+        | "cooldown_active";
     };
 
 export type NotificationRuntimeInput = {
   orchestration: NotificationOrchestrationResult;
   permission: NotificationPermissionState;
+  memory?: NotificationDeliveryMemoryDecision | null;
   scheduled?: ScheduledNotificationRecord | null;
   delivered?: DeliveredNotificationRecord[] | null;
   now?: Date | null;
@@ -124,6 +127,15 @@ export function planNotificationRuntime(
 
     return {
       command: { type: "NOOP", reason: "nothing_to_schedule" },
+      evaluatedAt: now.toISOString(),
+    };
+  }
+
+  // Delivery memory can make the system quieter, but it cannot create or upgrade
+  // an interrupt. Runtime only obeys the upstream restraint decision.
+  if (input.memory && !input.memory.allowDelivery) {
+    return {
+      command: { type: "NOOP", reason: "cooldown_active" },
       evaluatedAt: now.toISOString(),
     };
   }

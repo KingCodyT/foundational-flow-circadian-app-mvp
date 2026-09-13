@@ -84,7 +84,7 @@ export function buildVoiceRelationshipOutput(
   const reconsidering = candidate.reconsideration?.shouldReconsider === true;
   const adaptedAction = candidate.adaptedAction ?? null;
   const isConstraintAdaptation =
-    candidate.decision.reason === "adapted_feasible_action_due_to_constraint";
+    candidate.originalDecision.reason === "adapted_feasible_action_due_to_constraint";
 
   let headline = event.name;
   let guidance = adaptedAction ?? event.guidance;

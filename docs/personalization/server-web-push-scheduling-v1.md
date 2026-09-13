@@ -10,21 +10,26 @@ The contract remains:
 
 This v1 adds a durable branch to the delivery transport:
 
-**Approved future notification → Web Push subscription → durable schedule → cron dispatcher → service worker → notification → delivery receipt**
+**Approved future notification → Web Push subscription → durable schedule record → one-shot delayed QStash callback → service worker → notification → delivery receipt**
 
 ## What v1 does
 
 - Registers a browser Push API subscription after notification permission is already granted.
 - Never triggers a permission prompt automatically.
 - Stores subscriptions in a durable Redis-compatible REST store.
-- Stores approved future notification jobs in a sorted set keyed by delivery time.
-- Runs a protected Vercel cron dispatcher once per minute.
+- Stores approved future notification records server-side.
+- Publishes a one-shot delayed QStash message using the approved `scheduledFor` time.
+- Authenticates the delayed dispatch callback with a server-only secret.
 - Sends standards-based Web Push without adding an npm dependency.
 - Removes expired subscriptions on 404/410 responses.
-- Keeps retryable delivery failures queued for a later cron pass.
+- Lets QStash retry transient dispatch failures.
 - Writes successful delivery receipts server-side.
 - Hydrates server delivery receipts back into the local notification history on next app open.
-- Keeps due-now notifications local-first to avoid local + cron duplicate delivery.
+- Keeps due-now notifications local-first to avoid local + server duplicate delivery.
+
+## Why one-shot scheduling instead of Vercel cron
+
+Minute-level Vercel cron requires a plan that supports minute frequency. Foundational Flow needs delivery tied to biological timing, so a daily or imprecise cron is the wrong primitive. v1 therefore uses a one-shot delayed message per approved notification rather than a continuously polling cron.
 
 ## What v1 does not do
 
@@ -47,7 +52,9 @@ That distinction matters. A server clock is not a second coaching engine.
 
 The current runtime may still create many notification records at the moment they become relevant. Those remain local-first. This infrastructure becomes true closed-app scheduling when an upstream planner supplies an approved `scheduledFor` time more than 30 seconds in the future.
 
-That future planner must preserve the same zombie-notification safeguards before creating or refreshing the job. The server dispatcher itself intentionally does not reinterpret biology.
+That future planner must preserve the same zombie-notification safeguards before creating or refreshing the job. The server dispatcher intentionally does not reinterpret biology.
+
+Cancellation is store-authoritative: deleting the server schedule record is sufficient. If a previously published delayed QStash callback still arrives afterward, the dispatch endpoint finds no schedule and quietly returns without sending anything.
 
 ## Required environment variables
 
@@ -67,9 +74,11 @@ Web Push:
 - `WEB_PUSH_VAPID_PRIVATE_KEY`
 - `WEB_PUSH_VAPID_SUBJECT` (optional; defaults to `mailto:notifications@codyoakland.com`)
 
-Cron protection:
+One-shot scheduler:
 
-- `CRON_SECRET`
+- `QSTASH_TOKEN`
+- `PUSH_DISPATCH_SECRET`
+- `APP_ORIGIN` (optional; otherwise inferred from the request host)
 
 Generate a VAPID key pair with:
 
@@ -79,18 +88,17 @@ node scripts/generate-vapid-keys.cjs
 
 ## API surface
 
-- `GET /api/push/public-key` — exposes only the public VAPID key when the push stack is configured.
+- `GET /api/push/public-key` — exposes only the public VAPID key when the complete durable push stack is configured.
 - `POST /api/push/subscribe` — stores one browser subscription for the app client ID.
-- `POST /api/push/schedule` — stores an approved notification job.
-- `DELETE /api/push/schedule` — cancels a stored job.
+- `POST /api/push/schedule` — stores an approved notification job and publishes its delayed one-shot dispatch.
+- `DELETE /api/push/schedule` — cancels the authoritative stored job.
+- `POST /api/push/dispatch` — authenticated scheduler callback that sends Web Push only if the stored job still exists.
 - `GET /api/push/deliveries?clientId=...` — returns recent server delivery receipts for local cooldown/history hydration.
-- `GET /api/cron/push-dispatch` — protected cron-only dispatcher.
 
 ## Storage model
 
 - Subscription: `ff:push:subscription:{clientId}`
 - Schedule: `ff:push:schedule:{clientId}:{notificationId}`
-- Due queue: sorted set `ff:push:due`
 - Delivery receipts: `ff:push:deliveries:{clientId}`, capped at 50 records
 
 ## Delivery restraint

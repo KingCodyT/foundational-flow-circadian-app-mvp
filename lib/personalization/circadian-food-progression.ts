@@ -19,11 +19,11 @@ function isAlignedMealDay(day: FoodTimingDay) {
   if (!last) return false;
 
   const sleepSeparation = last.minutesBeforeTargetSleep;
-  const afterSunset = last.minutesFromSunset != null && last.minutesFromSunset > 0;
 
-  // v1 treats adequate separation from target sleep as the primary observable.
-  // Sunset adds context but does not turn clock time into morality.
-  return sleepSeparation != null && sleepSeparation >= 120 && !afterSunset;
+  // v1 progression uses separation from target sleep as its narrow observable.
+  // Sunset remains context. It is not a binary dinner cutoff because season and
+  // latitude can move sunset dramatically without making a meal intrinsically bad.
+  return sleepSeparation != null && sleepSeparation >= 120;
 }
 
 function isMismatchMealDay(day: FoodTimingDay) {

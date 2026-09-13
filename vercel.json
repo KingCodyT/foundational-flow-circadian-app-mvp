@@ -1,10 +1,4 @@
 {
   "framework": "nextjs",
-  "buildCommand": "rm -rf .next && next build",
-  "crons": [
-    {
-      "path": "/api/cron/push-dispatch",
-      "schedule": "* * * * *"
-    }
-  ]
+  "buildCommand": "rm -rf .next && next build"
 }

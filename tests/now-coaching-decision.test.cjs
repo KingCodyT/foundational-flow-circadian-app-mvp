@@ -63,9 +63,10 @@ test('NOW surfaces guidance when current opportunity matches active target', () 
   assert.equal(decision.candidate.biologicallyRelevantNow, true);
   assert.equal(decision.candidate.finalLevel, 3);
   assert.equal(decision.shouldSurfacePersonalizedGuidance, true);
+  assert.equal(decision.shouldSurfacePassiveContext, false);
 });
 
-test('NOW stays quiet when a current circadian event does not match the coaching target', () => {
+test('unrelated current circadian event becomes passive context without becoming coaching', () => {
   const decision = assembleNowCoachingDecision({
     day1: makeDay1(),
     activeEvent: makeEvent({ id: 'digital_sunset', name: 'Digital Sunset' }),
@@ -75,9 +76,10 @@ test('NOW stays quiet when a current circadian event does not match the coaching
   assert.equal(decision.activeEventSupportsTarget, false);
   assert.equal(decision.candidate.biologicallyRelevantNow, false);
   assert.equal(decision.shouldSurfacePersonalizedGuidance, false);
+  assert.equal(decision.shouldSurfacePassiveContext, true);
 });
 
-test('NOW stays quiet when there is no current biological opportunity', () => {
+test('NOW remains silent when there is no current biological opportunity', () => {
   const decision = assembleNowCoachingDecision({
     day1: makeDay1(),
     activeEvent: null,
@@ -86,6 +88,7 @@ test('NOW stays quiet when there is no current biological opportunity', () => {
 
   assert.equal(decision.activeEventSupportsTarget, false);
   assert.equal(decision.shouldSurfacePersonalizedGuidance, false);
+  assert.equal(decision.shouldSurfacePassiveContext, false);
 });
 
 test('DEVELOPING target can surface in-app guidance without becoming interruption eligible', () => {
@@ -98,4 +101,5 @@ test('DEVELOPING target can surface in-app guidance without becoming interruptio
   assert.equal(decision.candidate.finalLevel, 2);
   assert.equal(decision.candidate.interruptionEligible, false);
   assert.equal(decision.shouldSurfacePersonalizedGuidance, true);
+  assert.equal(decision.shouldSurfacePassiveContext, false);
 });

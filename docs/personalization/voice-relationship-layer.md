@@ -20,6 +20,8 @@ The voice layer should sound like a thoughtful guide who understands the user’
 
 The Voice Layer is a presentation and relationship layer downstream of coaching decisions.
 
+“The Voice & Relationship Layer is a product-language and communication layer. It is not a biological, personalization, inference, or decision-making engine.”
+
 The governing architecture is:
 
 Biology → Interpretation → Coaching Decision → Voice → Human

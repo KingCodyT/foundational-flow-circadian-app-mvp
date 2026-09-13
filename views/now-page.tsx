@@ -148,33 +148,37 @@ export default function NowPage() {
   return (
     <FlowShell>
       <section className="mx-auto max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-muted)]">NOW</p>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl tracking-[-0.03em] sm:text-5xl">Your biology, right now.</h1>
-        <p className="mt-4 text-lg text-[var(--color-muted)]">{formatTime(now, profileTimeZone)}</p>
+        <div className="flex items-end justify-between gap-6">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-muted)]">NOW</p>
+            <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl tracking-[-0.03em] sm:text-5xl">Your biology, right now.</h1>
+          </div>
+          <p className="shrink-0 pb-1 text-sm tabular-nums text-[var(--color-muted)]">{formatTime(now, profileTimeZone)}</p>
+        </div>
 
-        <div className="mt-10 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">
+        <div className={`mt-9 rounded-3xl border p-6 sm:p-8 ${isCoaching ? "border-[var(--color-gold)] bg-white" : isPassiveContext ? "border-[var(--color-line)] bg-white/55" : "border-[var(--color-line)] bg-transparent"}`}>
           {surfacedEvent ? (
             <>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">
+              <p className={`text-xs font-semibold uppercase tracking-[0.22em] ${isCoaching ? "text-[var(--color-charcoal)]" : "text-[var(--color-muted)]"}`}>
                 {isPassiveContext ? "Biological Context" : "Current Guidance"}
               </p>
-              <h2 className={isPassiveContext ? "mt-3 text-2xl font-semibold" : "mt-3 text-3xl font-semibold"}>
+              <h2 className={isPassiveContext ? "mt-3 text-2xl font-semibold tracking-[-0.02em]" : "mt-3 text-3xl font-semibold tracking-[-0.025em] sm:text-4xl"}>
                 {voice.headline}
               </h2>
-              {voice.guidance ? <p className="mt-4 leading-7 text-[var(--color-muted)]">{voice.guidance}</p> : null}
+              {voice.guidance ? <p className={`mt-4 max-w-2xl leading-7 ${isCoaching ? "text-[var(--color-charcoal)]" : "text-[var(--color-muted)]"}`}>{voice.guidance}</p> : null}
               {isCoaching && voice.why ? (
-                <details className="mt-6">
-                  <summary className="cursor-pointer text-sm font-semibold">Why this?</summary>
-                  <p className="mt-3 leading-7 text-[var(--color-muted)]">{voice.why}</p>
+                <details className="mt-6 border-t border-[var(--color-line)] pt-5">
+                  <summary className="cursor-pointer text-sm font-semibold text-[var(--color-muted)]">Why this?</summary>
+                  <p className="mt-3 max-w-2xl leading-7 text-[var(--color-muted)]">{voice.why}</p>
                 </details>
               ) : null}
               {isCoaching && voice.perspective ? (
-                <p className="mt-6 border-t border-[var(--color-line)] pt-5 text-sm leading-6 text-[var(--color-muted)]">{voice.perspective}</p>
+                <p className="mt-5 text-sm leading-6 text-[var(--color-muted)]">{voice.perspective}</p>
               ) : null}
               {isCoaching && surfacedEvent.status === "current" && voice.evidenceAction ? (
                 <button
                   onClick={() => completeCurrentEvent(surfacedEvent.id)}
-                  className="mt-6 rounded-full border border-[var(--color-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--color-charcoal)]"
+                  className="mt-7 rounded-full bg-[var(--color-charcoal)] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
                 >
                   {voice.evidenceAction}
                 </button>
@@ -182,33 +186,35 @@ export default function NowPage() {
             </>
           ) : (
             <>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">Current Guidance</p>
-              <h2 className="mt-3 text-2xl font-semibold">You don’t need to do anything right now.</h2>
-              <p className="mt-3 leading-7 text-[var(--color-muted)]">Foundational Flow sees what is happening in your biological day, but it will only surface coaching when the timing and your current focus line up.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">Right Now</p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em]">Nothing needs your attention.</h2>
+              <p className="mt-3 max-w-2xl leading-7 text-[var(--color-muted)]">Your current signals don’t call for coaching. Foundational Flow will speak up when something becomes biologically relevant and useful.</p>
             </>
           )}
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-[var(--color-line)] bg-white/60 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">What’s Next</p>
-            <p className="mt-2 text-xl font-semibold">{next ? next.name : "Nothing else scheduled"}</p>
-            <p className="mt-1 text-sm text-[var(--color-muted)]">{next ? formatTime(next.start, profileTimeZone) : "You’re good for now."}</p>
-          </div>
+        <div className="mt-8 border-t border-[var(--color-line)] pt-6">
+          <div className="grid gap-7 sm:grid-cols-2 sm:gap-10">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">What’s Next</p>
+              <p className="mt-2 text-lg font-semibold">{next ? next.name : "The rest of the day is clear"}</p>
+              <p className="mt-1 text-sm text-[var(--color-muted)]">{next ? formatTime(next.start, profileTimeZone) : "Nothing else needs your attention."}</p>
+            </div>
 
-          <div className="rounded-2xl border border-[var(--color-line)] bg-white/60 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">Environment</p>
-            {locationAvailable && solar ? (
-              <>
-                <p className="mt-2">Sunrise: {formatTime(solar.sunrise, profileTimeZone)}</p>
-                <p className="mt-1">Sunset: {formatTime(solar.sunset, profileTimeZone)}</p>
-                {solar.dayLengthMinutes === 1440 || solar.dayLengthMinutes === 0 ? (
-                  <p className="mt-2 text-sm text-[var(--color-muted)]">{solar.dayLengthMinutes === 1440 ? "Continuous daylight today; there is no sunrise or sunset." : "The sun stays below the horizon today."}</p>
-                ) : null}
-              </>
-            ) : (
-              <p className="mt-2 text-[var(--color-muted)]">Location is not available yet.</p>
-            )}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--color-muted)]">Environment</p>
+              {locationAvailable && solar ? (
+                <>
+                  <p className="mt-2 text-sm"><span className="text-[var(--color-muted)]">Sunrise</span> <span className="ml-2 font-semibold">{formatTime(solar.sunrise, profileTimeZone)}</span></p>
+                  <p className="mt-1 text-sm"><span className="text-[var(--color-muted)]">Sunset</span> <span className="ml-2 font-semibold">{formatTime(solar.sunset, profileTimeZone)}</span></p>
+                  {solar.dayLengthMinutes === 1440 || solar.dayLengthMinutes === 0 ? (
+                    <p className="mt-2 text-sm text-[var(--color-muted)]">{solar.dayLengthMinutes === 1440 ? "Continuous daylight today; there is no sunrise or sunset." : "The sun stays below the horizon today."}</p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-[var(--color-muted)]">Location is not available yet.</p>
+              )}
+            </div>
           </div>
         </div>
       </section>

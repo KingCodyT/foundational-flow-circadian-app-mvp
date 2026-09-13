@@ -10,6 +10,7 @@ function decision({
   passive = false,
   state = CoachingState.NEEDS_ATTENTION,
   adaptedAction = null,
+  decisionReason = 'needs_attention_relevant_now',
   reconsideration = null,
   eventId = 'morning_light',
   eventName = 'Morning Light',
@@ -28,6 +29,7 @@ function decision({
       coachingState: state,
       adaptedAction,
       reconsideration,
+      decision: { reason: decisionReason },
     },
   };
 }
@@ -73,8 +75,17 @@ test('developing uses quieter continuity language', () => {
   assert.equal(output.guidance, 'Get outside for morning light.');
 });
 
-test('constraint adaptation preserves approved fallback and avoids noncompliance framing', () => {
-  const output = buildVoiceRelationshipOutput(decision({ adaptedAction: 'Use the brightest available window.' }));
+test('ordinary preferred action does not trigger constraint fallback language', () => {
+  const output = buildVoiceRelationshipOutput(decision({ adaptedAction: 'Get outside for morning light.' }));
+  assert.equal(output.guidance, 'Get outside for morning light.');
+  assert.doesNotMatch(output.guidance, /biological objective stays the same/);
+});
+
+test('actual constraint adaptation preserves approved fallback and explains the workable move', () => {
+  const output = buildVoiceRelationshipOutput(decision({
+    adaptedAction: 'Use the brightest available window.',
+    decisionReason: 'adapted_feasible_action_due_to_constraint',
+  }));
   assert.match(output.guidance, /^Use the brightest available window\./);
   assert.match(output.guidance, /biological objective stays the same/);
 });

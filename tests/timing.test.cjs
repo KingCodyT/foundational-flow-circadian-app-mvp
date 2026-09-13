@@ -131,6 +131,7 @@ const { selectPrimaryCoachingTarget } = load('lib/personalization/primary-target
 const { SignalClassification, HierarchyLayer, CoachingState } = load('lib/personalization/types.ts');
 const { decideIntervention } = load('lib/personalization/intervention.ts');
 const { ActionFeasibility, evaluateActionFeasibility } = load('lib/personalization/feasibility.ts');
+const { assignInitialConfidence } = load('lib/personalization/initial-confidence.ts');
 
 function makeBehaviorSignal(id, state, hierarchy, evidenceScores) {
   return {
@@ -327,6 +328,175 @@ test('constraint adaptation does not change targetSignalId or coaching state whe
   assert.equal(decision.targetSignalId, primary.signalId);
   assert.equal(primary.coachingState, CoachingState.NEEDS_ATTENTION);
   assert.equal(primary.severity, EvidenceSeverity.MODERATE);
+});
+
+test('single direct behavioral observation remains high confidence', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        evidence: [{ source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' }],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.equal(next.perSignal.morning_light_timing.confidence.score, 0.9);
+});
+
+test('lack of corroboration does not reduce a clear direct behavioral signal', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        evidence: [{ source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' }],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.ok(next.perSignal.morning_light_timing.confidence.score >= 0.8);
+  assert.notEqual(next.perSignal.morning_light_timing.confidence.score, 0.15);
+});
+
+test('duplicate evidence from the same identity does not increase confidence', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        evidence: [
+          { source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' },
+          { source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 75, optionLabel: 'Within 15 min' },
+        ],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.equal(next.perSignal.morning_light_timing.confidence.score, 0.9);
+});
+
+test('two distinguishable supporting observations may reinforce confidence without score-band logic', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        evidence: [
+          { source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' },
+          { source: ['USER_FEEDBACK'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 75, optionLabel: 'Within 15 min' },
+        ],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.equal(next.perSignal.morning_light_timing.confidence.score, 0.9);
+});
+
+test('different raw answerScore values alone do not automatically create confidence conflict', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        evidence: [
+          { source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' },
+          { source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 45, optionLabel: 'Within 15 min' },
+        ],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.equal(next.perSignal.morning_light_timing.confidence.score, 0.9);
+});
+
+test('semantic contradiction lowers confidence when the model can express it conservatively', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        evidence: [
+          { source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' },
+          { source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'rarely', answerScore: 10, optionLabel: 'Rarely' },
+        ],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.equal(next.perSignal.morning_light_timing.confidence.score, 0.4);
+});
+
+test('missing evidence remains low confidence uncertainty', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        evidence: [{ source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing' }],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.equal(next.perSignal.morning_light_timing.confidence.score, 0.15);
+});
+
+test('legacy-mapped behavior remains conservative', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      meal_timing_regularity: {
+        id: 'meal_timing_regularity',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.DEVELOPING,
+        evidence: [{ source: ['QUESTIONNAIRE'], questionId: 'day_meal_regular', answer: 'good', answerScore: 75, optionLabel: 'Often', legacyMapping: true }],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.equal(next.perSignal.meal_timing_regularity.confidence.score, 0.6);
+});
+
+test('confidence does not depend on severity bands or score-band agreement', () => {
+  const state = {
+    generatedAt: new Date().toISOString(),
+    perSignal: {
+      morning_light_timing: {
+        id: 'morning_light_timing',
+        classification: SignalClassification.BEHAVIOR,
+        coachingState: CoachingState.NEEDS_ATTENTION,
+        evidence: [
+          { source: ['QUESTIONNAIRE'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 100, optionLabel: 'Within 15 min' },
+          { source: ['USER_FEEDBACK'], questionId: 'morning_light_timing', answer: 'within_15', answerScore: 75, optionLabel: 'Within 15 min' },
+        ],
+      },
+    },
+  };
+
+  const next = assignInitialConfidence(state);
+  assert.equal(next.perSignal.morning_light_timing.confidence.score, 0.9);
 });
 
 test('feasibility model distinguishes feasible and infeasible actions without altering severity', () => {

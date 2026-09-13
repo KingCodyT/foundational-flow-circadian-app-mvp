@@ -1,6 +1,6 @@
 import { InitialPersonalizationState, InitialSignalState } from "./initial-state";
 import { SIGNAL_REGISTRY } from "./signal-registry";
-import { SignalClassification } from "./types";
+import { SignalClassification, SignalSourceType } from "./types";
 
 // Confidence score helpers
 const HIGH = 0.9;
@@ -8,10 +8,56 @@ const MODERATE = 0.6;
 const REDUCED = 0.4;
 const LOW = 0.15;
 
-function mapScoreToBand(score: number) {
-  if (score >= 85) return "ESTABLISHED";
-  if (score >= 65) return "DEVELOPING";
-  return "NEEDS_ATTENTION";
+type EvidenceInfo = {
+  key: string;
+  directBehavior: boolean;
+  legacy: boolean;
+  answer: string | null;
+  questionId: string | null;
+  source: SignalSourceType[];
+};
+
+function evidenceIdentity(ev: { questionId?: string | null; answer?: string | null; source?: SignalSourceType[]; optionLabel?: string | null; legacyMapping?: boolean }) {
+  return JSON.stringify({
+    questionId: ev.questionId ?? null,
+    answer: ev.answer ?? null,
+    optionLabel: ev.optionLabel ?? null,
+    source: [...(ev.source ?? [])].sort(),
+    legacy: Boolean(ev.legacyMapping),
+  });
+}
+
+function normalizedEvidenceInfo(signalClass: SignalClassification, ev: any): EvidenceInfo | null {
+  if (!ev) return null;
+  const source = Array.isArray(ev.source) ? ev.source : [];
+  const isDirectBehavior = signalClass === SignalClassification.BEHAVIOR && Boolean(ev.questionId) && ev.answer != null && ev.answer !== "";
+  return {
+    key: evidenceIdentity(ev),
+    directBehavior: isDirectBehavior,
+    legacy: Boolean(ev.legacyMapping),
+    answer: ev.answer ?? null,
+    questionId: ev.questionId ?? null,
+    source,
+  };
+}
+
+function semanticConflictExists(items: EvidenceInfo[]) {
+  const direct = items.filter((item) => item.directBehavior);
+  if (direct.length < 2) return false;
+
+  const grouped: Record<string, EvidenceInfo[]> = {};
+  for (const item of direct) {
+    const key = item.questionId ?? item.key;
+    grouped[key] = grouped[key] ?? [];
+    grouped[key].push(item);
+  }
+
+  for (const group of Object.values(grouped)) {
+    const answers = new Set(group.filter((item) => item.answer).map((item) => item.answer));
+    if (answers.size > 1) return true;
+  }
+
+  return false;
 }
 
 export function assignInitialConfidence(state: InitialPersonalizationState): InitialPersonalizationState {
@@ -19,43 +65,39 @@ export function assignInitialConfidence(state: InitialPersonalizationState): Ini
   const perSignal = { ...(state.perSignal ?? {}) };
 
   for (const [id, s] of Object.entries(perSignal)) {
-    // Only assign confidence for behavioral signals
     const def = SIGNAL_REGISTRY[id];
     if (!def) continue;
     if (def.classification !== SignalClassification.BEHAVIOR) continue;
 
     const evidence = s.evidence ?? [];
-    const answered = evidence.filter((e) => e.answerScore != null);
+    const validEvidence = evidence.filter((ev) => ev && typeof ev === "object");
+    const uniqueEvidence = Array.from(new Map(validEvidence.map((ev) => [evidenceIdentity(ev), ev])).values());
+    const directEvidence = uniqueEvidence
+      .map((ev) => normalizedEvidenceInfo(def.classification, ev))
+      .filter((ev): ev is EvidenceInfo => ev !== null && ev.directBehavior);
 
-    let confidenceScore = LOW;
     const sources: string[] = [];
+    let confidenceScore = LOW;
 
-    if (answered.length === 0) {
-      confidenceScore = LOW; // missing evidence
-      if (evidence.length > 0) evidence.forEach((ev) => ev.questionId && sources.push(`${ev.questionId}`));
-    } else if (answered.length === 1) {
-      const ev = answered[0];
-      if (ev.legacyMapping) {
-        confidenceScore = MODERATE;
-      } else {
-        confidenceScore = HIGH;
-      }
-      ev.questionId && sources.push(ev.questionId);
+    if (directEvidence.length === 0) {
+      confidenceScore = LOW;
+      validEvidence.forEach((ev) => {
+        if (ev.questionId) sources.push(ev.questionId);
+      });
+    } else if (directEvidence.length === 1) {
+      confidenceScore = directEvidence[0].legacy ? MODERATE : HIGH;
+      if (directEvidence[0].questionId) sources.push(directEvidence[0].questionId);
     } else {
-      // multiple answers
-      const bands = answered.map((a) => mapScoreToBand(a.answerScore!));
-      const allSame = bands.every((b) => b === bands[0]);
-      const anyLegacy = answered.some((a) => a.legacyMapping);
-
-      if (allSame && !anyLegacy) {
-        confidenceScore = HIGH; // multiple clean agreeing inputs
-      } else if (allSame && anyLegacy) {
-        confidenceScore = MODERATE; // agree but some legacy/provisional
+      const hasConflict = semanticConflictExists(directEvidence);
+      if (hasConflict) {
+        confidenceScore = REDUCED;
       } else {
-        confidenceScore = REDUCED; // conflicting evidence
+        const anyLegacy = directEvidence.some((item) => item.legacy);
+        confidenceScore = anyLegacy ? MODERATE : HIGH;
       }
-
-      answered.forEach((ev) => ev.questionId && sources.push(ev.questionId));
+      directEvidence.forEach((item) => {
+        if (item.questionId) sources.push(item.questionId);
+      });
     }
 
     const updated: InitialSignalState = {
@@ -63,7 +105,7 @@ export function assignInitialConfidence(state: InitialPersonalizationState): Ini
       confidence: {
         score: confidenceScore,
         lastEvidenceAt: now,
-        sources: sources.length > 0 ? sources : undefined,
+        sources: sources.length > 0 ? Array.from(new Set(sources)) : undefined,
       },
     };
 

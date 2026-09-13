@@ -129,6 +129,8 @@ export default function NowPage() {
   });
   const voice = buildVoiceRelationshipOutput(coachingDecision);
   const surfacedEvent = voice.silent ? null : coachingDecision.activeEvent;
+  const isPassiveContext = voice.mode === "PASSIVE_CONTEXT";
+  const isCoaching = voice.mode === "COACHING";
 
   const completeCurrentEvent = (eventId: string) => {
     const at = new Date();
@@ -153,19 +155,23 @@ export default function NowPage() {
         <div className="mt-10 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">
           {surfacedEvent ? (
             <>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">Current Guidance</p>
-              <h2 className="mt-3 text-3xl font-semibold">{voice.headline}</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">
+                {isPassiveContext ? "Biological Context" : "Current Guidance"}
+              </p>
+              <h2 className={isPassiveContext ? "mt-3 text-2xl font-semibold" : "mt-3 text-3xl font-semibold"}>
+                {voice.headline}
+              </h2>
               {voice.guidance ? <p className="mt-4 leading-7 text-[var(--color-muted)]">{voice.guidance}</p> : null}
-              {voice.why ? (
+              {isCoaching && voice.why ? (
                 <details className="mt-6">
                   <summary className="cursor-pointer text-sm font-semibold">Why this?</summary>
                   <p className="mt-3 leading-7 text-[var(--color-muted)]">{voice.why}</p>
                 </details>
               ) : null}
-              {voice.perspective ? (
+              {isCoaching && voice.perspective ? (
                 <p className="mt-6 border-t border-[var(--color-line)] pt-5 text-sm leading-6 text-[var(--color-muted)]">{voice.perspective}</p>
               ) : null}
-              {surfacedEvent.status === "current" && voice.evidenceAction ? (
+              {isCoaching && surfacedEvent.status === "current" && voice.evidenceAction ? (
                 <button
                   onClick={() => completeCurrentEvent(surfacedEvent.id)}
                   className="mt-6 rounded-full border border-[var(--color-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--color-charcoal)]"

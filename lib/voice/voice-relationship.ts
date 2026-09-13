@@ -83,6 +83,8 @@ export function buildVoiceRelationshipOutput(
   const coachingState = candidate.coachingState ?? null;
   const reconsidering = candidate.reconsideration?.shouldReconsider === true;
   const adaptedAction = candidate.adaptedAction ?? null;
+  const isConstraintAdaptation =
+    candidate.decision.reason === "adapted_feasible_action_due_to_constraint";
 
   let headline = event.name;
   let guidance = adaptedAction ?? event.guidance;
@@ -94,8 +96,8 @@ export function buildVoiceRelationshipOutput(
     headline = event.name;
   }
 
-  if (adaptedAction) {
-    // Constraint is not noncompliance. The approved fallback is authoritative.
+  if (isConstraintAdaptation && adaptedAction) {
+    // Constraint language is reserved for an actual upstream constraint adaptation.
     guidance = `${adaptedAction} The biological objective stays the same; this is the workable move right now.`;
   }
 

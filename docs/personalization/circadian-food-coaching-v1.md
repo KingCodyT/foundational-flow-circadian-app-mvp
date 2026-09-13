@@ -19,10 +19,11 @@ The thresholds are internal interpretation guards, not universal client-facing p
 ## Patterns
 
 - `LATE_LAST_MEAL_PATTERN`: repeated direct meal evidence places the last meal within two hours of target sleep.
-- `LATE_EATING_DAY_PATTERN`: repeated last meals occur after sunset and within two hours of target sleep.
-- `LATE_FIRST_MEAL_PATTERN`: repeated first meals occur more than six hours after wake. This may contribute to meal-timing regularity interpretation; it does not prescribe breakfast or condemn fasting.
+- `LATE_EATING_DAY_PATTERN`: repeated last meals occur after sunset and within two hours of target sleep. Sunset describes context; sunset alone does not create a mismatch.
 - `ALIGNED_OR_VARIABLE`: enough observations exist, but no repeated v1 mismatch is present.
 - `INSUFFICIENT_EVIDENCE`: remain quiet and keep learning.
+
+First-meal timing remains observational in Food Engine v1. A delayed first meal does not create a coaching mismatch, is not treated as irregularity, and does not generate a breakfast recommendation.
 
 ## Non-goals
 
@@ -36,6 +37,7 @@ v1 does not:
 - score meals;
 - infer calories, macros, composition, or food quality;
 - treat `NOT_YET` or `EATING_LATER` as evidence that a meal occurred;
+- treat sunset as a universal dinner cutoff;
 - shame a late meal or recommend skipping food because an ideal window passed.
 
 ## Product rule

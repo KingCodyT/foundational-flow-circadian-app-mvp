@@ -15,6 +15,8 @@ export type InterventionDecisionInput = {
   adaptedAction?: string | null;
   // optional explicit event window (ISO strings) indicating biologically relevant timing
   eventWindow?: { start?: string | null; end?: string | null } | null;
+  // optional authoritative decision time; callers should pass one shared moment through the pipeline
+  now?: Date | null;
   // optional explicit flag indicating a material contextual disruption (caller must detect)
   materialDisruption?: boolean;
   // optional recent intervention metadata if available to support novelty checks
@@ -44,7 +46,7 @@ export type InterventionDecision = {
 
 // Pure, deterministic intervention decision function per Phase 3A rules.
 export function decideIntervention(input: InterventionDecisionInput): InterventionDecision {
-  const now = new Date();
+  const now = input.now ?? new Date();
   const primary = input.primary;
 
   // Helper: determine if now is within provided eventWindow
@@ -116,7 +118,6 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
 
   // We have a primary target
   const coachingState = primary.coachingState;
-  const confidence = primary && (primary as any).confidence ? (primary as any).confidence : null; // optional
 
   // Determine biological relevance conservatively: only mark true when an eventWindow is provided and now is inside it.
   const biologicallyRelevantNow = inEventWindow;
@@ -133,7 +134,7 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
         level: 2,
         targetSignalId: primary.signalId,
         reason: "adapted_feasible_action_due_to_constraint",
-        biologicallyRelevantNow: biologicallyRelevantNow,
+        biologicallyRelevantNow,
         actionableNow: true,
         interruptionEligible: false,
         preferredAction,
@@ -152,7 +153,7 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
       level: 0,
       targetSignalId: primary.signalId,
       reason: "no_actionable_path_for_target",
-      biologicallyRelevantNow: biologicallyRelevantNow,
+      biologicallyRelevantNow,
       actionableNow: false,
       interruptionEligible: false,
       preferredAction,
@@ -178,8 +179,8 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
       level: hasSolar ? 1 : 0,
       targetSignalId: primary.signalId,
       reason: "established_signal_no_intervention",
-      biologicallyRelevantNow: biologicallyRelevantNow,
-      actionableNow: actionableNow,
+      biologicallyRelevantNow,
+      actionableNow,
       interruptionEligible: false,
       supportingContext: {
         derivedEnvironment: input.derivedEnvironment ?? null,
@@ -200,7 +201,7 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
         level: 2,
         targetSignalId: primary.signalId,
         reason: "adapted_feasible_action_due_to_constraint",
-        biologicallyRelevantNow: biologicallyRelevantNow,
+        biologicallyRelevantNow,
         actionableNow: true,
         interruptionEligible: false,
         preferredAction,
@@ -219,7 +220,7 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
       level: 0,
       targetSignalId: primary.signalId,
       reason: "no_actionable_path_for_target",
-      biologicallyRelevantNow: biologicallyRelevantNow,
+      biologicallyRelevantNow,
       actionableNow: false,
       interruptionEligible: false,
       preferredAction,
@@ -238,8 +239,6 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
   // If biologically relevant now and actionable, consider Level 3 for NEEDS_ATTENTION, Level 2 for DEVELOPING
   if (biologicallyRelevantNow) {
     if (coachingState === CoachingState.NEEDS_ATTENTION) {
-      // When biologically relevant and actionable, Phase 3A MAY propose Level 3 even if novelty/recency is unknown.
-      // Product decision: proposal intensity reflects biology; Phase 3B may later downgrade/suppress.
       return {
         level: 3,
         targetSignalId: primary.signalId,
@@ -306,8 +305,8 @@ export function decideIntervention(input: InterventionDecisionInput): Interventi
     level: 1,
     targetSignalId: primary.signalId,
     reason: "fallback_quiet_context",
-    biologicallyRelevantNow: biologicallyRelevantNow,
-    actionableNow: actionableNow,
+    biologicallyRelevantNow,
+    actionableNow,
     interruptionEligible: false,
     preferredAction,
     fallbackAction,

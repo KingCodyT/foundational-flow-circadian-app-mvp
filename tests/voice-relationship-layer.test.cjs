@@ -7,15 +7,19 @@ const { CoachingState } = load('lib/personalization/types.ts');
 
 function decision({
   surface = true,
+  passive = false,
   state = CoachingState.NEEDS_ATTENTION,
   adaptedAction = null,
   reconsideration = null,
+  eventId = 'morning_light',
+  eventName = 'Morning Light',
 } = {}) {
   return {
     shouldSurfacePersonalizedGuidance: surface,
+    shouldSurfacePassiveContext: passive,
     activeEvent: {
-      id: 'morning_light',
-      name: 'Morning Light',
+      id: eventId,
+      name: eventName,
       guidance: 'Get outside for morning light.',
       why: 'Morning light helps anchor circadian timing.',
       status: 'current',
@@ -30,14 +34,33 @@ function decision({
 
 test('voice preserves upstream silence', () => {
   const output = buildVoiceRelationshipOutput(decision({ surface: false }));
+  assert.equal(output.mode, 'SILENT');
   assert.equal(output.silent, true);
   assert.equal(output.headline, null);
   assert.equal(output.guidance, null);
   assert.equal(output.evidenceAction, null);
 });
 
+test('passive context is observational and cannot expose coaching controls', () => {
+  const output = buildVoiceRelationshipOutput(decision({
+    surface: false,
+    passive: true,
+    eventId: 'sunset',
+    eventName: 'Sunset',
+  }));
+  assert.equal(output.mode, 'PASSIVE_CONTEXT');
+  assert.equal(output.silent, false);
+  assert.equal(output.headline, 'Sunset');
+  assert.match(output.guidance, /lower-light phase/);
+  assert.equal(output.why, null);
+  assert.equal(output.evidenceAction, null);
+  assert.equal(output.perspective, null);
+  assert.doesNotMatch(output.guidance, /\b(do|should|must|need to)\b/i);
+});
+
 test('needs attention communicates the authoritative action without changing it', () => {
   const output = buildVoiceRelationshipOutput(decision());
+  assert.equal(output.mode, 'COACHING');
   assert.equal(output.silent, false);
   assert.equal(output.headline, 'Morning Light');
   assert.equal(output.guidance, 'Get outside for morning light.');

@@ -5,6 +5,7 @@ import {
   DailyEventState,
 } from "@/types/circadian";
 import { NotificationPersistenceState } from "@/lib/personalization/notification-persistence";
+import { FoodTimingEvidence } from "@/lib/personalization/circadian-food-timing";
 
 export const STORAGE_KEY = "foundational-flow-circadian-app-state";
 
@@ -26,6 +27,7 @@ export type LocalAuditState = {
   participationLevel?: ParticipationLevel | null;
   dailyProfile?: DailyProfile | null;
   eventStateByDate?: Record<string, DailyEventState> | null;
+  foodTimingEvidenceByDate?: Record<string, FoodTimingEvidence[]> | null;
   previousContextSnapshot?: ContextSnapshotState | null;
   currentContextSnapshot?: ContextSnapshotState | null;
   notificationState?: NotificationPersistenceState | null;

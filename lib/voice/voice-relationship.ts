@@ -1,7 +1,10 @@
 import { CoachingState } from "@/lib/personalization/types";
 import { NowCoachingDecision } from "@/lib/personalization/now-coaching";
 
+export type VoiceMode = "SILENT" | "PASSIVE_CONTEXT" | "COACHING";
+
 export type VoiceRelationshipOutput = {
+  mode: VoiceMode;
   silent: boolean;
   headline: string | null;
   guidance: string | null;
@@ -21,15 +24,53 @@ function evidenceActionForEvent(name?: string | null): string | null {
   return "I did this";
 }
 
+function passiveContextForEvent(eventId?: string | null): string | null {
+  switch (eventId) {
+    case "morning_light":
+      return "Morning light is available now, one of the day’s strongest circadian timing signals.";
+    case "first_meal":
+      return "Your first-meal window is part of today’s biological rhythm.";
+    case "midday_light":
+      return "Daytime light is available now, reinforcing the contrast between day and night.";
+    case "movement":
+      return "This part of the day is one of your natural movement windows.";
+    case "last_meal":
+      return "Your biological day is moving toward its final meal window.";
+    case "sunset":
+      return "Sunset is part of the transition into a lower-light phase of the biological day.";
+    case "dim_house":
+      return "The evening light environment is shifting toward darkness.";
+    case "digital_sunset":
+      return "Your biological day is moving deeper into the evening.";
+    case "sleep_window":
+      return "Your planned sleep window is approaching.";
+    default:
+      return "A circadian transition is active right now.";
+  }
+}
+
 export function buildVoiceRelationshipOutput(
   decision: NowCoachingDecision,
 ): VoiceRelationshipOutput {
   const candidate = decision.candidate;
   const event = decision.activeEvent;
 
+  if (decision.shouldSurfacePassiveContext && event) {
+    return {
+      mode: "PASSIVE_CONTEXT",
+      silent: false,
+      headline: event.name,
+      guidance: passiveContextForEvent(event.id),
+      why: null,
+      evidenceAction: null,
+      perspective: null,
+    };
+  }
+
   // Voice never overrides upstream silence or invents a coaching moment.
   if (!decision.shouldSurfacePersonalizedGuidance || !event) {
     return {
+      mode: "SILENT",
       silent: true,
       headline: null,
       guidance: null,
@@ -64,6 +105,7 @@ export function buildVoiceRelationshipOutput(
   }
 
   return {
+    mode: "COACHING",
     silent: false,
     headline,
     guidance,

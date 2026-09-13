@@ -4,6 +4,7 @@ import {
   DailyProfile,
   DailyEventState,
 } from "@/types/circadian";
+import { NotificationPersistenceState } from "@/lib/personalization/notification-persistence";
 
 export const STORAGE_KEY = "foundational-flow-circadian-app-state";
 
@@ -27,6 +28,7 @@ export type LocalAuditState = {
   eventStateByDate?: Record<string, DailyEventState> | null;
   previousContextSnapshot?: ContextSnapshotState | null;
   currentContextSnapshot?: ContextSnapshotState | null;
+  notificationState?: NotificationPersistenceState | null;
 };
 
 export function createClientId() {

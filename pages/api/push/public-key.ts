@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getVapidPublicKey } from "@/lib/personalization/web-push-server";
+import { qstashConfigured } from "@/lib/personalization/qstash-scheduler";
 import { pushStoreConfigured } from "@/lib/personalization/server-push-store";
+import { getVapidPublicKey } from "@/lib/personalization/web-push-server";
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -9,7 +10,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 
   const publicKey = getVapidPublicKey();
-  if (!publicKey || !pushStoreConfigured()) {
+  if (!publicKey || !pushStoreConfigured() || !qstashConfigured()) {
     return res.status(503).json({ error: "web_push_not_configured" });
   }
 

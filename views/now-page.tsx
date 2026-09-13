@@ -6,6 +6,16 @@ import { useCircadian } from "@/components/circadian-provider";
 import { buildTodaysFlow } from "@/lib/flow-engine";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
+import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
+import { assembleDay1Personalization } from "@/lib/personalization/day1";
+import { applyDailyEvidence } from "@/lib/personalization/daily-evidence";
+import { selectPrimaryCoachingTarget } from "@/lib/personalization/primary-target";
+import {
+  assessReconsideration,
+  buildContextSnapshot,
+  ContextSnapshot,
+} from "@/lib/personalization/reconsideration";
+import { assembleNowCoachingDecision } from "@/lib/personalization/now-coaching";
 
 function formatTime(date?: Date | null, timeZone?: string | null) {
   if (!date) return "—";
@@ -14,8 +24,11 @@ function formatTime(date?: Date | null, timeZone?: string | null) {
 
 export default function NowPage() {
   const {
+    answers,
     dailyProfile,
     participationLevel,
+    eventStateByDate,
+    previousContextSnapshot,
     getEventStateForDate,
     setEventRecord,
     isHydrated,
@@ -35,6 +48,66 @@ export default function NowPage() {
     }),
     [dailyProfile]
   );
+
+  const environment = useMemo(
+    () => buildDerivedEnvironment({ profile: dailyProfile }),
+    [dailyProfile, todayKey]
+  );
+
+  const currentPersonalization = useMemo(() => {
+    const initialDay1 = assembleDay1Personalization({
+      answers,
+      derivedEnvironment: environment,
+    });
+    const withDailyEvidence = applyDailyEvidence(
+      {
+        generatedAt: initialDay1.generatedAt,
+        perSignal: initialDay1.signalStates,
+        derivedEnvironment: initialDay1.derivedEnvironment,
+      },
+      eventStateByDate,
+    );
+    const primaryCoachingTarget = selectPrimaryCoachingTarget(withDailyEvidence);
+
+    return {
+      ...initialDay1,
+      signalStates: withDailyEvidence.perSignal,
+      derivedEnvironment: withDailyEvidence.derivedEnvironment ?? environment,
+      primaryCoachingTarget,
+    };
+  }, [answers, environment, eventStateByDate]);
+
+  const reconsideration = useMemo(() => {
+    const currentContext = buildContextSnapshot({
+      profile: dailyProfile,
+      derivedEnvironment: environment,
+      capturedAt: now.toISOString(),
+    });
+    const priorContext: ContextSnapshot | null = previousContextSnapshot
+      ? {
+          ...previousContextSnapshot,
+          capturedAt: previousContextSnapshot.capturedAt ?? now.toISOString(),
+        }
+      : null;
+    const signalEvidence = Object.fromEntries(
+      Object.entries(currentPersonalization.signalStates).map(([signalId, signal]) => [
+        signalId,
+        (signal.evidence ?? []).map((evidence) => ({
+          questionId: evidence.questionId ?? null,
+          answer: evidence.answer ?? null,
+          source: evidence.source,
+        })),
+      ]),
+    );
+
+    return assessReconsideration({
+      priorContext,
+      currentContext,
+      signalEvidence,
+      signalIds: Object.keys(currentPersonalization.signalStates),
+    });
+  }, [currentPersonalization, dailyProfile, environment, now, previousContextSnapshot]);
+
   if (!isHydrated) {
     return (
       <FlowShell>
@@ -45,6 +118,7 @@ export default function NowPage() {
       </FlowShell>
     );
   }
+
   const eventStateForDate = getEventStateForDate(todayKey);
 
   const {
@@ -59,10 +133,22 @@ export default function NowPage() {
     eventStateForDate,
   });
 
+  const coachingDecision = assembleNowCoachingDecision({
+    day1: currentPersonalization,
+    activeEvent,
+    derivedEnvironment: environment,
+    reconsideration,
+    now,
+  });
+
+  const surfacedEvent = coachingDecision.shouldSurfacePersonalizedGuidance
+    ? coachingDecision.activeEvent
+    : null;
+
   const completeCurrentEvent = (eventId: string) => {
     // Recheck at click time: a timer tick or midnight may be between renders.
     const at = new Date();
-    const dateKey = localDateKey(at);
+    const dateKey = localDateKey(at, profileTimeZone);
     const current = buildTodaysFlow({
       now: at,
       profile: profileInput,
@@ -89,49 +175,51 @@ export default function NowPage() {
         </p>
 
         <div className="mt-10 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">
-          {activeEvent ? (
+          {surfacedEvent ? (
             <>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">
                 Current Guidance
               </p>
 
               <h2 className="mt-3 text-3xl font-semibold">
-                {activeEvent.name}
+                {surfacedEvent.name}
               </h2>
 
               <p className="mt-4 leading-7 text-[var(--color-muted)]">
-                {activeEvent.guidance}
+                {coachingDecision.candidate.adaptedAction ?? surfacedEvent.guidance}
               </p>
 
-              {activeEvent.why ? (
+              {surfacedEvent.why ? (
                 <details className="mt-6">
                   <summary className="cursor-pointer text-sm font-semibold">
                     Why this?
                   </summary>
 
                   <p className="mt-3 leading-7 text-[var(--color-muted)]">
-                    {activeEvent.why}
+                    {surfacedEvent.why}
                   </p>
                 </details>
               ) : null}
-              {activeEvent.status === "current" ? (
-  <button
-    onClick={() => completeCurrentEvent(activeEvent.id)}
-    className="mt-6 rounded-full border border-[var(--color-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--color-charcoal)]"
-  >
-   {activeEvent.name === "Last Meal"
-  ? "I’ve finished eating"
-  : activeEvent.name === "Morning Light"
-    ? "I’m outside"
-    : activeEvent.name === "Sunset / Light Transition"
-      ? "I’ve adjusted my light"
-      : activeEvent.name === "Darkness"
-        ? "My environment is dim"
-        : activeEvent.name === "Sleep Window"
-          ? "I’m winding down"
-          : "I did this"}
-  </button>
-) : null}
+              {surfacedEvent.status === "current" ? (
+                <button
+                  onClick={() => completeCurrentEvent(surfacedEvent.id)}
+                  className="mt-6 rounded-full border border-[var(--color-gold)] px-5 py-2.5 text-sm font-semibold text-[var(--color-charcoal)]"
+                >
+                  {surfacedEvent.name === "Last Meal"
+                    ? "I’ve finished eating"
+                    : surfacedEvent.name === "Morning Light"
+                      ? "I’m outside"
+                      : surfacedEvent.name === "Sunset"
+                        ? "I’ve adjusted my light"
+                        : surfacedEvent.name === "Dim the House"
+                          ? "My environment is dim"
+                          : surfacedEvent.name === "Digital Sunset"
+                            ? "Screens are down"
+                            : surfacedEvent.name === "Sleep Window"
+                              ? "I’m winding down"
+                              : "I did this"}
+                </button>
+              ) : null}
             </>
           ) : (
             <>
@@ -144,7 +232,7 @@ export default function NowPage() {
               </h2>
 
               <p className="mt-3 leading-7 text-[var(--color-muted)]">
-                We’ll let you know when something biologically meaningful is coming up.
+                Foundational Flow sees what is happening in your biological day, but it will only surface coaching when the timing and your current focus line up.
               </p>
             </>
           )}

@@ -18,6 +18,7 @@ import {
   FoodTimingAction,
   FoodTimingEvidence,
 } from "@/lib/personalization/circadian-food-timing";
+import { captureHistoricalBiologicalContext } from "@/lib/personalization/biological-context";
 import {
   DEFAULT_NOTIFICATION_PERSISTENCE_STATE,
   NotificationPersistenceState,
@@ -36,6 +37,16 @@ import {
   DailyEventState,
 } from "@/types/circadian";
 
+type ContextSnapshot = {
+  timeZone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  wakeTime?: string | null;
+  targetBedtime?: string | null;
+  dayLengthMinutes?: number | null;
+  capturedAt?: string | null;
+};
+
 type CircadianState = {
   clientId: string;
   answers: AnswerMap;
@@ -46,24 +57,8 @@ type CircadianState = {
   dailyProfile: DailyProfile | null;
   eventStateByDate: Record<string, DailyEventState> | null;
   foodTimingEvidenceByDate: Record<string, FoodTimingEvidence[]> | null;
-  previousContextSnapshot: {
-    timeZone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    wakeTime?: string | null;
-    targetBedtime?: string | null;
-    dayLengthMinutes?: number | null;
-    capturedAt?: string | null;
-  } | null;
-  currentContextSnapshot: {
-    timeZone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    wakeTime?: string | null;
-    targetBedtime?: string | null;
-    dayLengthMinutes?: number | null;
-    capturedAt?: string | null;
-  } | null;
+  previousContextSnapshot: ContextSnapshot | null;
+  currentContextSnapshot: ContextSnapshot | null;
   notificationState: NotificationPersistenceState;
   getEventStateForDate: (dateStr: string) => DailyEventState;
   getFoodTimingEvidenceForDate: (dateStr: string) => FoodTimingEvidence[];
@@ -110,24 +105,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     string,
     FoodTimingEvidence[]
   > | null>(null);
-  const [previousContextSnapshot, setPreviousContextSnapshot] = useState<{
-    timeZone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    wakeTime?: string | null;
-    targetBedtime?: string | null;
-    dayLengthMinutes?: number | null;
-    capturedAt?: string | null;
-  } | null>(null);
-  const [currentContextSnapshot, setCurrentContextSnapshot] = useState<{
-    timeZone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    wakeTime?: string | null;
-    targetBedtime?: string | null;
-    dayLengthMinutes?: number | null;
-    capturedAt?: string | null;
-  } | null>(null);
+  const [previousContextSnapshot, setPreviousContextSnapshot] = useState<ContextSnapshot | null>(null);
+  const [currentContextSnapshot, setCurrentContextSnapshot] = useState<ContextSnapshot | null>(null);
   const [notificationState, setNotificationState] =
     useState<NotificationPersistenceState>(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -265,12 +244,22 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
         ? crypto.randomUUID()
         : `food-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const historicalContext = captureHistoricalBiologicalContext({
+      at: timestamp,
+      profile: {
+        wakeTime: dailyProfile?.wakeTime ?? null,
+        targetBedtime: dailyProfile?.targetBedtime ?? null,
+        timeZone: dailyProfile?.timeZone ?? getRuntimeTimeZone(),
+        latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
+        longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
+      },
+    });
 
     setFoodTimingEvidenceByDate((current) => {
       const next = { ...(current ?? {}) };
       next[dateStr] = [
         ...(next[dateStr] ?? []),
-        { id, action, at: timestamp, source: "USER" },
+        { id, action, at: timestamp, source: "USER", historicalContext },
       ];
       return next;
     });

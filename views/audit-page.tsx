@@ -39,15 +39,26 @@ export default function AuditPage() {
   const [draft, setDraft] = useState<DailyProfile>(emptyProfile);
 
   useEffect(() => { if (isHydrated) setDraft({ ...emptyProfile(), ...dailyProfile, timeZone: dailyProfile?.timeZone ?? getRuntimeTimeZone() }); }, [dailyProfile, isHydrated]);
-  useEffect(() => window.scrollTo({ top: 0, behavior: "auto" }), [index]);
-  const stage = stages[index];
+  useEffect(() => {
+    if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+      window.scrollTo(0, 0);
+    }
+  }, [index]);
+  const safeIndex = Math.min(Math.max(index, 0), stages.length - 1);
+  const stage = stages[safeIndex];
   const valid = useMemo(() => stage === "Basics" ? Boolean(draft.timeZone) : stage === "Schedule" ? Boolean(draft.wakeTime && draft.targetBedtime && draft.lastMealTime) : stage === "Environment" ? Boolean(draft.sleepEnvironment) : stage === "Your Reality" ? Boolean(draft.workStructure && draft.travelFrequency && draft.exercisePattern) : true, [draft, stage]);
 
   function useLocation() {
     if (!navigator.geolocation) return setLocationMessage("Location is unavailable. Your timezone will still be saved.");
     setLocationMessage("Requesting location…");
-    navigator.geolocation.getCurrentPosition(({ coords }) => {
-      setDraft((current) => ({ ...current, locationPermissionGranted: true, latitude: coords.latitude, longitude: coords.longitude }));
+    navigator.geolocation.getCurrentPosition((position) => {
+      const latitude = Number(position.coords.latitude);
+      const longitude = Number(position.coords.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        setLocationMessage("Location could not be read. You can continue and add it later from YOU.");
+        return;
+      }
+      setDraft((current) => ({ ...current, locationPermissionGranted: true, latitude, longitude }));
       setLocationMessage("Location added. Sunrise, sunset, season, and latitude will be calculated automatically.");
     }, () => setLocationMessage("Location was not added. You can continue and add it later from YOU."), { timeout: 10000 });
   }
@@ -62,13 +73,18 @@ export default function AuditPage() {
     completeAudit();
     setIndex(4);
   }
-  function next() { if (!valid) return setValidation(true); setValidation(false); stage === "Your Reality" ? finish() : setIndex((current) => current + 1); }
+  function next() {
+    if (!valid) return setValidation(true);
+    setValidation(false);
+    if (stage === "Your Reality") finish();
+    else setIndex(Math.min(safeIndex + 1, stages.length - 1));
+  }
   if (!isHydrated) return <FlowShell><div className="py-20 text-[var(--color-muted)]">Loading your profile…</div></FlowShell>;
   const [eyebrow, title, description] = copy[stage];
 
   return <FlowShell><section className="mx-auto max-w-5xl py-6 lg:py-10"><div className="grid gap-10 lg:grid-cols-[0.36fr_0.64fr]">
-    <aside className="lg:sticky lg:top-6 lg:self-start"><p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-muted)]">{eyebrow}</p><h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-[1.05] tracking-[-0.035em] sm:text-5xl">{title}</h1><p className="mt-5 text-lg leading-8 text-[var(--color-muted)]">{description}</p><div className="mt-8 rounded-[2rem] border border-[var(--color-line)] bg-white/70 p-6"><ProgressBar current={index + 1} total={stages.length} /><div className="mt-5 space-y-2">{stages.map((name, position) => <div key={name} className={`flex items-center justify-between rounded-2xl px-4 py-3 ${position === index ? "bg-[rgba(179,145,80,0.16)]" : "bg-[var(--color-cream)]/60"}`}><span className="text-sm font-medium">{name}</span><span className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-muted)]">{position < index ? "Done" : position === index ? "Now" : "Next"}</span></div>)}</div></div></aside>
-    <main className="rounded-[2rem] border border-[var(--color-line)] bg-white/75 p-6 shadow-[0_24px_60px_rgba(31,28,24,0.05)] sm:p-9"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">Step {index + 1} of {stages.length}</p>
+    <aside className="lg:sticky lg:top-6 lg:self-start"><p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--color-muted)]">{eyebrow}</p><h1 className="mt-4 font-[family-name:var(--font-display)] text-4xl leading-[1.05] tracking-[-0.035em] sm:text-5xl">{title}</h1><p className="mt-5 text-lg leading-8 text-[var(--color-muted)]">{description}</p><div className="mt-8 rounded-[2rem] border border-[var(--color-line)] bg-white/70 p-6"><ProgressBar current={safeIndex + 1} total={stages.length} /><div className="mt-5 space-y-2">{stages.map((name, position) => <div key={name} className={`flex items-center justify-between rounded-2xl px-4 py-3 ${position === safeIndex ? "bg-[rgba(179,145,80,0.16)]" : "bg-[var(--color-cream)]/60"}`}><span className="text-sm font-medium">{name}</span><span className="text-[10px] uppercase tracking-[0.16em] text-[var(--color-muted)]">{position < safeIndex ? "Done" : position === safeIndex ? "Now" : "Next"}</span></div>)}</div></div></aside>
+    <main className="rounded-[2rem] border border-[var(--color-line)] bg-white/75 p-6 shadow-[0_24px_60px_rgba(31,28,24,0.05)] sm:p-9"><p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">Step {safeIndex + 1} of {stages.length}</p>
       {stage === "Basics" && <Basics draft={draft} useLocation={useLocation} message={locationMessage} />}
       {stage === "Schedule" && <Schedule draft={draft} setDraft={setDraft} />}
       {stage === "Environment" && <ChoiceField title="How dark is your sleep environment?" description="Darkness and sleep are separate biological signals. This describes the environment, not whether you sleep well." value={draft.sleepEnvironment ?? ""} items={asChoices(choices.sleep)} onChange={(value) => setDraft((current) => ({ ...current, sleepEnvironment: value as DailyProfile["sleepEnvironment"] }))} />}

@@ -21,6 +21,12 @@ test('finish persists the profile before completing onboarding', () => {
   assert.match(source, /Guidance begins on NOW/i);
 });
 
+test('step transitions and browser location data are guarded', () => {
+  assert.match(source, /const safeIndex = Math\.min\(Math\.max\(index, 0\), stages\.length - 1\)/);
+  assert.match(source, /Number\.isFinite\(latitude\)/);
+  assert.match(source, /setIndex\(Math\.min\(safeIndex \+ 1, stages\.length - 1\)\)/);
+});
+
 test('profile carries the onboarding fields used by the finish screen', () => {
   for (const field of ['lastMealTime', 'workStructure', 'travelFrequency', 'exercisePattern', 'sleepEnvironment']) {
     assert.match(types, new RegExp(field));

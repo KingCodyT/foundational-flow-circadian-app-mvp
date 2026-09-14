@@ -3,8 +3,7 @@ export type QuestionCategory =
   | "Daytime Environment"
   | "Evening Light"
   | "Sleep Timing"
-  | "Disruption Load"
-  | "Location / Season";
+  | "Life Constraints";
 
 export type InputType = "segmented";
 

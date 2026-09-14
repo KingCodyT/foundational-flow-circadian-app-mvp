@@ -1,5 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const load = require('./load-typescript.cjs');
 
 const { categoryDefinitions, questionnaire } = load('lib/questionnaire.ts');
@@ -27,4 +29,10 @@ test('assessment keeps meal timing questions biologically distinct', () => {
   assert.doesNotMatch(regularity.prompt, /activity/i);
   assert.match(lastMeal.prompt, /last meal relative to bedtime/i);
   assert.doesNotMatch(lastMeal.prompt, /alcohol|stimulants/i);
+});
+
+test('root route opens the assessment front door', () => {
+  const source = fs.readFileSync(path.resolve(__dirname, '../pages/index.tsx'), 'utf8');
+  assert.match(source, /views\/audit-page/);
+  assert.doesNotMatch(source, /views\/you-page/);
 });

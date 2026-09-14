@@ -41,6 +41,11 @@ export type DailyProfile = {
   locationPermissionGranted: boolean;
   latitude?: number | null;
   longitude?: number | null;
+  lastMealTime?: string | null;
+  workStructure?: "daytime" | "flexible" | "shift" | "overnight" | null;
+  travelFrequency?: "rarely" | "monthly" | "weekly" | "frequent" | null;
+  exercisePattern?: "morning" | "midday" | "evening" | "variable" | "none" | null;
+  sleepEnvironment?: "very_dark" | "mostly_dark" | "some_light" | "bright" | null;
 };
 
 export type EventStatus =

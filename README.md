@@ -7,7 +7,7 @@ Foundational Flow is a local-first Next.js app organized around NOW, RHYTHM, and
 - `/now`: current guidance, the next upcoming event, and available sunrise/sunset context. Confirming an action saves dated behavioral evidence.
 - `/rhythm`: today's timeline using the engine's current, upcoming, completed, skipped, and missed statuses.
 - `/you` (also `/`): profile/environment facts, behavioral coaching states, confidence, and the primary coaching target.
-- `/audit`: six assessment sections containing 18 questions. Finishing saves completion and opens YOU.
+- `/audit`: five-stage onboarding (Basics, Schedule, Environment, Your Reality, Finish). Finishing saves the initial profile and opens a profile-at-a-glance confirmation before NOW.
 - `/dev/evidence`: evidence test controls in local development only. Production HTML and Next data requests return 404.
 
 The legacy `/dashboard`, `/results`, and `/tracker` routes show YOU; `/season` shows RHYTHM; `/todays-flow` and `/protocol` show NOW. These are compatibility aliases, not separate legacy features.

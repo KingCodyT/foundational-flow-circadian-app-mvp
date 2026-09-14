@@ -17,7 +17,9 @@ export default function AuditPage() {
 
   const currentCategory = categoryDefinitions[currentIndex];
   const currentQuestions = getQuestionsForCategory(currentCategory.title);
-  const isCurrentStepComplete = currentQuestions.every((question) => answers[question.id]);
+  const isCurrentStepComplete = currentQuestions.every((question) =>
+    question.options.some((option) => option.value === answers[question.id]),
+  );
   const isFinalStep = currentIndex === categoryDefinitions.length - 1;
 
   useEffect(() => {

@@ -52,12 +52,25 @@ function minutesBetween(later: Date | null, earlier: Date | null) {
   return Math.round((later.getTime() - earlier.getTime()) / 60000);
 }
 
+function anchorsForEvidence(evidence: FoodTimingEvidence, fallback: FoodTimingAnchors): FoodTimingAnchors {
+  const context = evidence.historicalContext;
+  if (!context) return fallback;
+  return {
+    wakeAt: context.wakeAt,
+    morningLightAt: context.morningLightAt,
+    sunsetAt: context.sunsetAt,
+    darknessAt: null,
+    targetSleepAt: context.targetSleepAt,
+  };
+}
+
 function buildRelationship(
   evidence: FoodTimingEvidence,
-  anchors: FoodTimingAnchors,
+  fallbackAnchors: FoodTimingAnchors,
 ): MealTimingRelationship | null {
   const mealAt = parsed(evidence.at);
   if (!mealAt) return null;
+  const anchors = anchorsForEvidence(evidence, fallbackAnchors);
 
   const wakeAt = parsed(anchors.wakeAt);
   const morningLightAt = parsed(anchors.morningLightAt);
@@ -79,8 +92,8 @@ function buildRelationship(
 /**
  * Circadian Food Timing v1 is an interpretation layer, not a second coaching engine.
  * It converts direct meal-timing evidence into relationships with known biological
- * anchors. It deliberately makes no good/bad score, fasting rule, calorie estimate,
- * composition inference, or universal meal-time prescription.
+ * anchors. Stored historical context is authoritative for evidence captured with it;
+ * fallback anchors exist only for legacy evidence that predates context persistence.
  */
 export function buildCircadianFoodTimingSnapshot(input: {
   evidence: FoodTimingEvidence[];

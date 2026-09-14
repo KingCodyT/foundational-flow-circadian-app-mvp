@@ -1,3 +1,5 @@
+import { HistoricalBiologicalContext } from "./biological-context";
+
 export type FoodTimingAction = "MEAL_STARTED" | "NOT_YET" | "EATING_LATER";
 
 export type FoodTimingEvidence = {
@@ -5,6 +7,7 @@ export type FoodTimingEvidence = {
   action: FoodTimingAction;
   at: string;
   source: "USER";
+  historicalContext?: HistoricalBiologicalContext | null;
 };
 
 export type FoodTimingAnchors = {

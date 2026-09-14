@@ -36,7 +36,6 @@ function makeQuestion(
   category: QuestionCategory,
   prompt: string,
   description: string,
-  weight = 1,
   options = frequencyOptions,
 ): Question {
   return {
@@ -45,7 +44,6 @@ function makeQuestion(
     prompt,
     description,
     inputType: "segmented",
-    weight,
     options: [...options],
   };
 }
@@ -55,36 +53,26 @@ export const categoryDefinitions: CategoryDefinition[] = [
     title: "Morning Light",
     subtitle: "Anchor the biological morning.",
     intention: "Strong early light tells the brain when the day begins.",
-    scoreKey: "morningSignalScore",
   },
   {
     title: "Daytime Environment",
     subtitle: "Build a bright, active daylight window.",
     intention: "The daytime signal should be bright, dynamic, and awake.",
-    scoreKey: "daylightStrengthScore",
   },
   {
     title: "Evening Light",
     subtitle: "Protect the descent into darkness.",
     intention: "Lower light exposure supports melatonin timing and depth.",
-    scoreKey: "darknessScore",
   },
   {
     title: "Sleep Timing",
     subtitle: "Stabilize sleep output and recovery.",
     intention: "Regular sleep timing helps the body trust the pattern.",
-    scoreKey: "sleepOutputScore",
   },
   {
-    title: "Disruption Load",
-    subtitle: "Reduce the signals that create circadian noise.",
-    intention: "Travel, late meals, alcohol, and irregularity can blunt progress.",
-    scoreKey: "disruptionLoadScore",
-  },
-  {
-    title: "Location / Season",
-    subtitle: "Adapt the plan to your environment.",
-    intention: "Latitude, climate, and seasonal daylight change the protocol details.",
+    title: "Life Constraints",
+    subtitle: "Work with the life you actually live.",
+    intention: "Schedule, travel, and environmental control shape what guidance is realistic.",
   },
 ];
 
@@ -94,7 +82,6 @@ export const questionnaire: Question[] = [
     "Morning Light",
     "How soon after waking do you get outside or into bright natural light?",
     "Early outdoor light is one of the strongest signals for circadian timing.",
-    1.4,
     [
       {
         value: "within_15",
@@ -127,7 +114,6 @@ export const questionnaire: Question[] = [
     "Morning Light",
     "How much bright morning light do you usually accumulate?",
     "Longer exposure helps reinforce the wake signal, especially in winter.",
-    1.1,
     [
       {
         value: "30_plus",
@@ -160,14 +146,12 @@ export const questionnaire: Question[] = [
     "Morning Light",
     "How often do you pair morning light with a walk or light movement?",
     "Movement can amplify the alerting effect of the morning signal.",
-    0.8,
   ),
   makeQuestion(
     "day_brightness",
     "Daytime Environment",
     "How bright is your work or daytime environment for most of the day?",
     "Indoor spaces are often much dimmer than the body expects during the day.",
-    1.3,
     [
       {
         value: "mostly_outdoors",
@@ -200,7 +184,6 @@ export const questionnaire: Question[] = [
     "Daytime Environment",
     "How often do you take midday daylight breaks outdoors?",
     "A midday light pulse can support alertness and circadian amplitude.",
-    1,
     [
       {
         value: "daily",
@@ -231,16 +214,14 @@ export const questionnaire: Question[] = [
   makeQuestion(
     "day_meal_regular",
     "Daytime Environment",
-    "How regular are your daytime meals and activity blocks?",
-    "Predictable daytime patterns can strengthen the body clock.",
-    0.7,
+    "How consistent is the timing of your meals from day to day?",
+    "Meal timing is its own biological signal and should not be bundled with activity.",
   ),
   makeQuestion(
     "evening_light_reduction",
     "Evening Light",
     "How much do you dim lights in the final 2 to 3 hours before bed?",
     "Evening darkness is a direct signal that the biological night has started.",
-    1.3,
     [
       {
         value: "deep_dim",
@@ -273,14 +254,12 @@ export const questionnaire: Question[] = [
     "Evening Light",
     "How controlled is your screen exposure late in the evening?",
     "Late screen light can delay sleep timing and reduce sleep depth.",
-    1.1,
   ),
   makeQuestion(
     "bedroom_darkness",
     "Evening Light",
     "How dark is your sleep environment once you are in bed?",
     "Residual bedroom light can fragment the darkness signal overnight.",
-    0.9,
     [
       {
         value: "blackout",
@@ -313,21 +292,18 @@ export const questionnaire: Question[] = [
     "Sleep Timing",
     "How consistent are your bedtime and wake time across the week?",
     "Regular timing is often more important than chasing perfection on any one night.",
-    1.3,
   ),
   makeQuestion(
     "sleep_duration",
     "Sleep Timing",
     "How often do you get enough total sleep for your body to feel restored?",
     "Sleep output reflects both timing quality and total opportunity.",
-    1.1,
   ),
   makeQuestion(
     "sleep_latency",
     "Sleep Timing",
     "How easily do you fall asleep once you intend to sleep?",
     "Difficulty falling asleep can indicate misaligned timing or excess stimulation.",
-    0.8,
     [
       {
         value: "easy",
@@ -357,149 +333,79 @@ export const questionnaire: Question[] = [
   ),
   makeQuestion(
     "travel_schedule_variability",
-    "Disruption Load",
-    "How often do travel, shift work, or large schedule swings affect your week?",
-    "Frequent schedule changes can reduce circadian reliability.",
-    1.2,
+    "Life Constraints",
+    "How predictable is your work and daily schedule from week to week?",
+    "This is context, not a performance score. It helps Foundational Flow adapt guidance to your real schedule.",
     [
       {
-        value: "rarely",
-        label: "Rarely",
-        detail: "My weekly schedule is relatively stable.",
+        value: "stable",
+        label: "Very predictable",
+        detail: "My wake, work, and sleep windows are usually stable.",
         score: 100,
       },
       {
-        value: "sometimes",
-        label: "Sometimes",
-        detail: "There are occasional disruptions, but they are not constant.",
+        value: "mostly_stable",
+        label: "Mostly predictable",
+        detail: "There are occasional changes, but a normal pattern exists.",
         score: 70,
       },
       {
-        value: "often",
-        label: "Often",
-        detail: "My schedule changes materially most weeks.",
+        value: "variable",
+        label: "Variable",
+        detail: "My schedule changes materially from day to day or week to week.",
         score: 35,
       },
       {
-        value: "very_often",
-        label: "Very often",
-        detail: "Travel or erratic timing is a defining feature of my routine.",
+        value: "shift_or_irregular",
+        label: "Shift or irregular",
+        detail: "Rotating, overnight, or irregular hours are part of my reality.",
         score: 10,
       },
     ],
   ),
   makeQuestion(
     "late_meals_stimulants",
-    "Disruption Load",
-    "How often do late meals, alcohol, or stimulants push into your evening window?",
-    "These inputs can create noise even when light habits are decent.",
-    1,
+    "Life Constraints",
+    "When do you usually finish your last meal relative to bedtime?",
+    "Last-meal timing is evaluated separately from alcohol and stimulants.",
     [
       {
-        value: "rarely",
-        label: "Rarely",
-        detail: "These disruptions are limited and deliberate.",
+        value: "3_plus_hours",
+        label: "3+ hours before",
+        detail: "My last meal usually finishes at least three hours before bed.",
         score: 100,
       },
       {
-        value: "sometimes",
-        label: "Sometimes",
-        detail: "They show up occasionally, but not nightly.",
+        value: "2_to_3_hours",
+        label: "2–3 hours before",
+        detail: "My last meal usually leaves a moderate buffer before bed.",
         score: 70,
       },
       {
-        value: "often",
-        label: "Often",
-        detail: "Evenings are regularly affected by these inputs.",
+        value: "1_to_2_hours",
+        label: "1–2 hours before",
+        detail: "My last meal often sits fairly close to bedtime.",
         score: 35,
       },
       {
-        value: "very_often",
-        label: "Very often",
-        detail: "This is a major recurring source of disruption.",
+        value: "within_1_hour",
+        label: "Within 1 hour",
+        detail: "I often eat immediately before bed or during my sleep window.",
         score: 10,
       },
     ],
   ),
   makeQuestion(
     "stress_winddown",
-    "Disruption Load",
-    "How often do you create a true wind-down period before bed?",
-    "A nervous system that never ramps down often blunts the sleep signal.",
-    0.8,
-  ),
-  makeQuestion(
-    "season_daylight",
-    "Location / Season",
-    "How supportive is your current season for natural daylight exposure?",
-    "Short winter days or harsh weather often require a more deliberate plan.",
-    1,
-    [
-      {
-        value: "very_supportive",
-        label: "Very supportive",
-        detail: "Long, accessible daylight is easy to get most days.",
-        score: 100,
-      },
-      {
-        value: "moderate",
-        label: "Moderate",
-        detail: "The season is workable, but not effortless.",
-        score: 70,
-      },
-      {
-        value: "challenging",
-        label: "Challenging",
-        detail: "Short days, weather, or heat make access inconsistent.",
-        score: 40,
-      },
-      {
-        value: "very_challenging",
-        label: "Very challenging",
-        detail: "My environment strongly limits natural light exposure.",
-        score: 15,
-      },
-    ],
-  ),
-  makeQuestion(
-    "location_latitude",
-    "Location / Season",
-    "How extreme is the daylight swing where you live?",
-    "Higher latitude living often calls for stronger timing habits.",
-    0.9,
-    [
-      {
-        value: "minimal",
-        label: "Minimal swing",
-        detail: "Day length is relatively stable year-round.",
-        score: 90,
-      },
-      {
-        value: "moderate",
-        label: "Moderate swing",
-        detail: "There is a noticeable seasonal shift, but manageable.",
-        score: 70,
-      },
-      {
-        value: "strong",
-        label: "Strong swing",
-        detail: "Seasonal light timing changes a lot through the year.",
-        score: 40,
-      },
-      {
-        value: "extreme",
-        label: "Extreme swing",
-        detail: "Seasonal daylight changes are dramatic.",
-        score: 20,
-      },
-    ],
+    "Life Constraints",
+    "How settled do you usually feel as you approach bedtime?",
+    "This is an outcome signal that helps interpret your evening—not a judgment about discipline.",
   ),
   makeQuestion(
     "home_environment_support",
-    "Location / Season",
+    "Life Constraints",
     "How easy is it to shape your home for both bright mornings and dark evenings?",
-    "Blackout shades, outdoor access, and lighting control all matter here.",
-    0.9,
+    "This identifies environmental control and constraints. Location, latitude, season, sunrise, and sunset are calculated automatically.",
   ),
 ];
 

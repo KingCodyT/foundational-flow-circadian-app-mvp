@@ -1,3 +1,5 @@
+-- Historical Build 1 schema; not used by the current local-only application.
+-- Retained as a reference for existing installations, not a current setup step.
 create extension if not exists "pgcrypto";
 
 create table if not exists public.circadian_audits (

@@ -1,0 +1,323 @@
+import { PrimaryCoachingTargetResult } from "./primary-target";
+import { DerivedEnvironment } from "./derived-environment";
+import { CoachingState } from "./types";
+import { ActionFeasibility, evaluateActionFeasibility } from "./feasibility";
+
+export type InterventionDecisionInput = {
+  primary: PrimaryCoachingTargetResult | null;
+  derivedEnvironment?: DerivedEnvironment | null;
+  // context/constraint evidence and outcome evidence are passed through for traceability
+  contextEvidence?: Record<string, any> | null;
+  outcomeEvidence?: Record<string, any> | null;
+  // optional action metadata: preferred action vs feasible alternative when a known constraint blocks the ideal action
+  preferredAction?: string | null;
+  fallbackAction?: string | null;
+  adaptedAction?: string | null;
+  // optional explicit event window (ISO strings) indicating biologically relevant timing
+  eventWindow?: { start?: string | null; end?: string | null } | null;
+  // optional authoritative decision time; callers should pass one shared moment through the pipeline
+  now?: Date | null;
+  // optional explicit flag indicating a material contextual disruption (caller must detect)
+  materialDisruption?: boolean;
+  // optional recent intervention metadata if available to support novelty checks
+  recentIntervention?: { lastAt?: string; type?: string } | null;
+  // optional explicit actionability override (true = actionable, false = infeasible)
+  actionabilityOverride?: boolean | null;
+};
+
+export type InterventionDecision = {
+  level: 0 | 1 | 2 | 3 | 4;
+  targetSignalId: string | null;
+  reason: string;
+  biologicallyRelevantNow: boolean;
+  actionableNow: boolean;
+  interruptionEligible: boolean;
+  preferredAction?: string | null;
+  fallbackAction?: string | null;
+  adaptedAction?: string | null;
+  supportingContext?: {
+    derivedEnvironment?: DerivedEnvironment | null;
+    contextEvidence?: Record<string, any> | null;
+    outcomeEvidence?: Record<string, any> | null;
+  };
+  eventWindow?: { start?: string | null; end?: string | null } | null;
+  noInterventionReason?: string | null;
+};
+
+// Pure, deterministic intervention decision function per Phase 3A rules.
+export function decideIntervention(input: InterventionDecisionInput): InterventionDecision {
+  const now = input.now ?? new Date();
+  const primary = input.primary;
+
+  // Helper: determine if now is within provided eventWindow
+  const inEventWindow = (() => {
+    if (!input.eventWindow) return false;
+    const s = input.eventWindow.start ? new Date(input.eventWindow.start) : null;
+    const e = input.eventWindow.end ? new Date(input.eventWindow.end) : null;
+    if (s && e) return now >= s && now <= e;
+    if (s && !e) return now >= s;
+    if (!s && e) return now <= e;
+    return false;
+  })();
+
+  // If explicit material disruption -> Level 4 capability
+  if (input.materialDisruption) {
+    return {
+      level: 4,
+      targetSignalId: primary?.signalId ?? null,
+      reason: "material_contextual_disruption",
+      biologicallyRelevantNow: false,
+      actionableNow: false,
+      interruptionEligible: true,
+      supportingContext: {
+        derivedEnvironment: input.derivedEnvironment ?? null,
+        contextEvidence: input.contextEvidence ?? null,
+        outcomeEvidence: input.outcomeEvidence ?? null,
+      },
+      eventWindow: input.eventWindow ?? null,
+    };
+  }
+
+  // No primary coaching target -> consider Level 1 if environmental context present, otherwise Level 0
+  if (!primary || !primary.signalId) {
+    // If derived environment has relevant solar times, emit Level 1 (quiet context)
+    const hasSolar = Boolean(input.derivedEnvironment && (input.derivedEnvironment.sunrise || input.derivedEnvironment.sunset || input.derivedEnvironment.civilDawn || input.derivedEnvironment.civilDusk));
+    if (hasSolar) {
+      return {
+        level: 1,
+        targetSignalId: null,
+        reason: "context_only_solar_present",
+        biologicallyRelevantNow: false,
+        actionableNow: false,
+        interruptionEligible: false,
+        supportingContext: {
+          derivedEnvironment: input.derivedEnvironment ?? null,
+          contextEvidence: input.contextEvidence ?? null,
+          outcomeEvidence: input.outcomeEvidence ?? null,
+        },
+        eventWindow: input.eventWindow ?? null,
+      };
+    }
+
+    return {
+      level: 0,
+      targetSignalId: null,
+      reason: "no_target_no_context",
+      biologicallyRelevantNow: false,
+      actionableNow: false,
+      interruptionEligible: false,
+      supportingContext: {
+        derivedEnvironment: input.derivedEnvironment ?? null,
+        contextEvidence: input.contextEvidence ?? null,
+        outcomeEvidence: input.outcomeEvidence ?? null,
+      },
+      eventWindow: input.eventWindow ?? null,
+      noInterventionReason: "no_primary_target",
+    };
+  }
+
+  // We have a primary target
+  const coachingState = primary.coachingState;
+
+  // Determine biological relevance conservatively: only mark true when an eventWindow is provided and now is inside it.
+  const biologicallyRelevantNow = inEventWindow;
+
+  // Determine actionability: preserve the biological objective while adapting the action to known constraints.
+  const preferredAction = input.preferredAction ?? (input.contextEvidence && (input.contextEvidence as any).preferredAction) ?? null;
+  const fallbackAction = input.fallbackAction ?? (input.contextEvidence && (input.contextEvidence as any).fallbackAction) ?? null;
+  const adaptedAction = input.adaptedAction ?? fallbackAction ?? null;
+  const preferredActionFeasibility = evaluateActionFeasibility(input.contextEvidence, preferredAction);
+
+  if (preferredActionFeasibility.status === ActionFeasibility.INFEASIBLE) {
+    if (fallbackAction) {
+      return {
+        level: 2,
+        targetSignalId: primary.signalId,
+        reason: "adapted_feasible_action_due_to_constraint",
+        biologicallyRelevantNow,
+        actionableNow: true,
+        interruptionEligible: false,
+        preferredAction,
+        fallbackAction,
+        adaptedAction: fallbackAction,
+        supportingContext: {
+          derivedEnvironment: input.derivedEnvironment ?? null,
+          contextEvidence: input.contextEvidence ?? null,
+          outcomeEvidence: input.outcomeEvidence ?? null,
+        },
+        eventWindow: input.eventWindow ?? null,
+      };
+    }
+
+    return {
+      level: 0,
+      targetSignalId: primary.signalId,
+      reason: "no_actionable_path_for_target",
+      biologicallyRelevantNow,
+      actionableNow: false,
+      interruptionEligible: false,
+      preferredAction,
+      fallbackAction,
+      adaptedAction: null,
+      supportingContext: {
+        derivedEnvironment: input.derivedEnvironment ?? null,
+        contextEvidence: input.contextEvidence ?? null,
+        outcomeEvidence: input.outcomeEvidence ?? null,
+      },
+      eventWindow: input.eventWindow ?? null,
+      noInterventionReason: "infeasible_action_no_fallback",
+    };
+  }
+
+  let actionableNow = true;
+  if (input.actionabilityOverride === false) actionableNow = false;
+
+  // If coaching state is ESTABLISHED, prefer silence or quiet context
+  if (coachingState === CoachingState.ESTABLISHED) {
+    const hasSolar = Boolean(input.derivedEnvironment && (input.derivedEnvironment.sunrise || input.derivedEnvironment.sunset || input.derivedEnvironment.civilDawn || input.derivedEnvironment.civilDusk));
+    return {
+      level: hasSolar ? 1 : 0,
+      targetSignalId: primary.signalId,
+      reason: "established_signal_no_intervention",
+      biologicallyRelevantNow,
+      actionableNow,
+      interruptionEligible: false,
+      supportingContext: {
+        derivedEnvironment: input.derivedEnvironment ?? null,
+        contextEvidence: input.contextEvidence ?? null,
+        outcomeEvidence: input.outcomeEvidence ?? null,
+      },
+      eventWindow: input.eventWindow ?? null,
+      noInterventionReason: "signal_established",
+    };
+  }
+
+  // For DEVELOPING or NEEDS_ATTENTION
+  // A known infeasible preferred action may still yield a meaningful adapted action.
+  // If the action is impossible and there is no supported fallback, preserve the biological objective and silence.
+  if (!actionableNow) {
+    if (adaptedAction) {
+      return {
+        level: 2,
+        targetSignalId: primary.signalId,
+        reason: "adapted_feasible_action_due_to_constraint",
+        biologicallyRelevantNow,
+        actionableNow: true,
+        interruptionEligible: false,
+        preferredAction,
+        fallbackAction,
+        adaptedAction,
+        supportingContext: {
+          derivedEnvironment: input.derivedEnvironment ?? null,
+          contextEvidence: input.contextEvidence ?? null,
+          outcomeEvidence: input.outcomeEvidence ?? null,
+        },
+        eventWindow: input.eventWindow ?? null,
+      };
+    }
+
+    return {
+      level: 0,
+      targetSignalId: primary.signalId,
+      reason: "no_actionable_path_for_target",
+      biologicallyRelevantNow,
+      actionableNow: false,
+      interruptionEligible: false,
+      preferredAction,
+      fallbackAction,
+      adaptedAction: null,
+      supportingContext: {
+        derivedEnvironment: input.derivedEnvironment ?? null,
+        contextEvidence: input.contextEvidence ?? null,
+        outcomeEvidence: input.outcomeEvidence ?? null,
+      },
+      eventWindow: input.eventWindow ?? null,
+      noInterventionReason: "infeasible_action_no_fallback",
+    };
+  }
+
+  // If biologically relevant now and actionable, consider Level 3 for NEEDS_ATTENTION, Level 2 for DEVELOPING
+  if (biologicallyRelevantNow) {
+    if (coachingState === CoachingState.NEEDS_ATTENTION) {
+      return {
+        level: 3,
+        targetSignalId: primary.signalId,
+        reason: "needs_attention_biologically_relevant_actionable",
+        biologicallyRelevantNow: true,
+        actionableNow: true,
+        interruptionEligible: true,
+        preferredAction,
+        fallbackAction,
+        adaptedAction: adaptedAction ?? preferredAction ?? null,
+        supportingContext: {
+          derivedEnvironment: input.derivedEnvironment ?? null,
+          contextEvidence: input.contextEvidence ?? null,
+          outcomeEvidence: input.outcomeEvidence ?? null,
+        },
+        eventWindow: input.eventWindow ?? null,
+      };
+    }
+
+    if (coachingState === CoachingState.DEVELOPING) {
+      return {
+        level: 2,
+        targetSignalId: primary.signalId,
+        reason: "developing_biologically_relevant_guidance",
+        biologicallyRelevantNow: true,
+        actionableNow: true,
+        interruptionEligible: false,
+        preferredAction,
+        fallbackAction,
+        adaptedAction: adaptedAction ?? preferredAction ?? null,
+        supportingContext: {
+          derivedEnvironment: input.derivedEnvironment ?? null,
+          contextEvidence: input.contextEvidence ?? null,
+          outcomeEvidence: input.outcomeEvidence ?? null,
+        },
+        eventWindow: input.eventWindow ?? null,
+      };
+    }
+  }
+
+  // If not biologically relevant now but actionable and coaching state indicates need, provide Level 2 guidance
+  if (coachingState === CoachingState.NEEDS_ATTENTION) {
+    return {
+      level: 2,
+      targetSignalId: primary.signalId,
+      reason: "needs_attention_not_time_critical_guidance",
+      biologicallyRelevantNow: false,
+      actionableNow: true,
+      interruptionEligible: false,
+      preferredAction,
+      fallbackAction,
+      adaptedAction: adaptedAction ?? preferredAction ?? null,
+      supportingContext: {
+        derivedEnvironment: input.derivedEnvironment ?? null,
+        contextEvidence: input.contextEvidence ?? null,
+        outcomeEvidence: input.outcomeEvidence ?? null,
+      },
+      eventWindow: input.eventWindow ?? null,
+    };
+  }
+
+  // Default fallback: Level 1 contextual info
+  return {
+    level: 1,
+    targetSignalId: primary.signalId,
+    reason: "fallback_quiet_context",
+    biologicallyRelevantNow,
+    actionableNow,
+    interruptionEligible: false,
+    preferredAction,
+    fallbackAction,
+    adaptedAction: adaptedAction ?? preferredAction ?? null,
+    supportingContext: {
+      derivedEnvironment: input.derivedEnvironment ?? null,
+      contextEvidence: input.contextEvidence ?? null,
+      outcomeEvidence: input.outcomeEvidence ?? null,
+    },
+    eventWindow: input.eventWindow ?? null,
+  };
+}
+
+export default decideIntervention;

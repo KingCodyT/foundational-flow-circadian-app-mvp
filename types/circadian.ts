@@ -3,8 +3,7 @@ export type QuestionCategory =
   | "Daytime Environment"
   | "Evening Light"
   | "Sleep Timing"
-  | "Disruption Load"
-  | "Location / Season";
+  | "Life Constraints";
 
 export type InputType = "segmented";
 
@@ -12,6 +11,7 @@ export type QuestionOption = {
   value: string;
   label: string;
   detail: string;
+  // Used by initial personalization to map answers to coaching states.
   score: number;
 };
 
@@ -21,7 +21,6 @@ export type Question = {
   prompt: string;
   description?: string;
   inputType: InputType;
-  weight: number;
   options: QuestionOption[];
 };
 
@@ -31,79 +30,35 @@ export type CategoryDefinition = {
   title: QuestionCategory;
   subtitle: string;
   intention: string;
-  scoreKey?: keyof CircadianScores;
 };
 
-export type ScoreKey =
-  | "morningSignalScore"
-  | "daylightStrengthScore"
-  | "darknessScore"
-  | "sleepOutputScore"
-  | "disruptionLoadScore";
+export type ParticipationLevel = "BASELINE" | "GUIDED_FLOW" | "FULL_FLOW";
 
-export type CircadianScores = {
-  morningSignalScore: number;
-  daylightStrengthScore: number;
-  darknessScore: number;
-  sleepOutputScore: number;
-  disruptionLoadScore: number;
-  locationSeasonScore: number;
-  overallCircadianScore: number;
+export type DailyProfile = {
+  wakeTime: string | null; // HH:MM local
+  targetBedtime: string | null; // HH:MM local
+  timeZone?: string | null; // IANA timezone for the user's saved biological context
+  locationPermissionGranted: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  lastMealTime?: string | null;
+  workStructure?: "daytime" | "flexible" | "shift" | "overnight" | null;
+  travelFrequency?: "rarely" | "monthly" | "weekly" | "frequent" | null;
+  exercisePattern?: "morning" | "midday" | "evening" | "variable" | "none" | null;
+  sleepEnvironment?: "very_dark" | "mostly_dark" | "some_light" | "bright" | null;
 };
 
-export type ScoreSummary = {
-  label: string;
-  value: number;
-  description: string;
-  key: ScoreKey;
-  band: "strong" | "stable" | "fragile" | "broken";
+export type EventStatus =
+  | "upcoming"
+  | "active"
+  | "current"
+  | "completed"
+  | "skipped"
+  | "missed";
+
+export type EventRecord = {
+  status: EventStatus;
+  at: string; // ISO timestamp when action occurred (completed/skipped)
 };
 
-export type CircadianInsight = {
-  primaryBrokenSignal: ScoreSummary;
-  rankedSignals: ScoreSummary[];
-  summary: string;
-  primaryReason: string;
-  strengths: string[];
-  contextualNotes: string[];
-};
-
-export type ProtocolStep = {
-  title: string;
-  window: string;
-  actions: string[];
-};
-
-export type ProtocolPlan = {
-  headline: string;
-  rationale: string;
-  focusArea: string;
-  steps: ProtocolStep[];
-  supportNotes: string[];
-};
-
-export type PersistedAuditRecord = {
-  id: string;
-  clientId: string;
-  createdAt: string;
-  answers: AnswerMap;
-  scores: CircadianScores;
-  insight: CircadianInsight;
-  protocol: ProtocolPlan;
-};
-
-export type PersistenceMode = "local" | "supabase";
-
-export type SaveStatus = "idle" | "saving" | "saved" | "error";
-
-export type HabitHistoryEntry = {
-  date: string;
-  completedHabitIds: string[];
-};
-
-export type EmailDeliveryStatus =
-  | "idle"
-  | "sending"
-  | "sent"
-  | "not_configured"
-  | "error";
+export type DailyEventState = Record<string, EventRecord>; // eventId -> EventRecord

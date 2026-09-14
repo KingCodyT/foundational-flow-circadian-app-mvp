@@ -8,47 +8,84 @@ import {
   useState,
 } from "react";
 import {
-  createAuditRecord,
   createClientId,
-  getLatestAudit,
   LocalAuditState,
-  mergeAuditHistory,
+  normalizeDailyProfile,
   STORAGE_KEY,
 } from "@/lib/audit-store";
-import { calculateScores, generateInsights } from "@/lib/scoring";
-import { generateProtocol } from "@/lib/protocol";
+import { getRuntimeTimeZone } from "@/lib/live-clock";
+import {
+  FoodTimingAction,
+  FoodTimingEvidence,
+} from "@/lib/personalization/circadian-food-timing";
+import { captureHistoricalBiologicalContext } from "@/lib/personalization/biological-context";
+import {
+  DEFAULT_NOTIFICATION_PERSISTENCE_STATE,
+  NotificationPersistenceState,
+  pruneNotificationPersistenceState,
+  setMaterialChangeKey,
+  upsertDeliveredNotification,
+} from "@/lib/personalization/notification-persistence";
+import {
+  DeliveredNotificationRecord,
+  ScheduledNotificationRecord,
+} from "@/lib/personalization/notification-runtime";
 import {
   AnswerMap,
-  CircadianInsight,
-  CircadianScores,
-  HabitHistoryEntry,
-  PersistedAuditRecord,
-  PersistenceMode,
-  ProtocolPlan,
-  SaveStatus,
+  ParticipationLevel,
+  DailyProfile,
+  DailyEventState,
 } from "@/types/circadian";
-import { toggleHabitCompletion } from "@/lib/habit-tracker";
+
+type ContextSnapshot = {
+  timeZone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  wakeTime?: string | null;
+  targetBedtime?: string | null;
+  dayLengthMinutes?: number | null;
+  capturedAt?: string | null;
+};
 
 type CircadianState = {
   clientId: string;
   answers: AnswerMap;
-  scores: CircadianScores | null;
-  insight: CircadianInsight | null;
-  protocol: ProtocolPlan | null;
-  auditHistory: PersistedAuditRecord[];
-  habitHistory: HabitHistoryEntry[];
-  protocolLeadFirstName: string | null;
-  protocolLeadEmail: string | null;
-  protocolLeadCapturedAt: string | null;
-  persistenceMode: PersistenceMode;
-  saveStatus: SaveStatus;
   lastSavedAt: string | null;
   isHydrated: boolean;
   hasCompletedAudit: boolean;
+  participationLevel: ParticipationLevel | null;
+  dailyProfile: DailyProfile | null;
+  eventStateByDate: Record<string, DailyEventState> | null;
+  foodTimingEvidenceByDate: Record<string, FoodTimingEvidence[]> | null;
+  previousContextSnapshot: ContextSnapshot | null;
+  currentContextSnapshot: ContextSnapshot | null;
+  notificationState: NotificationPersistenceState;
+  getEventStateForDate: (dateStr: string) => DailyEventState;
+  getFoodTimingEvidenceForDate: (dateStr: string) => FoodTimingEvidence[];
+  setEventRecord: (
+    dateStr: string,
+    eventId: string,
+    record: {
+      status: "completed" | "skipped" | "missed";
+      at?: string;
+    },
+  ) => void;
+  recordFoodTimingAction: (
+    dateStr: string,
+    action: FoodTimingAction,
+    at?: string,
+  ) => void;
+  clearEventRecords: (eventId: string) => void;
+  setScheduledNotification: (record: ScheduledNotificationRecord | null) => void;
+  recordDeliveredNotification: (record: DeliveredNotificationRecord) => void;
+  setNotificationMaterialChangeKey: (
+    identity: string,
+    materialChangeKey: string | null,
+  ) => void;
   setAnswer: (questionId: string, value: string) => void;
   completeAudit: () => void;
-  toggleHabit: (date: string, habitId: string) => void;
-  recordProtocolLead: (firstName: string, email: string) => void;
+  setParticipationLevel: (level: ParticipationLevel | null) => void;
+  setDailyProfile: (profile: DailyProfile | null) => void;
   resetAudit: () => void;
 };
 
@@ -57,172 +94,89 @@ const CircadianContext = createContext<CircadianState | null>(null);
 export function CircadianProvider({ children }: { children: ReactNode }) {
   const [clientId, setClientId] = useState("");
   const [answers, setAnswers] = useState<AnswerMap>({});
-  const [scores, setScores] = useState<CircadianScores | null>(null);
-  const [insight, setInsight] = useState<CircadianInsight | null>(null);
-  const [protocol, setProtocol] = useState<ProtocolPlan | null>(null);
-  const [auditHistory, setAuditHistory] = useState<PersistedAuditRecord[]>([]);
-  const [habitHistory, setHabitHistory] = useState<HabitHistoryEntry[]>([]);
-  const [protocolLeadFirstName, setProtocolLeadFirstName] = useState<string | null>(null);
-  const [protocolLeadEmail, setProtocolLeadEmail] = useState<string | null>(null);
-  const [protocolLeadCapturedAt, setProtocolLeadCapturedAt] = useState<string | null>(null);
-  const [persistenceMode, setPersistenceMode] =
-    useState<PersistenceMode>("local");
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [participationLevel, setParticipationLevelState] =
+    useState<ParticipationLevel | null>(null);
+  const [dailyProfile, setDailyProfileState] = useState<DailyProfile | null>(null);
+  const [eventStateByDate, setEventStateByDate] = useState<Record<
+    string,
+    DailyEventState
+  > | null>(null);
+  const [foodTimingEvidenceByDate, setFoodTimingEvidenceByDate] = useState<Record<
+    string,
+    FoodTimingEvidence[]
+  > | null>(null);
+  const [previousContextSnapshot, setPreviousContextSnapshot] = useState<ContextSnapshot | null>(null);
+  const [currentContextSnapshot, setCurrentContextSnapshot] = useState<ContextSnapshot | null>(null);
+  const [notificationState, setNotificationState] =
+    useState<NotificationPersistenceState>(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasCompletedAudit, setHasCompletedAudit] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
-
-  const applyAuditRecord = (record: PersistedAuditRecord) => {
-    setAnswers(record.answers);
-    setScores(record.scores);
-    setInsight(record.insight);
-    setProtocol(record.protocol);
-    setHasCompletedAudit(true);
-    setLastSavedAt(record.createdAt);
-  };
 
   useEffect(() => {
     const rawState = window.localStorage.getItem(STORAGE_KEY);
 
     if (rawState) {
-      const parsedState = JSON.parse(rawState) as LocalAuditState;
-      setClientId(parsedState.clientId ?? createClientId());
-      setAnswers(parsedState.answers ?? {});
-      setScores(parsedState.scores ?? null);
-      setInsight(parsedState.insight ?? null);
-      setProtocol(parsedState.protocol ?? null);
-      setAuditHistory(parsedState.auditHistory ?? []);
-      setHabitHistory(parsedState.habitHistory ?? []);
-      setProtocolLeadFirstName(parsedState.protocolLeadFirstName ?? null);
-      setProtocolLeadEmail(parsedState.protocolLeadEmail ?? null);
-      setProtocolLeadCapturedAt(parsedState.protocolLeadCapturedAt ?? null);
-      setLastSavedAt(parsedState.lastSavedAt ?? null);
-      setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
+      try {
+        const parsedState = JSON.parse(rawState) as LocalAuditState;
+        const fallbackTimeZone = getRuntimeTimeZone();
+        setClientId(parsedState.clientId ?? createClientId());
+        setAnswers(parsedState.answers ?? {});
+        setParticipationLevelState(parsedState.participationLevel ?? null);
+        setDailyProfileState(normalizeDailyProfile(parsedState.dailyProfile ?? null, fallbackTimeZone));
+        setEventStateByDate(parsedState.eventStateByDate ?? null);
+        setFoodTimingEvidenceByDate(parsedState.foodTimingEvidenceByDate ?? null);
+        setPreviousContextSnapshot(parsedState.previousContextSnapshot ?? null);
+        setCurrentContextSnapshot(parsedState.currentContextSnapshot ?? null);
+        setNotificationState(
+          pruneNotificationPersistenceState(parsedState.notificationState ?? null),
+        );
+        setLastSavedAt(parsedState.lastSavedAt ?? null);
+        setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
+      } catch {
+        setClientId(createClientId());
+        setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
+      }
     } else {
       setClientId(createClientId());
+      setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
     }
 
     setIsHydrated(true);
   }, []);
 
   useEffect(() => {
-    if (!isHydrated || !clientId) {
-      return;
-    }
+    if (!isHydrated || !clientId) return;
 
     const state: LocalAuditState = {
       clientId,
       answers,
-      scores,
-      insight,
-      protocol,
       hasCompletedAudit,
-      auditHistory,
-      habitHistory,
-      protocolLeadFirstName,
-      protocolLeadEmail,
-      protocolLeadCapturedAt,
       lastSavedAt,
+      participationLevel,
+      dailyProfile,
+      eventStateByDate,
+      foodTimingEvidenceByDate,
+      previousContextSnapshot,
+      currentContextSnapshot,
+      notificationState: pruneNotificationPersistenceState(notificationState),
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [answers, auditHistory, clientId, habitHistory, hasCompletedAudit, insight, isHydrated, lastSavedAt, protocol, protocolLeadCapturedAt, protocolLeadEmail, protocolLeadFirstName, scores]);
-
-  useEffect(() => {
-    if (!isHydrated || !clientId) {
-      return;
-    }
-
-    let isCancelled = false;
-
-    async function syncRemoteAudits() {
-      try {
-        const response = await fetch(
-          `/api/audits?clientId=${encodeURIComponent(clientId)}&limit=6`,
-        );
-
-        if (!response.ok) {
-          throw new Error("Unable to load saved audits.");
-        }
-
-        const data = (await response.json()) as {
-          configured: boolean;
-          audits?: PersistedAuditRecord[];
-        };
-
-        if (!data.configured || isCancelled) {
-          return;
-        }
-
-        const remoteHistory = data.audits ?? [];
-        const mergedHistory = mergeAuditHistory(auditHistory, remoteHistory);
-        const latestRemote = getLatestAudit(mergedHistory);
-        const latestLocal = getLatestAudit(auditHistory);
-        const shouldApplyRemote = Boolean(
-          latestRemote &&
-            (((!hasCompletedAudit && Object.keys(answers).length === 0) ||
-              !latestLocal ||
-              new Date(latestRemote.createdAt).getTime() >
-                new Date(latestLocal.createdAt).getTime())),
-        );
-
-        setPersistenceMode("supabase");
-        setAuditHistory(mergedHistory);
-
-        if (latestRemote && shouldApplyRemote) {
-          applyAuditRecord(latestRemote);
-        }
-      } catch {
-        setPersistenceMode("local");
-      }
-    }
-
-    void syncRemoteAudits();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [answers, auditHistory, clientId, hasCompletedAudit, isHydrated]);
-
-  const persistAuditRecord = async (record: PersistedAuditRecord) => {
-    try {
-      const response = await fetch("/api/audits", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ record }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Unable to save audit.");
-      }
-
-      const data = (await response.json()) as {
-        configured: boolean;
-        audit?: PersistedAuditRecord;
-      };
-
-      if (!data.configured) {
-        setPersistenceMode("local");
-        setSaveStatus("saved");
-        return;
-      }
-
-      setPersistenceMode("supabase");
-      setSaveStatus("saved");
-
-      if (data.audit) {
-        setLastSavedAt(data.audit.createdAt);
-        setAuditHistory((currentHistory) =>
-          mergeAuditHistory(currentHistory, [data.audit!]),
-        );
-      }
-    } catch {
-      setPersistenceMode("local");
-      setSaveStatus("error");
-    }
-  };
+  }, [
+    answers,
+    clientId,
+    dailyProfile,
+    eventStateByDate,
+    foodTimingEvidenceByDate,
+    hasCompletedAudit,
+    isHydrated,
+    lastSavedAt,
+    notificationState,
+    participationLevel,
+    previousContextSnapshot,
+    currentContextSnapshot,
+  ]);
 
   const setAnswer = (questionId: string, value: string) => {
     setAnswers((current) => ({
@@ -231,61 +185,154 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     }));
   };
 
-  const completeAudit = () => {
-    const activeClientId = clientId || createClientId();
+  const setParticipationLevel = (level: ParticipationLevel | null) => {
+    setParticipationLevelState(level);
+  };
 
-    if (!clientId) {
-      setClientId(activeClientId);
-    }
+  const setDailyProfile = (profile: DailyProfile | null) => {
+    const runtimeTimeZone = getRuntimeTimeZone();
+    const normalized = normalizeDailyProfile(profile, runtimeTimeZone);
+    const nextCurrentContextSnapshot = {
+      timeZone: normalized?.timeZone ?? null,
+      latitude: normalized?.latitude ?? null,
+      longitude: normalized?.longitude ?? null,
+      wakeTime: normalized?.wakeTime ?? null,
+      targetBedtime: normalized?.targetBedtime ?? null,
+      dayLengthMinutes: null,
+      capturedAt: new Date().toISOString(),
+    };
+    setPreviousContextSnapshot((current) => current ?? nextCurrentContextSnapshot);
+    setCurrentContextSnapshot(nextCurrentContextSnapshot);
+    setDailyProfileState(normalized);
+  };
 
-    const computedScores = calculateScores(answers);
-    const computedInsight = generateInsights(computedScores, answers);
-    const generatedProtocol = generateProtocol(
-      computedScores,
-      computedInsight,
-      answers,
-    );
-    const record = createAuditRecord({
-      clientId: activeClientId,
-      answers,
-      scores: computedScores,
-      insight: computedInsight,
-      protocol: generatedProtocol,
+  const getEventStateForDate = (dateStr: string) => {
+    return eventStateByDate?.[dateStr] ?? {};
+  };
+
+  const getFoodTimingEvidenceForDate = (dateStr: string) => {
+    return foodTimingEvidenceByDate?.[dateStr] ?? [];
+  };
+
+  const setEventRecord = (
+    dateStr: string,
+    eventId: string,
+    record: {
+      status: "completed" | "skipped" | "missed";
+      at?: string;
+    },
+  ) => {
+    setEventStateByDate((current) => {
+      const next = { ...(current ?? {}) };
+      const dayState = { ...(next[dateStr] ?? {}) };
+      dayState[eventId] = {
+        status: record.status,
+        at: record.at ?? new Date().toISOString(),
+      };
+      next[dateStr] = dayState;
+      return next;
+    });
+  };
+
+  const recordFoodTimingAction = (
+    dateStr: string,
+    action: FoodTimingAction,
+    at?: string,
+  ) => {
+    const timestamp = at ?? new Date().toISOString();
+    const id =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `food-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const historicalContext = captureHistoricalBiologicalContext({
+      at: timestamp,
+      profile: {
+        wakeTime: dailyProfile?.wakeTime ?? null,
+        targetBedtime: dailyProfile?.targetBedtime ?? null,
+        timeZone: dailyProfile?.timeZone ?? getRuntimeTimeZone(),
+        latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
+        longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
+      },
     });
 
-    applyAuditRecord(record);
-    setAuditHistory((currentHistory) => mergeAuditHistory(currentHistory, [record]));
-    setSaveStatus("saving");
-
-    void persistAuditRecord(record);
+    setFoodTimingEvidenceByDate((current) => {
+      const next = { ...(current ?? {}) };
+      next[dateStr] = [
+        ...(next[dateStr] ?? []),
+        { id, action, at: timestamp, source: "USER", historicalContext },
+      ];
+      return next;
+    });
   };
 
-  const toggleHabit = (date: string, habitId: string) => {
-    setHabitHistory((current) => toggleHabitCompletion(current, date, habitId));
+  const clearEventRecords = (eventId: string) => {
+    setEventStateByDate((current) => {
+      if (!current) return current;
+
+      const next: Record<string, DailyEventState> = {};
+      for (const [date, dayState] of Object.entries(current)) {
+        const nextDay = { ...dayState };
+        delete nextDay[eventId];
+        if (Object.keys(nextDay).length > 0) next[date] = nextDay;
+      }
+
+      return Object.keys(next).length > 0 ? next : null;
+    });
   };
 
-  const recordProtocolLead = (firstName: string, email: string) => {
-    setProtocolLeadFirstName(firstName.trim());
-    setProtocolLeadEmail(email.trim());
-    setProtocolLeadCapturedAt(new Date().toISOString());
+  const setScheduledNotification = (record: ScheduledNotificationRecord | null) => {
+    setNotificationState((current) => ({
+      ...current,
+      scheduledNotification: record,
+    }));
+  };
+
+  const recordDeliveredNotification = (record: DeliveredNotificationRecord) => {
+    setNotificationState((current) => ({
+      ...current,
+      scheduledNotification:
+        current.scheduledNotification?.id === record.id
+          ? null
+          : current.scheduledNotification,
+      deliveredNotifications: upsertDeliveredNotification(
+        current.deliveredNotifications,
+        record,
+      ),
+    }));
+  };
+
+  const setNotificationMaterialChangeKey = (
+    identity: string,
+    materialChangeKey: string | null,
+  ) => {
+    setNotificationState((current) => ({
+      ...current,
+      materialChangeKeys: setMaterialChangeKey(
+        current.materialChangeKeys,
+        identity,
+        materialChangeKey,
+      ),
+    }));
+  };
+
+  const completeAudit = () => {
+    if (!clientId) setClientId(createClientId());
+    setHasCompletedAudit(true);
+    setLastSavedAt(new Date().toISOString());
   };
 
   const resetAudit = () => {
-    const nextClientId = createClientId();
-    setClientId(nextClientId);
+    setClientId(createClientId());
     setAnswers({});
-    setScores(null);
-    setInsight(null);
-    setProtocol(null);
-    setAuditHistory([]);
-    setHabitHistory([]);
-    setProtocolLeadFirstName(null);
-    setProtocolLeadEmail(null);
-    setProtocolLeadCapturedAt(null);
+    setParticipationLevelState(null);
+    setDailyProfileState(null);
+    setEventStateByDate(null);
+    setFoodTimingEvidenceByDate(null);
+    setPreviousContextSnapshot(null);
+    setCurrentContextSnapshot(null);
+    setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
     setLastSavedAt(null);
     setHasCompletedAudit(false);
-    setPersistenceMode("local");
-    setSaveStatus("idle");
     window.localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -294,23 +341,28 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       value={{
         clientId,
         answers,
-        scores,
-        insight,
-        protocol,
-        auditHistory,
-        habitHistory,
-        protocolLeadFirstName,
-        protocolLeadEmail,
-        protocolLeadCapturedAt,
-        persistenceMode,
-        saveStatus,
         lastSavedAt,
         isHydrated,
         hasCompletedAudit,
+        participationLevel,
+        dailyProfile,
+        eventStateByDate,
+        foodTimingEvidenceByDate,
+        previousContextSnapshot,
+        currentContextSnapshot,
+        notificationState,
+        getEventStateForDate,
+        getFoodTimingEvidenceForDate,
+        setEventRecord,
+        recordFoodTimingAction,
+        clearEventRecords,
+        setScheduledNotification,
+        recordDeliveredNotification,
+        setNotificationMaterialChangeKey,
         setAnswer,
         completeAudit,
-        toggleHabit,
-        recordProtocolLead,
+        setParticipationLevel,
+        setDailyProfile,
         resetAudit,
       }}
     >

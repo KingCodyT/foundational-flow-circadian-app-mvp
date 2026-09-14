@@ -1,1 +1,1 @@
-export { default } from "@/views/season-mode-page";
+export { default } from "@/views/rhythm-page";

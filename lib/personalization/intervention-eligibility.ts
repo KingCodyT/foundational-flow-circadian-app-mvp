@@ -59,7 +59,11 @@ export function evaluateInterventionEligibility(input: InterventionEligibilityIn
   const biologicallyRelevantNow = decision.biologicallyRelevantNow ?? false;
   let actionableNow = decision.actionableNow ?? true;
   if (input.actionabilityOverride === false) actionableNow = false;
-  if (input.contextEvidence && (input.contextEvidence as any).infeasible === true) actionableNow = false;
+
+  // Phase 3A has already resolved constraint feasibility, including whether a
+  // supported fallback makes the approved action actionable. Do not reinterpret
+  // the raw constraint here or an adapted Level 2 action is incorrectly reduced
+  // to passive context.
 
   const contextLimited = !actionableNow;
 

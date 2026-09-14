@@ -238,35 +238,31 @@ export const SIGNAL_REGISTRY: Record<string, SignalDefinition> = {
       "Self-reported wind-down / pre-sleep activation — used as diagnostic outcome information.",
   },
 
-  // Location / season (spec indicates these should be derived; keep questionId for now)
+  // Location / season are environmental facts derived from location and date.
   season_daylight: {
     id: "season_daylight",
     label: "Seasonal Daylight Context",
     classification: SignalClassification.DERIVED_ENVIRONMENT,
-    source: [SignalSourceType.DERIVED, SignalSourceType.QUESTIONNAIRE],
-    questionId: "season_daylight",
+    source: [SignalSourceType.DERIVED],
     coachingEligible: false,
     isOutcome: false,
     isContextConstraint: true,
     isDerivedEnvironment: true,
-    legacyMapping: true,
     description:
-      "DERIVED_ENVIRONMENT canonical signal. The questionnaire entry is legacy-only for historical compatibility; future personalization must derive this from location/date/solar context.",
+      "DERIVED_ENVIRONMENT canonical signal calculated from location, date, and solar context.",
   },
 
   location_latitude: {
     id: "location_latitude",
     label: "Latitude / Seasonal Variability Context",
     classification: SignalClassification.DERIVED_ENVIRONMENT,
-    source: [SignalSourceType.DERIVED, SignalSourceType.QUESTIONNAIRE],
-    questionId: "location_latitude",
+    source: [SignalSourceType.DERIVED],
     coachingEligible: false,
     isOutcome: false,
     isContextConstraint: true,
     isDerivedEnvironment: true,
-    legacyMapping: true,
     description:
-      "DERIVED_ENVIRONMENT canonical signal. The questionnaire entry is legacy-only for historical compatibility; future personalization must derive latitude/context from location.",
+      "DERIVED_ENVIRONMENT canonical signal calculated from the user's location.",
   },
 
   home_environment_support: {

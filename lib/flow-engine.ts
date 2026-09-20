@@ -1,4 +1,5 @@
 import { getSolarTimes, SolarTimes } from "./solar";
+import { scheduleTime, scheduleDateKey, shiftDateKey } from "./schedule-time";
 
 export type FlowEvent = {
   id: string;
@@ -8,22 +9,17 @@ export type FlowEvent = {
   status: "upcoming" | "current" | "completed" | "missed" | "skipped";
   guidance: string;
   why?: string;
+  source?: "schedule" | "suggestion" | "solar";
 };
 
 export type DailyProfileInput = {
   wakeTime?: string | null; // 'HH:MM'
+  lastMealTime?: string | null;
   targetBedtime?: string | null; // 'HH:MM'
   timeZone?: string | null;
   latitude?: number | null;
   longitude?: number | null;
 };
-
-function parseTimeToDate(baseDate: Date, time?: string | null) {
-  if (!time || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
-  const [hh, mm] = time.split(":").map(Number);
-  const d = new Date(baseDate.getFullYear(), baseDate.getMonth(), baseDate.getDate(), hh, mm, 0);
-  return d;
-}
 
 function addMinutes(d: Date, mins: number) {
   return new Date(d.getTime() + mins * 60000);
@@ -42,144 +38,91 @@ function statusFor(now: Date, start: Date, end?: Date) {
   return "completed";
 }
 
-export function buildTodaysFlow(opts: { date?: Date; now?: Date; profile?: DailyProfileInput; participationLevel?: string | null; eventStateForDate?: Record<string, { status: string; at: string }>; }): { events: FlowEvent[]; next?: FlowEvent; solar: SolarTimes | null; locationAvailable: boolean; activeEvent?: FlowEvent | undefined; progress: { completed: number; total: number; percent: number } } {
+export function buildTodaysFlow(opts: { date?: Date; now?: Date; profile?: DailyProfileInput; participationLevel?: string | null; eventStateForDate?: Record<string, { status: string; at: string }>; }): { events: FlowEvent[]; next?: FlowEvent; solar: SolarTimes | null; locationAvailable: boolean; activeEvent?: FlowEvent | undefined; warnings: string[]; progress: { completed: number; total: number; percent: number } } {
   const now = opts.now ?? new Date();
   const date = opts.date ?? now;
   const profile = opts.profile ?? {};
 
-  const solar = getSolarTimes(date, profile.latitude ?? null, profile.longitude ?? null);
+  const key = scheduleDateKey(date, profile.timeZone);
+  const wake = scheduleTime(key, profile.wakeTime, profile.timeZone) ?? scheduleTime(key, "07:00", profile.timeZone)!;
+  let bedtime = scheduleTime(key, profile.targetBedtime, profile.timeZone) ?? addMinutes(wake, 15 * 60);
+  if (bedtime <= wake) bedtime = scheduleTime(shiftDateKey(key, 1), profile.targetBedtime, profile.timeZone)!;
+  const warnings: string[] = [];
+  const awakeMinutes = (bedtime.getTime() - wake.getTime()) / 60000;
+  if (awakeMinutes < 8 * 60 || awakeMinutes > 20 * 60) {
+    warnings.push("Your wake time and bedtime leave an unusually short or long waking day. Review your schedule; your entered times have been kept.");
+  }
+  const solar = getSolarTimes(wake, profile.latitude, profile.longitude, profile.timeZone);
   const locationAvailable = solar.solarNoon != null;
-
-  // derive wake/bedtime
-  const wake = parseTimeToDate(date, profile.wakeTime) ?? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 7); // default 7:00
-  const bedtime = parseTimeToDate(date, profile.targetBedtime) ?? addMinutes(wake, 15 * 60); // default 22:00-ish
-
-  // rules
   const events: FlowEvent[] = [];
-
-  // Morning Light: shortly after wake or sunrise
-  let morningStart = wake;
-  if (locationAvailable && solar.sunrise && solar.sunrise > wake) {
-    // if sunrise is after wake, prefer sunrise within 90 minutes
-    const candidate = solar.sunrise;
-    morningStart = candidate < addMinutes(wake, 90) ? candidate : wake;
-  }
-  const morningEnd = addMinutes(morningStart, 90);
-  events.push({
-    id: "morning_light",
-    name: "Morning Light",
-    start: morningStart,
-    end: morningEnd,
-    status: statusFor(now, morningStart, morningEnd),
-    guidance: "Expose yourself to bright light soon after waking to anchor circadian rhythms.",
-    why: "Strong morning light helps set your internal clock for the day.",
-  });
-
-  // First Meal: 30-180 minutes after wake
-  const firstMealStart = addMinutes(wake, 30);
-  const firstMealEnd = addMinutes(wake, 180);
-  events.push({
-    id: "first_meal",
-    name: "First Meal",
-    start: firstMealStart,
-    end: firstMealEnd,
-    status: statusFor(now, firstMealStart, firstMealEnd),
-    guidance: "Aim for your first meal in the morning window to support metabolic timing.",
-    why: "Timing meals consistently helps stabilize energy and circadian signals.",
-  });
-
-  // Midday Light: centered around solar noon if available, else midday after wake
-  let middayCenter = addMinutes(wake, 6 * 60);
-  if (locationAvailable && solar.solarNoon) middayCenter = solar.solarNoon;
-  const middayStart = addMinutes(middayCenter, -45);
-  const middayEnd = addMinutes(middayCenter, 45);
-  events.push({
-    id: "midday_light",
-    name: "Midday Light",
-    start: middayStart,
-    end: middayEnd,
-    status: statusFor(now, middayStart, middayEnd),
-    guidance: "Get bright light around solar noon to maintain daytime signaling.",
-    why: "Daytime light reinforces alertness and strengthens day/night contrast.",
-  });
-
-  // Movement: mid-morning or after a meal
-  const movementStart = addMinutes(firstMealStart, 90);
-  const movementEnd = addMinutes(movementStart, 60);
-  events.push({
-    id: "movement",
-    name: "Movement",
-    start: movementStart,
-    end: movementEnd,
-    status: statusFor(now, movementStart, movementEnd),
-    guidance: "Short bout of movement or light exercise during daytime.",
-    why: "Activity supports metabolism and daytime alertness.",
-  });
-
-  // Last Meal: approx 3 hours before bedtime
-  const lastMealTime = addMinutes(bedtime, -180);
-  const lastMealEnd = addMinutes(lastMealTime, 60);
-  events.push({
-    id: "last_meal",
-    name: "Last Meal",
-    start: lastMealTime,
-    end: lastMealEnd,
-    status: statusFor(now, lastMealTime, lastMealEnd),
-    guidance: "Finish meals a few hours before bed to improve sleep quality.",
-    why: "Allowing digestion before sleep supports sleep onset and metabolic health.",
-  });
-
-  // Sunset: actual
-  if (locationAvailable && solar.sunset) {
-    const s = solar.sunset;
-    events.push({
-      id: "sunset",
-      name: "Sunset",
-      start: s,
-      status: statusFor(now, s),
-      guidance: "Note the time of sunset and begin evening simplification.",
-      why: "Evening darkness signals the body to prepare for sleep.",
-    });
-  }
-
-  // Dim the House: ~2 hours before bedtime
-  const dimStart = addMinutes(bedtime, -120);
-  events.push({
-    id: "dim_house",
-    name: "Dim the House",
-    start: dimStart,
-    end: addMinutes(dimStart, 30),
-    status: statusFor(now, dimStart, addMinutes(dimStart, 30)),
-    guidance: "Reduce bright lights and switch to warm lighting.",
-    why: "Lower light in the evening reduces circadian disruption.",
-  });
-
-  // Digital Sunset: ~1 hour before bedtime
-  const digitalStart = addMinutes(bedtime, -60);
-  events.push({
-    id: "digital_sunset",
-    name: "Digital Sunset",
-    start: digitalStart,
-    end: addMinutes(digitalStart, 60),
-    status: statusFor(now, digitalStart, addMinutes(digitalStart, 60)),
-    guidance: "Limit screens and bright devices one hour before bed.",
-    why: "Reducing blue light helps melatonin onset and sleep quality.",
-  });
-
-  // Sleep Window: centered on bedtime (±45 minutes)
+  const add = (id: string, name: string, start: Date, end: Date | undefined, guidance: string, source: FlowEvent["source"] = "suggestion") => {
+    events.push({ id, name, start, end, guidance, why: guidance, source, status: statusFor(now, start, end) });
+  };
+  const earlier = (a: Date, b: Date) => a < b ? a : b;
+  const later = (a: Date, b: Date) => a > b ? a : b;
   const sleepStart = addMinutes(bedtime, -45);
-  const sleepEnd = addMinutes(bedtime, 45);
-  events.push({
-    id: "sleep_window",
-    name: "Sleep Window",
-    start: sleepStart,
-    end: sleepEnd,
-    status: statusFor(now, sleepStart, sleepEnd),
-    guidance: "Aim to be asleep within this window for best alignment.",
-    why: "Consistent sleep timing supports circadian stability.",
-  });
+  const dimStart = later(wake, addMinutes(bedtime, -120));
 
-  // sort events by start time
+  // Daylight is an environmental constraint, never a replacement for sleep or meals.
+  // Consider both calendar dates for schedules that cross midnight.
+  const daylight = [solar, getSolarTimes(scheduleTime(shiftDateKey(key, 1), "12:00", profile.timeZone)!, profile.latitude, profile.longitude, profile.timeZone)]
+    .flatMap(day => {
+      if (!day.sunrise || !day.sunset) return [];
+      const start = later(wake, day.sunrise);
+      const end = earlier(dimStart, day.sunset);
+      return start < end ? [{ start, end, noon: day.solarNoon! }] : [];
+    });
+  const firstDaylight = daylight[0];
+  if (firstDaylight || !locationAvailable || solar.dayLengthMinutes === 1440) {
+    const start = firstDaylight?.start ?? wake;
+    const end = earlier(addMinutes(start, 90), firstDaylight?.end ?? dimStart);
+    if (end > start) add("morning_light", "Morning Light", start, end,
+      firstDaylight && start > wake ? "Your day begins before sunrise. Outdoor light is scheduled when daylight is available." : "Get light after waking to support your daily rhythm.");
+  }
+
+  let enteredMeal = scheduleTime(key, profile.lastMealTime, profile.timeZone);
+  if (enteredMeal && enteredMeal < wake) enteredMeal = scheduleTime(shiftDateKey(key, 1), profile.lastMealTime, profile.timeZone);
+  const lastMeal = enteredMeal ?? later(wake, addMinutes(bedtime, -180));
+  const mealConflict = lastMeal < wake || lastMeal >= bedtime;
+  if (mealConflict) warnings.push("Your entered last meal falls outside your waking window. Review the meal or sleep time; neither has been moved.");
+  const firstMealStart = addMinutes(wake, 30);
+  const firstMealEnd = earlier(addMinutes(wake, 180), earlier(lastMeal, sleepStart));
+  if (firstMealEnd > firstMealStart) add("first_meal", "First-meal reference", firstMealStart, firstMealEnd,
+    "Internal reference only. Wake time alone does not justify a first-meal recommendation; habits, morning light, goals, and constraints are still needed.");
+
+  const movementStart = addMinutes(wake, 120);
+  const movementEnd = earlier(addMinutes(movementStart, 60), dimStart);
+  if (movementEnd > movementStart) add("movement", "Movement", movementStart, movementEnd,
+    "An optional movement window during your waking day.");
+
+  const lightDay = daylight.find(day => day.noon >= day.start && day.noon < day.end) ?? firstDaylight;
+  if (lightDay || !locationAvailable || solar.dayLengthMinutes === 1440) {
+    const lower = later(addMinutes(wake, 180), lightDay?.start ?? wake);
+    const upper = earlier(dimStart, lightDay?.end ?? dimStart);
+    const center = lightDay?.noon ?? addMinutes(wake, 360);
+    const start = later(lower, addMinutes(center, -45));
+    const end = earlier(upper, addMinutes(center, 45));
+    if (end > start) add("midday_light", "Midday Light", start, end,
+      lightDay ? "Daylight near solar noon, within your waking schedule." : "A daytime light window based on your wake time; solar timing is unavailable.");
+  }
+
+  add("last_meal", enteredMeal ? "Your usual last meal" : "Suggested last meal", lastMeal, undefined,
+    enteredMeal
+      ? "Uses the last-meal time you entered on Schedule." + (mealConflict ? " This falls outside your waking window; review your schedule." : "")
+      : "No last-meal time is saved. This suggestion is three hours before your bedtime.",
+    enteredMeal ? "schedule" : "suggestion");
+
+  if (solar.sunset) add("sunset", "Sunset", solar.sunset, undefined,
+    "Local sunset calculated from your location. Your bedtime stays anchored to your schedule.", "solar");
+  if (dimStart < sleepStart) add("dim_house", "Dim the House", dimStart, earlier(addMinutes(dimStart, 30), sleepStart),
+    "Reduce bright lighting about two hours before your entered bedtime.");
+  const digitalStart = later(wake, addMinutes(bedtime, -60));
+  if (digitalStart < bedtime) add("digital_sunset", "Digital Sunset", digitalStart, bedtime,
+    "Wind down screen use in the hour before your entered bedtime.");
+  add("sleep_window", "Sleep Window", sleepStart, addMinutes(bedtime, 45),
+    profile.targetBedtime ? "A 90-minute window centered on your entered bedtime. Sunrise and sunset do not move your sleep schedule." : "No bedtime is saved. This suggested sleep window is based on 15 hours after waking.",
+    profile.targetBedtime ? "schedule" : "suggestion");
+
   events.sort((a, b) => a.start.getTime() - b.start.getTime());
 
   // Apply persisted event state for the date if provided and compute final statuses
@@ -233,6 +176,7 @@ export function buildTodaysFlow(opts: { date?: Date; now?: Date; profile?: Daily
 
   return {
     events: finalized,
+    warnings,
     next: nextEvent ?? undefined,
     solar,
     locationAvailable,

@@ -1,5 +1,7 @@
+import { pushFailure } from "@/lib/personalization/push-configuration";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { getServerPushDeliveries } from "@/lib/personalization/server-push-store";
+import { activeKey, publicReminder } from "@/lib/personalization/push-lifecycle";
+import { getServerPushSchedule, redisCommand, getServerPushDeliveries } from "@/lib/personalization/server-push-store";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -14,9 +16,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const deliveries = await getServerPushDeliveries(clientId);
-    return res.status(200).json({ deliveries });
+    const id = await redisCommand<string | null>(["GET", activeKey(clientId)]);
+    const active = id ? await getServerPushSchedule(clientId, id) : null;
+    return res.status(200).json({ deliveries, reminder: active ? publicReminder(active) : null });
   } catch (error) {
     console.error("push_delivery_receipts_failed", error);
-    return res.status(503).json({ error: "push_store_unavailable" });
+    return res.status(503).json(pushFailure(error, true));
   }
 }

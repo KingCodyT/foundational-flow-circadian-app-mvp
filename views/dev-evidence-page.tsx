@@ -91,7 +91,7 @@ export default function EvidenceTestPage() {
           </div>
 
           <div className="mt-8 border-t border-[var(--color-line)] pt-6">
-            <Link href="/you" className="text-sm font-semibold underline underline-offset-4">Open YOU →</Link>
+            <Link href="/profile" className="text-sm font-semibold underline underline-offset-4">Open PROFILE →</Link>
           </div>
         </div>
 

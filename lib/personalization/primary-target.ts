@@ -172,3 +172,13 @@ function buildResultForChosen(chosen: { id: string; signal: InitialSignalState; 
 }
 
 export default selectPrimaryCoachingTarget;
+
+// Keep the assessed/user-reviewed focus while evidence updates its state.
+// Clock ticks and event completion never select a different coaching target.
+export function resolveCoachingFocus(state: InitialPersonalizationState, assessed: PrimaryCoachingTargetResult, reviewedId?: string | null): PrimaryCoachingTargetResult {
+  const id = reviewedId === undefined ? assessed.signalId : reviewedId;
+  const signal = id ? state.perSignal[id] : null;
+  if (!id || !signal || signal.classification !== SignalClassification.BEHAVIOR) return { signalId: null, reason: "awaiting_focus_review" };
+  const severity = deriveSignalSeverity(signal);
+  return buildResultForChosen({ id, signal, hierarchy: SIGNAL_REGISTRY[id]?.hierarchy, registryOrder: 0, severityBand: severity.band, severityScore: severity.score }, state);
+}

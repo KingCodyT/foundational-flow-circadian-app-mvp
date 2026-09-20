@@ -15,7 +15,7 @@ export async function scheduleQStashDispatch(input: {
 
   const notBefore = Math.max(
     Math.floor(Date.now() / 1000),
-    Math.floor(new Date(input.scheduledFor).getTime() / 1000),
+    Math.ceil(new Date(input.scheduledFor).getTime() / 1000),
   );
   if (!Number.isFinite(notBefore)) throw new Error("invalid_schedule_time");
 
@@ -32,6 +32,7 @@ export async function scheduleQStashDispatch(input: {
         "Upstash-Deduplication-Id": `${input.clientId}:${input.notificationId}:${input.scheduleRevision}`,
         "Upstash-Forward-Authorization": `Bearer ${dispatchSecret}`,
       },
+      signal: AbortSignal.timeout(10000),
       body: JSON.stringify({
         clientId: input.clientId,
         notificationId: input.notificationId,

@@ -20,6 +20,8 @@ export type ContextSnapshotState = {
 };
 
 export type LocalAuditState = {
+  wearableConnection?: import("./wearables/connection").WearableConnection | null;
+  firstRunHandoff?: import("./personalization/first-run-guidance").FirstRunHandoff | null;
   clientId: string;
   answers: AnswerMap;
   hasCompletedAudit: boolean;

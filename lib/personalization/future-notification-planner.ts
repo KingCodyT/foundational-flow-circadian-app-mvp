@@ -14,6 +14,7 @@ import { SignalReconsideration } from "./reconsideration";
 export const DEFAULT_FUTURE_NOTIFICATION_HORIZON_MINUTES = 12 * 60;
 
 export type FutureNotificationPlanReason =
+  | "notifications_disabled"
   | "planned"
   | "no_future_event"
   | "event_not_upcoming"
@@ -30,6 +31,7 @@ export type FutureNotificationPlan = {
 };
 
 export type FutureNotificationPlannerInput = {
+  notificationsEnabled?: boolean;
   day1: Day1PersonalizationResult;
   futureEvent?: FlowEvent | null;
   derivedEnvironment?: DerivedEnvironment | null;
@@ -64,6 +66,7 @@ export function planFutureNotification(
     opportunityAt,
   });
 
+  if (input.notificationsEnabled === false) return noPlan("notifications_disabled", null);
   if (!futureEvent) return noPlan("no_future_event", null);
   if (futureEvent.status !== "upcoming") return noPlan("event_not_upcoming");
 

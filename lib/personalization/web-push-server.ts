@@ -35,9 +35,9 @@ function hkdfExpand(prk: Buffer, info: Buffer, length: number) {
 function getVapidConfig() {
   const publicKey = process.env.WEB_PUSH_VAPID_PUBLIC_KEY ?? null;
   const privateKey = process.env.WEB_PUSH_VAPID_PRIVATE_KEY ?? null;
-  const subject = process.env.WEB_PUSH_VAPID_SUBJECT ?? "mailto:notifications@codyoakland.com";
+  const subject = process.env.WEB_PUSH_VAPID_SUBJECT ?? null;
 
-  if (!publicKey || !privateKey) return null;
+  if (!publicKey || !privateKey || !subject) return null;
   return { publicKey, privateKey, subject };
 }
 
@@ -165,10 +165,11 @@ export async function sendWebPush(
       Authorization: authorization,
       "Content-Encoding": "aes128gcm",
       "Content-Type": "application/octet-stream",
-      TTL: "300",
+      TTL: String(Math.max(1, Math.min(300, Math.floor((Date.parse(String(notification.validUntil || "")) - Date.now()) / 1000) || 300))),
       Urgency: "normal",
     },
     body,
+    signal: AbortSignal.timeout(15000),
   });
 
   return {

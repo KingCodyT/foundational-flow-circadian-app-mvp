@@ -11,18 +11,21 @@ import { SignalReconsideration } from "@/lib/personalization/reconsideration";
 export function FutureNotificationPlannerBridge({
   day1,
   futureEvent,
+  activeEventId,
   derivedEnvironment,
   reconsideration,
   now,
 }: {
   day1: Day1PersonalizationResult;
   futureEvent?: FlowEvent | null;
+  activeEventId?: string | null;
   derivedEnvironment?: DerivedEnvironment | null;
   reconsideration?: Record<string, SignalReconsideration> | null;
   now: Date;
 }) {
   const {
     isHydrated,
+    dailyProfile,
     notificationState,
     setScheduledNotification,
   } = useCircadian();
@@ -43,6 +46,7 @@ export function FutureNotificationPlannerBridge({
       planFutureNotification({
         day1,
         futureEvent,
+        notificationsEnabled: dailyProfile?.remindersEnabled === true,
         derivedEnvironment,
         reconsideration,
         delivered: deliveredHistory,
@@ -53,6 +57,7 @@ export function FutureNotificationPlannerBridge({
       deliveredHistory,
       derivedEnvironment,
       futureEvent,
+      dailyProfile?.remindersEnabled,
       now,
       reconsideration,
     ],
@@ -76,11 +81,12 @@ export function FutureNotificationPlannerBridge({
 
     // Planner owns only future:* records. Never clear an immediate/runtime
     // notification that another layer has already scheduled.
-    if (current?.id.startsWith("future:")) {
+    if (current?.id.startsWith("future:") && !(current.eventId === activeEventId && Date.parse(current.validUntil || "") >= now.getTime())) {
       setScheduledNotification(null);
     }
   }, [
     isHydrated,
+    activeEventId, now,
     notificationState.scheduledNotification,
     plan.notification,
     setScheduledNotification,

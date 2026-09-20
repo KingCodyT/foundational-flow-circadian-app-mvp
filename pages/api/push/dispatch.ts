@@ -1,98 +1,36 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import {
-  completeServerPushSchedule,
-  deletePushSubscription,
-  getPushSubscription,
-  getServerPushSchedule,
-  saveServerPushDelivery,
-} from "@/lib/personalization/server-push-store";
-import { sendWebPush, webPushConfigured } from "@/lib/personalization/web-push-server";
-
-function authorized(req: NextApiRequest) {
-  const secret = process.env.PUSH_DISPATCH_SECRET;
-  if (!secret) return false;
-  return req.headers.authorization === `Bearer ${secret}`;
-}
-
-function validClientId(value: unknown): value is string {
-  return typeof value === "string" && value.length >= 8 && value.length <= 200;
-}
-
+import { getPushSubscription, getServerPushSchedule, deletePushSubscription, redisCommand } from "@/lib/personalization/server-push-store";
+import { activeKey, publicReminder, withPushLock, saveLifecycle } from "@/lib/personalization/push-lifecycle";
+import { sendWebPush } from "@/lib/personalization/web-push-server";
+import { missingPushConfiguration, pushFailure } from "@/lib/personalization/push-configuration";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ error: "method_not_allowed" });
-  }
-  if (!authorized(req)) return res.status(401).json({ error: "unauthorized" });
-  if (!webPushConfigured()) {
-    return res.status(503).json({ error: "web_push_not_configured" });
-  }
-
+  if (req.method !== "POST") { res.setHeader("Allow", "POST"); return res.status(405).json({ error: "method_not_allowed" }); }
+  if (!process.env.PUSH_DISPATCH_SECRET || req.headers.authorization !== `Bearer ${process.env.PUSH_DISPATCH_SECRET}`) return res.status(401).json({ error: "unauthorized" });
+  if (missingPushConfiguration().length) return res.status(503).json(pushFailure(null));
   const { clientId, notificationId, scheduleRevision } = req.body ?? {};
-  if (
-    !validClientId(clientId) ||
-    typeof notificationId !== "string" ||
-    typeof scheduleRevision !== "string" ||
-    !scheduleRevision
-  ) {
-    return res.status(400).json({ error: "invalid_dispatch_request" });
-  }
-
+  if (typeof clientId !== "string" || typeof notificationId !== "string" || typeof scheduleRevision !== "string") return res.status(400).json({ error: "invalid_dispatch_request" });
   try {
-    const schedule = await getServerPushSchedule(clientId, notificationId);
-
-    // The durable schedule is the current delivery intent. Cancellation removes
-    // it; replacement changes its revision. Either condition makes an older
-    // delayed callback a quiet NOOP rather than a zombie notification.
-    if (!schedule) return res.status(204).end();
-    if (schedule.scheduleRevision !== scheduleRevision) {
-      return res.status(204).end();
-    }
-
-    const now = Date.now();
-    const scheduledAt = new Date(schedule.scheduledFor).getTime();
-    if (Number.isFinite(scheduledAt) && scheduledAt - now > 15_000) {
-      return res.status(425).json({ error: "dispatch_arrived_too_early" });
-    }
-
-    // Future coaching is valid only inside the biological opportunity that
-    // approved it. A delayed retry after that window closes is discarded.
-    if (schedule.validUntil) {
-      const validUntil = new Date(schedule.validUntil).getTime();
-      if (!Number.isFinite(validUntil) || now > validUntil) {
-        await completeServerPushSchedule(schedule);
-        return res.status(204).end();
+    const result = await withPushLock(clientId, async () => {
+      const record = await getServerPushSchedule(clientId, notificationId);
+      if (!record || record.scheduleRevision !== scheduleRevision || !["scheduled", "deferred"].includes(record.state || "scheduled") ||
+        await redisCommand(["GET", activeKey(clientId)]) !== notificationId) return 204;
+      if (Date.parse(record.scheduledFor) > Date.now()) return 425;
+      if (!record.validUntil || Date.parse(record.validUntil) < Date.now()) {
+        record.state = "failed"; record.reason = "Reminder window expired before delivery"; await saveLifecycle(record); return 204;
       }
-    }
-
-    const subscription = await getPushSubscription(clientId);
-    if (!subscription) {
-      await completeServerPushSchedule(schedule);
-      return res.status(204).end();
-    }
-
-    const result = await sendWebPush(subscription, schedule.notification);
-    if (result.ok) {
-      await saveServerPushDelivery(clientId, {
-        id: schedule.notification.id,
-        targetSignalId: schedule.notification.targetSignalId,
-        eventId: schedule.notification.eventId,
-        channel: schedule.notification.channel,
-        deliveredAt: new Date().toISOString(),
-      });
-      await completeServerPushSchedule(schedule);
-      return res.status(204).end();
-    }
-
-    if (result.subscriptionExpired) {
-      await deletePushSubscription(clientId);
-      await completeServerPushSchedule(schedule);
-      return res.status(204).end();
-    }
-
-    return res.status(503).json({ error: "web_push_delivery_retryable" });
-  } catch (error) {
-    console.error("web_push_dispatch_error", error);
-    return res.status(503).json({ error: "web_push_dispatch_failed" });
-  }
+      const subscription = await getPushSubscription(clientId);
+      if (!subscription) { record.state = "failed"; record.reason = "No phone/browser push subscription; enable notifications on that device"; await saveLifecycle(record); return 204; }
+      const sent = await sendWebPush(subscription, publicReminder(record));
+      if (sent.ok) {
+        record.state = "sent"; record.reason = "Push service accepted; device display is not yet confirmed";
+        await saveLifecycle(record); return 204;
+      }
+      if (sent.subscriptionExpired) {
+        await deletePushSubscription(clientId); record.state = "failed"; record.reason = "Push subscription expired; reconnect notifications on this device";
+        await saveLifecycle(record); return 204;
+      }
+      record.reason = `web_push_rejected:${sent.status}`; await saveLifecycle(record); throw new Error(record.reason);
+    });
+    return result === 425 ? res.status(425).json({ error: "dispatch_arrived_too_early" }) : res.status(204).end();
+  } catch (error) { return res.status(503).json(pushFailure(error)); }
 }

@@ -6,6 +6,8 @@ export type FoodTimingEvidence = {
   id: string;
   action: FoodTimingAction;
   at: string;
+  recordedAt?: string | null;
+  updatedAt?: string | null;
   source: "USER";
   historicalContext?: HistoricalBiologicalContext | null;
 };
@@ -21,6 +23,8 @@ export type FoodTimingAnchors = {
 export type MealTimingRelationship = {
   evidenceId: string;
   at: string;
+  recordedAt?: string | null;
+  updatedAt?: string | null;
   minutesFromWake: number | null;
   minutesFromMorningLight: number | null;
   minutesFromSunset: number | null;
@@ -81,6 +85,8 @@ function buildRelationship(
   return {
     evidenceId: evidence.id,
     at: mealAt.toISOString(),
+    recordedAt: evidence.recordedAt ?? null,
+    updatedAt: evidence.updatedAt ?? null,
     minutesFromWake: minutesBetween(mealAt, wakeAt),
     minutesFromMorningLight: minutesBetween(mealAt, morningLightAt),
     minutesFromSunset: minutesBetween(mealAt, sunsetAt),
@@ -102,7 +108,13 @@ export function buildCircadianFoodTimingSnapshot(input: {
   const evidence = [...input.evidence].sort((a, b) => {
     const aTime = parsed(a.at)?.getTime() ?? Number.MAX_SAFE_INTEGER;
     const bTime = parsed(b.at)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-    return aTime - bTime;
+    if (aTime !== bTime) return aTime - bTime;
+
+    const aRecorded = parsed(a.recordedAt ?? a.updatedAt ?? a.at)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const bRecorded = parsed(b.recordedAt ?? b.updatedAt ?? b.at)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    if (aRecorded !== bRecorded) return aRecorded - bRecorded;
+
+    return a.id.localeCompare(b.id);
   });
 
   const meals = evidence

@@ -1,0 +1,106 @@
+{
+  "clientId": "synthetic-food-only",
+  "answers": {
+    "morning_light_timing": "within_15",
+    "bedroom_darkness": "very_dark",
+    "future_answer": "retained"
+  },
+  "hasCompletedAudit": true,
+  "lastSavedAt": "2026-08-20T10:00:00-07:00",
+  "participationLevel": "BASELINE",
+  "dailyProfile": {
+    "displayName": "Synthetic Fixture",
+    "wakeTime": "07:00",
+    "targetBedtime": "21:45",
+    "lastMealTime": "18:30",
+    "timeZone": "America/Los_Angeles",
+    "locationPermissionGranted": false,
+    "coachingTargetSignalId": "meal_timing",
+    "futureProfile": {
+      "keep": true
+    }
+  },
+  "firstRunHandoff": {
+    "guidance": null,
+    "futureHandoff": 7
+  },
+  "eventStateByDate": {
+    "2026-08-19": {
+      "morning_light": {
+        "status": "completed",
+        "at": "2026-08-19T07:08:00-07:00",
+        "futureEvent": "retain"
+      }
+    }
+  },
+  "foodTimingEvidenceByDate": {
+    "2026-08-19": [
+      {
+        "id": "synthetic-meal-1",
+        "action": "MEAL_STARTED",
+        "at": "2026-08-19T18:30:00-07:00",
+        "recordedAt": "2026-08-20T01:32:00Z",
+        "updatedAt": "2026-08-20T01:35:00Z",
+        "source": "USER",
+        "futureMeal": {
+          "keep": true
+        },
+        "historicalContext": {
+          "capturedAt": "2026-08-19T18:30:00-07:00",
+          "timeZone": "America/Los_Angeles",
+          "latitude": null,
+          "longitude": null,
+          "wakeAt": "2026-08-19T07:00:00-07:00",
+          "morningLightAt": null,
+          "sunriseAt": null,
+          "sunsetAt": null,
+          "targetSleepAt": "2026-08-19T21:45:00-07:00",
+          "futureAnchor": "retain"
+        }
+      },
+      {
+        "id": "synthetic-intent-1",
+        "action": "EATING_LATER",
+        "at": "2026-08-19T12:00:00-07:00",
+        "source": "USER"
+      }
+    ],
+    "2026-08-18": []
+  },
+  "notificationState": {
+    "scheduledNotification": null,
+    "deliveredNotifications": [
+      {
+        "id": "synthetic-delivered-old",
+        "deliveredAt": "2020-01-01T00:00:00Z",
+        "futureDelivery": "retain"
+      }
+    ],
+    "materialChangeKeys": {
+      "old": "retain"
+    },
+    "futureNotification": {
+      "keep": true
+    }
+  },
+  "wearableConnection": {
+    "enabled": false,
+    "observations": [],
+    "futureWearable": "retain"
+  },
+  "recommendationArchive": [
+    {
+      "id": "synthetic-genuine-record",
+      "generatedAt": "2026-08-19T07:00:00-07:00",
+      "text": "Existing recorded suggestion",
+      "futureRecommendation": "retain"
+    }
+  ],
+  "futureRoot": {
+    "nested": [
+      "keep",
+      null,
+      3
+    ]
+  }
+}

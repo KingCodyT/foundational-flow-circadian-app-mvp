@@ -20,6 +20,13 @@ export type ContextSnapshotState = {
 };
 
 export type LocalAuditState = {
+  // Additive storage contract; unknown persisted fields survive provider roundtrips.
+  [key: string]: unknown;
+  schemaVersion?: 2;
+  acceptedFocus?: import("./personalization/storage-migration").AcceptedFocus;
+  personalizationRuntime?: import("./personalization/storage-migration").StoredRuntime;
+  assessmentEvidenceHistory?: Record<string, Record<string, unknown>[]>;
+  runtimeMigration?: { version: 1; rebuildRequired: boolean; unassessedPendingSignalIds: string[] };
   wearableConnection?: import("./wearables/connection").WearableConnection | null;
   firstRunHandoff?: import("./personalization/first-run-guidance").FirstRunHandoff | null;
   clientId: string;

@@ -6,14 +6,15 @@ import {
   ReactNode,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import {
   createClientId,
   LocalAuditState,
   normalizeDailyProfile,
-  STORAGE_KEY,
 } from "@/lib/audit-store";
+import { createStorageSession, type StorageIssue } from "@/lib/personalization/storage-migration";
 import { getRuntimeTimeZone, localDateKey } from "@/lib/live-clock";
 import {
   FoodTimingAction,
@@ -64,6 +65,8 @@ type CircadianState = {
   answers: AnswerMap;
   lastSavedAt: string | null;
   isHydrated: boolean;
+  storageIssue: StorageIssue | null;
+  retryStorage: () => void;
   hasCompletedAudit: boolean;
   participationLevel: ParticipationLevel | null;
   dailyProfile: DailyProfile | null;
@@ -135,6 +138,14 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasCompletedAudit, setHasCompletedAudit] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [storageIssue, setStorageIssue] = useState<StorageIssue | null>(null);
+  const [hydrationAttempt, setHydrationAttempt] = useState(0);
+  const [saveAttempt, setSaveAttempt] = useState(0);
+  const storageSession = useRef<ReturnType<typeof createStorageSession> | null>(null);
+  const retryStorage = () => {
+    if (isHydrated) setSaveAttempt(value => value + 1);
+    else setHydrationAttempt(value => value + 1);
+  };
 
   function parseIso(value?: string | null) {
     if (!value) return null;
@@ -200,40 +211,30 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    const rawState = window.localStorage.getItem(STORAGE_KEY);
-
-    if (rawState) {
-      try {
-        const parsedState = JSON.parse(rawState) as LocalAuditState;
-        const fallbackTimeZone = getRuntimeTimeZone();
-        setClientId(parsedState.clientId ?? createClientId());
-        setAnswers(parsedState.answers ?? {});
-        setParticipationLevelState(parsedState.participationLevel ?? null);
-        setDailyProfileState(normalizeDailyProfile(parsedState.dailyProfile ?? null, fallbackTimeZone));
-        setEventStateByDate(parsedState.eventStateByDate ?? null);
-        setFoodTimingEvidenceByDate(
-          normalizeFoodTimingEvidenceByDate(parsedState.foodTimingEvidenceByDate ?? null),
-        );
-        setPreviousContextSnapshot(parsedState.previousContextSnapshot ?? null);
-        setCurrentContextSnapshot(parsedState.currentContextSnapshot ?? null);
-        setNotificationState(
-          pruneNotificationPersistenceState(parsedState.notificationState ?? null),
-        );
-        setLastSavedAt(parsedState.lastSavedAt ?? null);
-        setWearableConnection(normalizeWearableConnection(parsedState.wearableConnection));
-        setFirstRunHandoff(parsedState.firstRunHandoff ?? null);
-        setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
-      } catch {
-        setClientId(createClientId());
-        setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
-      }
-    } else {
-      setClientId(createClientId());
-      setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
+    const session = storageSession.current ?? createStorageSession(() => window.localStorage);
+    storageSession.current = session;
+    const result = session.hydrate();
+    if (result.status !== "ready") {
+      setStorageIssue(result.issue);
+      return; // Never turn unreadable/unsupported storage into a new empty account.
     }
-
+    const parsedState = result.state;
+    setClientId(parsedState.clientId || createClientId());
+    setAnswers(parsedState.answers);
+    setParticipationLevelState(parsedState.participationLevel ?? null);
+    setDailyProfileState(normalizeDailyProfile(parsedState.dailyProfile ?? null, getRuntimeTimeZone()));
+    setEventStateByDate(parsedState.eventStateByDate ?? null);
+    setFoodTimingEvidenceByDate(parsedState.foodTimingEvidenceByDate ?? null);
+    setPreviousContextSnapshot(parsedState.previousContextSnapshot ?? null);
+    setCurrentContextSnapshot(parsedState.currentContextSnapshot ?? null);
+    setNotificationState(pruneNotificationPersistenceState(parsedState.notificationState ?? null));
+    setLastSavedAt(parsedState.lastSavedAt);
+    setWearableConnection(normalizeWearableConnection(parsedState.wearableConnection));
+    setFirstRunHandoff(parsedState.firstRunHandoff ?? null);
+    setHasCompletedAudit(parsedState.hasCompletedAudit);
+    setStorageIssue(null);
     setIsHydrated(true);
-  }, []);
+  }, [hydrationAttempt]);
 
   useEffect(() => {
     if (!isHydrated || !clientId) return;
@@ -254,8 +255,10 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       notificationState: pruneNotificationPersistenceState(notificationState),
     };
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const result = storageSession.current?.save(state);
+    setStorageIssue(result?.status === "blocked" ? result.issue : null);
   }, [
+    saveAttempt,
     firstRunHandoff,
     wearableConnection,
     answers,
@@ -412,17 +415,20 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         ...preserved,
         at: nextAt.toISOString(),
         updatedAt,
-        historicalContext: captureHistoricalBiologicalContext({
-          at: nextAt,
-          profile: {
-            wakeTime: dailyProfile?.wakeTime ?? null,
-            targetBedtime: dailyProfile?.targetBedtime ?? null,
-            lastMealTime: dailyProfile?.lastMealTime ?? null,
-            timeZone: dailyProfile?.timeZone ?? getRuntimeTimeZone(),
-            latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
-            longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
-          },
-        }),
+        historicalContext: {
+          ...preserved.historicalContext,
+          ...captureHistoricalBiologicalContext({
+            at: nextAt,
+            profile: {
+              wakeTime: dailyProfile?.wakeTime ?? null,
+              targetBedtime: dailyProfile?.targetBedtime ?? null,
+              lastMealTime: dailyProfile?.lastMealTime ?? null,
+              timeZone: dailyProfile?.timeZone ?? getRuntimeTimeZone(),
+              latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
+              longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
+            },
+          }),
+        },
       });
 
       const sourceBucket = [...(next[location.date] ?? [])];
@@ -526,6 +532,10 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   };
 
   const resetAudit = () => {
+    // Recovery-blocked data must not be erased by a reset or an early interaction.
+    if (!isHydrated || storageIssue) return;
+    // Persist an explicit reset only after retaining a recovery copy of the old account.
+    storageSession.current?.requestReset();
     setClientId(createClientId());
     setFirstRunHandoff(null);
     setDeliverySetup(null);
@@ -540,7 +550,6 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setNotificationState(DEFAULT_NOTIFICATION_PERSISTENCE_STATE);
     setLastSavedAt(null);
     setHasCompletedAudit(false);
-    window.localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
@@ -552,6 +561,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         answers,
         lastSavedAt,
         isHydrated,
+        storageIssue,
+        retryStorage,
         hasCompletedAudit,
         participationLevel,
         dailyProfile,

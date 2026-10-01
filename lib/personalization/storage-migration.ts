@@ -8,7 +8,7 @@ export type AcceptedFocus = {
   status: "unset" | "accepted";
   signalId: string | null;
   acceptedAt: string | null;
-  source: "uninitialized" | "legacy-profile" | "explicit";
+  source: "uninitialized" | "legacy-profile" | "explicit" | "system-initialization";
   [key: string]: unknown;
 };
 /** Stored checkpoint only. Stage 1 does not execute or recompute personalization. */
@@ -72,6 +72,8 @@ function validRuntime(v: unknown): boolean {
   if (v == null) return true;
   if (!object(v) || v.version !== 1 || typeof v.inputKey !== "string" || !object(v.state) || !records(v.state.perSignal)) return false;
   if (!["observedAnswers", "acceptedAnswers", "acknowledgedHistory", "evidenceKeys"].every(k => strings(v[k])) || !records(v.baselines) || !Object.values(v.baselines).every(context) || !arrays(v.history) || !Array.isArray(v.resolutions) || !v.resolutions.every(object)) return false;
+  if (!validFood(v.acceptedFoodEvidence)) return false;
+  if (v.foodContexts != null && (!records(v.foodContexts) || !Object.values(v.foodContexts).every(c => date(c.at) && object(c.context)))) return false;
   return Object.values(v.state.perSignal).every(s => {
     if (!object(s) || !Array.isArray(s.evidence) || !s.evidence.every(object)) return false;
     if (s.coachingState != null && !["ESTABLISHED", "DEVELOPING", "NEEDS_ATTENTION", "DISRUPTED"].includes(String(s.coachingState))) return false;
@@ -82,7 +84,7 @@ function validRuntime(v: unknown): boolean {
 }
 function validFocus(v: unknown): v is AcceptedFocus {
   return object(v) && v.version === 1 && Object.hasOwn(v, "signalId") && Object.hasOwn(v, "acceptedAt") && ["unset", "accepted"].includes(String(v.status)) && nullableString(v.signalId) &&
-    optionalDate(v.acceptedAt) && ["uninitialized", "legacy-profile", "explicit"].includes(String(v.source)) &&
+    optionalDate(v.acceptedAt) && ["uninitialized", "legacy-profile", "explicit", "system-initialization"].includes(String(v.source)) &&
     (v.status === "unset" ? v.signalId === null && v.acceptedAt === null && v.source === "uninitialized" : v.source !== "uninitialized");
 }
 function validHandoff(v: unknown): boolean {
@@ -130,7 +132,7 @@ export function decodeStorage(raw: string | null): DecodedStorage {
   try { parsed = raw === null ? {} : JSON.parse(raw); } catch { return { status: "blocked", issue: "malformed" }; }
   if (!object(parsed)) return { status: "blocked", issue: "malformed" };
   if (parsed.schemaVersion !== undefined && parsed.schemaVersion !== 1 && parsed.schemaVersion !== 2 ||
-      object(parsed.personalizationRuntime) && parsed.personalizationRuntime.version !== 1 ||
+      object(parsed.personalizationRuntime) && (parsed.personalizationRuntime.version !== 1 || parsed.personalizationRuntime.combinedRevision !== undefined && parsed.personalizationRuntime.combinedRevision !== 1) ||
       object(parsed.acceptedFocus) && parsed.acceptedFocus.version !== 1) return { status: "blocked", issue: "unsupported-version" };
   if (object(parsed.runtimeMigration) && parsed.runtimeMigration.version !== 1) return { status: "blocked", issue: "unsupported-version" };
   if (!validState(parsed)) return { status: "blocked", issue: "malformed" };
@@ -142,7 +144,7 @@ export function decodeStorage(raw: string | null): DecodedStorage {
   };
   const state = { ...parsed, schemaVersion: 2, clientId: parsed.clientId ?? "", answers: parsed.answers ?? {},
     hasCompletedAudit: parsed.hasCompletedAudit ?? false, lastSavedAt: parsed.lastSavedAt ?? null, acceptedFocus } as CombinedStorage;
-  if (state.personalizationRuntime && (parsed.schemaVersion !== 2 || !parsed.runtimeMigration)) {
+  if (state.personalizationRuntime && state.personalizationRuntime.combinedRevision !== 1 && (parsed.schemaVersion !== 2 || !parsed.runtimeMigration)) {
     const runtime = state.personalizationRuntime;
     const pendingEmpty = Object.entries(runtime.state.perSignal).filter(([, s]) =>
       s.classification === "BEHAVIOR" && s.coachingState == null && object(s.reconsideration) &&
@@ -162,12 +164,21 @@ export function decodeStorage(raw: string | null): DecodedStorage {
  */
 export function mergeRetained(original: unknown, before: unknown, after: unknown, path: string[] = []): unknown {
   if (same(before, after)) return original;
+  // These new runtime-owned snapshots are complete projections, not partial UI
+  // records. Merging omitted entries would resurrect deleted meals or stale
+  // fallback anchors. User source records and pending accepted snapshots remain
+  // preserved separately; unknown envelope/signal fields still use retention.
+  if (path.length === 2 && path[0] === "personalizationRuntime" &&
+      ["foodContexts", "acceptedFoodEvidence"].includes(path[1])) return after;
   if (object(original) && object(before) && object(after)) {
     // Dictionary removals are meaningful (deleted meals/events/keys). Omitted
     // fields in a typed record are retained: an older UI may not know them.
     const dictionary = path.length === 1 && ["answers", "foodTimingEvidenceByDate", "eventStateByDate"].includes(path[0]) ||
       path.length === 2 && (path[0] === "eventStateByDate" || path.join(".") === "notificationState.materialChangeKeys");
     return Object.fromEntries([...new Set([...Object.keys(original), ...Object.keys(after)])]
+      // Only the explicitly resolved known lifecycle field may disappear from a
+      // runtime signal record; unknown extension fields retain Stage 1 semantics.
+      .filter(k => !(path.length === 4 && path[0] === "personalizationRuntime" && path[1] === "state" && path[2] === "perSignal" && k === "reconsideration" && !Object.hasOwn(after, k)))
       .filter(k => !dictionary || !Object.hasOwn(before, k) || Object.hasOwn(after, k))
       .map(k => [k, Object.hasOwn(after, k) ? (Object.hasOwn(before, k) ? mergeRetained(original[k], before[k], after[k], [...path, k]) : after[k]) : original[k]]));
   }
@@ -236,5 +247,10 @@ export function createStorageSession(getStorage: () => StoragePort) {
     resetRequested = true;
     needsBackup = sourceRaw !== null;
   }
-  return { hydrate, save, requestReset };
+  // Bind the hydrated display projection before any runtime transition. This keeps
+  // normalization non-destructive while allowing the first rebuilt checkpoint to save.
+  function setViewBaseline(projection: LocalAuditState) {
+    if (ready && !view) view = projection;
+  }
+  return { hydrate, save, requestReset, setViewBaseline };
 }

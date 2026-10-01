@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useRef,
+  useMemo,
   useState,
 } from "react";
 import {
@@ -14,7 +15,12 @@ import {
   LocalAuditState,
   normalizeDailyProfile,
 } from "@/lib/audit-store";
-import { createStorageSession, type StorageIssue } from "@/lib/personalization/storage-migration";
+import { createStorageSession, type AcceptedFocus, type StoredRuntime, type StorageIssue } from "@/lib/personalization/storage-migration";
+import { useLiveClock } from "@/hooks/use-live-clock";
+import { buildDerivedEnvironment, type DerivedEnvironment } from "@/lib/personalization/derived-environment";
+import { buildContextSnapshot } from "@/lib/personalization/reconsideration";
+import { advancePersonalization, resolvePersonalizationReview, initializeAcceptedFocus, runtimeSelectors, UNSET_FOCUS, type PersonalizationRuntime } from "@/lib/personalization/runtime";
+import type { AssessmentEvidenceHistory } from "@/lib/personalization/reconsideration-application";
 import { getRuntimeTimeZone, localDateKey } from "@/lib/live-clock";
 import {
   FoodTimingAction,
@@ -66,6 +72,14 @@ type CircadianState = {
   lastSavedAt: string | null;
   isHydrated: boolean;
   storageIssue: StorageIssue | null;
+  now: Date;
+  environment: DerivedEnvironment;
+  runtime: PersonalizationRuntime | null;
+  acceptedFocus: AcceptedFocus;
+  currentPersonalization: ReturnType<typeof runtimeSelectors>["day1"] | null;
+  candidateTarget: ReturnType<typeof runtimeSelectors>["candidateTarget"] | null;
+  reconsideration: ReturnType<typeof runtimeSelectors>["reconsideration"];
+  resolveReconsideration: (signalId: string) => void;
   retryStorage: () => void;
   hasCompletedAudit: boolean;
   participationLevel: ParticipationLevel | null;
@@ -142,6 +156,35 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   const [hydrationAttempt, setHydrationAttempt] = useState(0);
   const [saveAttempt, setSaveAttempt] = useState(0);
   const storageSession = useRef<ReturnType<typeof createStorageSession> | null>(null);
+  const [runtimeCheckpoint, setRuntimeCheckpoint] = useState<PersonalizationRuntime | null>(null);
+  const [focusCheckpoint, setFocusCheckpoint] = useState<AcceptedFocus>(UNSET_FOCUS);
+  const [migrationCheckpoint, setMigrationCheckpoint] = useState<LocalAuditState["runtimeMigration"]>();
+  const legacyHistory = useRef<AssessmentEvidenceHistory | undefined>(undefined);
+  const now = useLiveClock();
+  const runtimeDate = localDateKey(now, dailyProfile?.timeZone);
+  const environment = useMemo(() => buildDerivedEnvironment({ profile: dailyProfile, date: now, now }), [dailyProfile, runtimeDate]);
+  const runtimeInput = useMemo(() => ({
+    answers, eventStateByDate, foodTimingEvidenceByDate, profile: dailyProfile, participationLevel, environment, now,
+    context: buildContextSnapshot({ profile: dailyProfile, derivedEnvironment: environment, capturedAt: now.toISOString() }),
+    legacyHistory: legacyHistory.current,
+    legacyBaseline: previousContextSnapshot ? { ...previousContextSnapshot, capturedAt: previousContextSnapshot.capturedAt ?? now.toISOString() } : null,
+  }), [answers, eventStateByDate, foodTimingEvidenceByDate, dailyProfile, participationLevel, environment, now, previousContextSnapshot]);
+  const sharedRuntime = useMemo(() => isHydrated ? advancePersonalization(runtimeCheckpoint, runtimeInput) : null,
+    [isHydrated, runtimeCheckpoint, runtimeInput]);
+  const acceptedFocus = useMemo(() => sharedRuntime ? initializeAcceptedFocus(focusCheckpoint, sharedRuntime, now.toISOString()) : focusCheckpoint,
+    [sharedRuntime, focusCheckpoint]);
+  const selectors = useMemo(() => sharedRuntime ? runtimeSelectors(sharedRuntime, acceptedFocus) : null, [sharedRuntime, acceptedFocus]);
+  const completedMigration = useMemo(() => migrationCheckpoint && sharedRuntime
+    ? { ...migrationCheckpoint, rebuildRequired: false } : migrationCheckpoint, [migrationCheckpoint, sharedRuntime]);
+  useEffect(() => {
+    if (!sharedRuntime) return;
+    setRuntimeCheckpoint(sharedRuntime);
+    setFocusCheckpoint(acceptedFocus);
+  }, [sharedRuntime, acceptedFocus]);
+  const resolveReconsideration = (signalId: string) => {
+    if (sharedRuntime && isHydrated) setRuntimeCheckpoint(previous =>
+      resolvePersonalizationReview(previous ?? sharedRuntime, runtimeInput, signalId, now.toISOString()));
+  };
   const retryStorage = () => {
     if (isHydrated) setSaveAttempt(value => value + 1);
     else setHydrationAttempt(value => value + 1);
@@ -219,17 +262,33 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       return; // Never turn unreadable/unsupported storage into a new empty account.
     }
     const parsedState = result.state;
+    const hydratedProfile = normalizeDailyProfile(parsedState.dailyProfile ?? null, getRuntimeTimeZone());
+    const hydratedNotifications = pruneNotificationPersistenceState(parsedState.notificationState ?? null);
+    const hydratedWearables = normalizeWearableConnection(parsedState.wearableConnection);
+    session.setViewBaseline({ ...parsedState,
+      participationLevel: parsedState.participationLevel ?? null,
+      eventStateByDate: parsedState.eventStateByDate ?? null,
+      foodTimingEvidenceByDate: parsedState.foodTimingEvidenceByDate ?? null,
+      previousContextSnapshot: parsedState.previousContextSnapshot ?? null,
+      currentContextSnapshot: parsedState.currentContextSnapshot ?? null,
+      firstRunHandoff: parsedState.firstRunHandoff ?? null,
+      dailyProfile: hydratedProfile,
+      notificationState: hydratedNotifications, wearableConnection: hydratedWearables });
+    setRuntimeCheckpoint(parsedState.personalizationRuntime as unknown as PersonalizationRuntime ?? null);
+    setFocusCheckpoint(parsedState.acceptedFocus);
+    setMigrationCheckpoint(parsedState.runtimeMigration);
+    legacyHistory.current = parsedState.assessmentEvidenceHistory;
     setClientId(parsedState.clientId || createClientId());
     setAnswers(parsedState.answers);
     setParticipationLevelState(parsedState.participationLevel ?? null);
-    setDailyProfileState(normalizeDailyProfile(parsedState.dailyProfile ?? null, getRuntimeTimeZone()));
+    setDailyProfileState(hydratedProfile);
     setEventStateByDate(parsedState.eventStateByDate ?? null);
     setFoodTimingEvidenceByDate(parsedState.foodTimingEvidenceByDate ?? null);
     setPreviousContextSnapshot(parsedState.previousContextSnapshot ?? null);
     setCurrentContextSnapshot(parsedState.currentContextSnapshot ?? null);
-    setNotificationState(pruneNotificationPersistenceState(parsedState.notificationState ?? null));
+    setNotificationState(hydratedNotifications);
     setLastSavedAt(parsedState.lastSavedAt);
-    setWearableConnection(normalizeWearableConnection(parsedState.wearableConnection));
+    setWearableConnection(hydratedWearables);
     setFirstRunHandoff(parsedState.firstRunHandoff ?? null);
     setHasCompletedAudit(parsedState.hasCompletedAudit);
     setStorageIssue(null);
@@ -237,9 +296,13 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   }, [hydrationAttempt]);
 
   useEffect(() => {
-    if (!isHydrated || !clientId) return;
+    if (!isHydrated || !clientId || !sharedRuntime) return;
 
     const state: LocalAuditState = {
+      schemaVersion: 2,
+      personalizationRuntime: sharedRuntime as unknown as StoredRuntime,
+      acceptedFocus,
+      runtimeMigration: completedMigration,
       firstRunHandoff,
       wearableConnection,
       clientId,
@@ -259,6 +322,9 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setStorageIssue(result?.status === "blocked" ? result.issue : null);
   }, [
     saveAttempt,
+    sharedRuntime,
+    acceptedFocus,
+    completedMigration,
     firstRunHandoff,
     wearableConnection,
     answers,
@@ -289,17 +355,6 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   const setDailyProfile = (profile: DailyProfile | null) => {
     const runtimeTimeZone = getRuntimeTimeZone();
     const normalized = normalizeDailyProfile(profile, runtimeTimeZone);
-    const nextCurrentContextSnapshot = {
-      timeZone: normalized?.timeZone ?? null,
-      latitude: normalized?.latitude ?? null,
-      longitude: normalized?.longitude ?? null,
-      wakeTime: normalized?.wakeTime ?? null,
-      targetBedtime: normalized?.targetBedtime ?? null,
-      dayLengthMinutes: null,
-      capturedAt: new Date().toISOString(),
-    };
-    setPreviousContextSnapshot((current) => current ?? nextCurrentContextSnapshot);
-    setCurrentContextSnapshot(nextCurrentContextSnapshot);
     setDailyProfileState(normalized);
   };
 
@@ -536,6 +591,10 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     if (!isHydrated || storageIssue) return;
     // Persist an explicit reset only after retaining a recovery copy of the old account.
     storageSession.current?.requestReset();
+    setRuntimeCheckpoint(null);
+    setFocusCheckpoint(UNSET_FOCUS);
+    setMigrationCheckpoint(undefined);
+    legacyHistory.current = undefined;
     setClientId(createClientId());
     setFirstRunHandoff(null);
     setDeliverySetup(null);
@@ -563,6 +622,10 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         isHydrated,
         storageIssue,
         retryStorage,
+        now, environment, runtime: sharedRuntime, acceptedFocus,
+        currentPersonalization: selectors?.day1 ?? null,
+        candidateTarget: selectors?.candidateTarget ?? null,
+        reconsideration: selectors?.reconsideration ?? {}, resolveReconsideration,
         hasCompletedAudit,
         participationLevel,
         dailyProfile,

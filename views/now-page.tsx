@@ -8,18 +8,7 @@ import { FlowShell } from "@/components/flow-shell";
 import { FutureNotificationPlannerBridge } from "@/components/future-notification-planner-bridge";
 import { useCircadian } from "@/components/circadian-provider";
 import { buildTodaysFlow } from "@/lib/flow-engine";
-import { useLiveClock } from "@/hooks/use-live-clock";
 import { localDateKey } from "@/lib/live-clock";
-import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
-import { assembleDay1Personalization } from "@/lib/personalization/day1";
-import { applyDailyEvidence } from "@/lib/personalization/daily-evidence";
-import { applyCircadianFoodCoachingEvidence } from "@/lib/personalization/circadian-food-signal-integration";
-import { selectPrimaryCoachingTarget, resolveCoachingFocus } from "@/lib/personalization/primary-target";
-import {
-  assessReconsideration,
-  buildContextSnapshot,
-  ContextSnapshot,
-} from "@/lib/personalization/reconsideration";
 import { buildFoodTimingPlan } from "@/lib/personalization/food-timing-plan";
 import { buildUpcomingReminderPreview } from "@/lib/personalization/upcoming-reminder-preview";
 import { selectContextualReminder } from "@/lib/personalization/contextual-reminders";
@@ -29,9 +18,8 @@ import { assembleNowCoachingDecision } from "@/lib/personalization/now-coaching"
 import { buildVoiceRelationshipOutput } from "@/lib/voice/voice-relationship";
 
 export default function NowPage() {
-  const { answers, dailyProfile, participationLevel, eventStateByDate, foodTimingEvidenceByDate,
-    previousContextSnapshot, firstRunHandoff, notificationState, getEventStateForDate, getFoodTimingEvidenceForDate, setEventRecord, isHydrated } = useCircadian();
-  const now = useLiveClock();
+  const { dailyProfile, participationLevel, eventStateByDate,
+    now, environment, currentPersonalization, reconsideration, firstRunHandoff, notificationState, getEventStateForDate, getFoodTimingEvidenceForDate, setEventRecord, isHydrated } = useCircadian();
   const profileTimeZone = dailyProfile?.timeZone ?? null;
   const todayKey = localDateKey(now, profileTimeZone);
   const profileInput = useMemo(
@@ -46,71 +34,7 @@ export default function NowPage() {
     [dailyProfile]
   );
 
-  const environment = useMemo(
-    () => buildDerivedEnvironment({ profile: dailyProfile }),
-    [dailyProfile, todayKey]
-  );
-
-  const currentPersonalization = useMemo(() => {
-    const initialDay1 = assembleDay1Personalization({ answers, derivedEnvironment: environment });
-    const withDailyEvidence = applyDailyEvidence(
-      {
-        generatedAt: initialDay1.generatedAt,
-        perSignal: initialDay1.signalStates,
-        derivedEnvironment: initialDay1.derivedEnvironment,
-      },
-      eventStateByDate,
-    );
-    const withFoodEvidence = applyCircadianFoodCoachingEvidence(withDailyEvidence, {
-      evidenceByDate: foodTimingEvidenceByDate,
-      profile: profileInput,
-      participationLevel,
-    });
-    const proposedTarget = selectPrimaryCoachingTarget(withFoodEvidence);
-    const primaryCoachingTarget = resolveCoachingFocus(withFoodEvidence, initialDay1.primaryCoachingTarget, dailyProfile?.coachingTargetSignalId);
-    return {
-      ...initialDay1,
-      signalStates: withFoodEvidence.perSignal,
-      derivedEnvironment: withFoodEvidence.derivedEnvironment ?? environment,
-      primaryCoachingTarget,
-      proposedTarget,
-    };
-  }, [
-    answers,
-    environment,
-    eventStateByDate,
-    foodTimingEvidenceByDate,
-    participationLevel,
-    profileInput,
-    dailyProfile?.coachingTargetSignalId,
-  ]);
-
-  const reconsideration = useMemo(() => {
-    const currentContext = buildContextSnapshot({
-      profile: dailyProfile,
-      derivedEnvironment: environment,
-      capturedAt: now.toISOString(),
-    });
-    const priorContext: ContextSnapshot | null = previousContextSnapshot
-      ? { ...previousContextSnapshot, capturedAt: previousContextSnapshot.capturedAt ?? now.toISOString() }
-      : null;
-    const signalEvidence = Object.fromEntries(
-      Object.entries(currentPersonalization.signalStates).map(([signalId, signal]) => [
-        signalId,
-        (signal.evidence ?? []).map((evidence) => ({
-          questionId: evidence.questionId ?? null,
-          answer: evidence.answer ?? null,
-          source: evidence.source,
-        })),
-      ]),
-    );
-    return assessReconsideration({
-      priorContext,
-      currentContext,
-      signalEvidence,
-      signalIds: Object.keys(currentPersonalization.signalStates),
-    });
-  }, [currentPersonalization, dailyProfile, environment, now, previousContextSnapshot]);
+  if (!isHydrated || !currentPersonalization) return <FlowShell><p role="status">Loading your focus…</p></FlowShell>;
 
   const eventStateForDate = getEventStateForDate(todayKey);
   const { events } = buildTodaysFlow({

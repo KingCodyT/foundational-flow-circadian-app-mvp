@@ -1,16 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
 import { WearableSettings } from "@/components/wearable-settings";
 import FoodTimingHistory from "@/components/food-timing-history";
 import DailyProfileForm from "@/components/todays-flow/daily-profile-form";
 import ParticipationSelector from "@/components/todays-flow/participation-selector";
-import { useLiveClock } from "@/hooks/use-live-clock";
 import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
 import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
-import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
 import { profileProgress } from "@/lib/profile-progress";
 
 function formatProfileTime(value?: string | null, timeZone?: string | null) {
@@ -51,16 +48,11 @@ export default function YouPage() {
     hasCompletedAudit,
     setDailyProfile,
     eventStateByDate,
+    now, environment,
   } = useCircadian();
 
-  const now = useLiveClock();
   const profileTimeZone = dailyProfile?.timeZone ?? null;
   const todayKey = localDateKey(now, profileTimeZone);
-
-  const environment = useMemo(
-    () => buildDerivedEnvironment({ profile: dailyProfile }),
-    [dailyProfile, todayKey]
-  );
 
   const progress = profileProgress(eventStateByDate, now, profileTimeZone);
 

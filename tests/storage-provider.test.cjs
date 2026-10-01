@@ -25,6 +25,11 @@ function mount(initial) {
       }];
     },
     useRef(initial) { const i = cursor++; return slots[i] ?? (slots[i] = { current: initial }); },
+    useMemo(fn, deps) {
+      const i = cursor++;
+      if (!slots[i] || !equal(slots[i].deps, deps)) slots[i] = { value: fn(), deps };
+      return slots[i].value;
+    },
     useCallback(fn, deps) {
       const i = cursor++;
       if (!slots[i] || !equal(slots[i].deps, deps)) slots[i] = { value: fn, deps };
@@ -41,6 +46,7 @@ function mount(initial) {
     setItem(k, v) { if (k === failWrite) throw Error('quota'); writes.push(k); saved.set(k, v); },
     removeItem() { assert.fail('provider must not delete storage during recovery/reset'); },
   };
+  const fixedNow = new Date("2026-08-20T12:00:00Z");
   const cache = new Map();
   function load(filename) {
     if (!path.extname(filename)) filename += fs.existsSync(filename + '.ts') ? '.ts' : '.tsx';
@@ -51,6 +57,7 @@ function mount(initial) {
     } }).outputText;
     const localRequire = id => {
       if (id === 'react') return react;
+      if (id === '@/hooks/use-live-clock') return { useLiveClock: () => fixedNow };
       if (id === 'react/jsx-runtime') return { jsx: (type, props) => ({ type, props }) };
       if (id.startsWith('@/')) return load(path.join(root, id.slice(2)));
       if (id.startsWith('.')) return load(path.resolve(path.dirname(filename), id));
@@ -79,7 +86,13 @@ for (const name of ['food-v1', 'architecture-v1', 'combined-v2', 'pre-fix-pendin
   const stored = JSON.parse(host.saved.get(key));
   assert.equal(stored.answers.synthetic_answer, 'new');
   for (const field of ['foodTimingEvidenceByDate', 'notificationState', 'dailyProfile', 'wearableConnection', 'recommendationArchive', 'assessmentEvidenceHistory', 'futureRoot']) assert.deepEqual(stored[field], original[field], field);
-  if (original.personalizationRuntime) assert.deepEqual(stored.personalizationRuntime.state, original.personalizationRuntime.state);
+  if (original.personalizationRuntime) {
+    for (const [id, signal] of Object.entries(original.personalizationRuntime.state.perSignal)) {
+      if (signal.coachingState) {
+        for (const field of ['coachingState', 'evidence', 'confidence', 'futureSignal']) assert.deepEqual(stored.personalizationRuntime.state.perSignal[id][field], signal[field]);
+      } // Unassessed stale placeholders now initialize in the Stage 2 rebuild.
+    }
+  }
   const reloaded = mount(host.saved.get(key)); reloaded.render();
   assert.equal(reloaded.saved.get(key), host.saved.get(key)); assert.equal(reloaded.writes.length, 0);
 });
@@ -128,7 +141,11 @@ test('provider context/profile edit does not replace accepted target or runtime 
   value.setDailyProfile({ ...knownProfile, timeZone: 'Asia/Tokyo' }); host.render();
   const stored = JSON.parse(host.saved.get(key));
   assert.deepEqual(stored.acceptedFocus, original.acceptedFocus);
-  assert.deepEqual(stored.personalizationRuntime, original.personalizationRuntime);
+  for (const [id, signal] of Object.entries(original.personalizationRuntime.state.perSignal)) {
+    assert.deepEqual(stored.personalizationRuntime.state.perSignal[id].evidence, signal.evidence);
+    assert.deepEqual(stored.personalizationRuntime.state.perSignal[id].confidence, signal.confidence);
+    assert.equal(stored.personalizationRuntime.state.perSignal[id].coachingState, signal.coachingState);
+  }
   assert.deepEqual(stored.foodTimingEvidenceByDate, original.foodTimingEvidenceByDate);
   assert.deepEqual(stored.dailyProfile.futureProfile, original.dailyProfile.futureProfile);
 });
@@ -136,7 +153,7 @@ test('explicit provider reset has a recovery copy before account replacement', (
   const host = mount(fixture('combined-v2')); let value = host.render();
   const original = host.saved.get(key); value.resetAudit(); value = host.render();
   const stored = JSON.parse(host.saved.get(key));
-  assert.deepEqual(stored.answers, {}); assert.equal(stored.personalizationRuntime, undefined);
+  assert.deepEqual(stored.answers, {}); assert.deepEqual(stored.personalizationRuntime.history, {}); assert.deepEqual(stored.personalizationRuntime.resolutions, []);
   assert.equal(stored.acceptedFocus.status, 'unset');
   assert.deepEqual(JSON.parse(host.saved.get(recoveryKey)).originals, [original]);
 });

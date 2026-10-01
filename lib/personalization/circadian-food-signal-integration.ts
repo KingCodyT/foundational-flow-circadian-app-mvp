@@ -1,3 +1,4 @@
+import { scheduleTime } from "../schedule-time";
 import { buildTodaysFlow, DailyProfileInput } from "@/lib/flow-engine";
 import { FoodTimingEvidence } from "./circadian-food-timing";
 import { buildFoodJourneySnapshot } from "./circadian-food-journey";
@@ -12,9 +13,8 @@ export type ApplyFoodTimingEvidenceInput = {
   participationLevel?: string | null;
 };
 
-function dateAtNoon(dateKey: string) {
-  const candidate = new Date(`${dateKey}T12:00:00`);
-  return Number.isFinite(candidate.getTime()) ? candidate : null;
+function dateAtNoon(dateKey: string, timeZone?: string | null) {
+  return scheduleTime(dateKey, "12:00", timeZone);
 }
 
 function buildObservedDays(input: ApplyFoodTimingEvidenceInput) {
@@ -23,7 +23,7 @@ function buildObservedDays(input: ApplyFoodTimingEvidenceInput) {
 
   return Object.entries(evidenceByDate)
     .map(([date, evidence]) => {
-      const day = dateAtNoon(date);
+      const day = dateAtNoon(date, profile.timeZone);
       if (!day) return null;
       const flow = buildTodaysFlow({
         date: day,

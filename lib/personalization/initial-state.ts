@@ -8,6 +8,7 @@ import {
 import { AnswerMap } from "@/types/circadian";
 import { questionnaire } from "@/lib/questionnaire";
 import { DerivedEnvironment } from "./derived-environment";
+import type { ReconsiderationReason, SignalEvidenceFragment } from "./reconsideration";
 
 export type InitialSignalEvidence = {
   source: SignalSourceType[];
@@ -24,6 +25,14 @@ export type InitialSignalState = {
   coachingState?: CoachingState; // only for BEHAVIOR signals
   // Internal confidence in the coachingState estimate (Phase 2C)
   confidence?: import("./types").Confidence;
+  reconsideration?: {
+    status: "pending";
+    signalId: string;
+    shouldReconsider: true;
+    reasons: ReconsiderationReason[];
+    observedAt: string;
+    evidence: SignalEvidenceFragment[];
+  };
   evidence: InitialSignalEvidence[]; // one or more pieces of evidence
   notes?: string[];
 };

@@ -4,18 +4,12 @@ import Link from "next/link";
 import { useMemo } from "react";
 import DailyProfileForm from "@/components/todays-flow/daily-profile-form";
 import ParticipationSelector from "@/components/todays-flow/participation-selector";
-import { useLiveClock } from "@/hooks/use-live-clock";
-import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
+import { formatTimeInZone } from "@/lib/live-clock";
 import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
-import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
-import { buildInitialPersonalizationState } from "@/lib/personalization/initial-state";
-import { assignInitialConfidence } from "@/lib/personalization/initial-confidence";
 import {
-  applyDailyEvidence,
   summarizeDailyEvidence,
 } from "@/lib/personalization/daily-evidence";
-import { selectPrimaryCoachingTarget } from "@/lib/personalization/primary-target";
 import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
 import {
   CoachingState,
@@ -86,40 +80,21 @@ function confidenceLabel(score?: number | null) {
 
 export default function YouPage() {
   const {
-    answers,
     dailyProfile,
     participationLevel,
     isHydrated,
     hasCompletedAudit,
     eventStateByDate,
+    personalization,
+    environment,
+    primaryTarget,
   } = useCircadian();
 
-  const now = useLiveClock();
   const profileTimeZone = dailyProfile?.timeZone ?? null;
-  const todayKey = localDateKey(now, profileTimeZone);
-
-  const environment = useMemo(
-    () => buildDerivedEnvironment({ profile: dailyProfile }),
-    [dailyProfile, todayKey]
-  );
-
-  const personalization = useMemo(() => {
-    const initial = buildInitialPersonalizationState({
-      answers,
-      derivedEnvironment: environment,
-    });
-    const withConfidence = assignInitialConfidence(initial);
-    return applyDailyEvidence(withConfidence, eventStateByDate);
-  }, [answers, environment, eventStateByDate]);
 
   const dailyEvidence = useMemo(
     () => summarizeDailyEvidence(eventStateByDate),
     [eventStateByDate]
-  );
-
-  const primaryTarget = useMemo(
-    () => selectPrimaryCoachingTarget(personalization),
-    [personalization]
   );
 
   const behavioralSignals = useMemo(

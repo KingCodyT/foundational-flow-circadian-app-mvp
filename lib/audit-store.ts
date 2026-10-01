@@ -4,6 +4,9 @@ import {
   DailyProfile,
   DailyEventState,
 } from "@/types/circadian";
+import type { AssessmentEvidenceHistory } from "@/lib/personalization/reconsideration-application";
+
+import type { PersonalizationRuntime } from "@/lib/personalization/runtime";
 
 export const STORAGE_KEY = "foundational-flow-circadian-app-state";
 
@@ -27,6 +30,8 @@ export type LocalAuditState = {
   eventStateByDate?: Record<string, DailyEventState> | null;
   previousContextSnapshot?: ContextSnapshotState | null;
   currentContextSnapshot?: ContextSnapshotState | null;
+  assessmentEvidenceHistory?: AssessmentEvidenceHistory;
+  personalizationRuntime?: PersonalizationRuntime;
 };
 
 export function createClientId() {

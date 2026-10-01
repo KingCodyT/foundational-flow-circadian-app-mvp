@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useMemo,
 } from "react";
 import {
   createClientId,
@@ -13,7 +14,15 @@ import {
   normalizeDailyProfile,
   STORAGE_KEY,
 } from "@/lib/audit-store";
-import { getRuntimeTimeZone } from "@/lib/live-clock";
+import { getRuntimeTimeZone, localDateKey } from "@/lib/live-clock";
+import { useLiveClock } from "@/hooks/use-live-clock";
+import { buildDerivedEnvironment } from "@/lib/personalization/derived-environment";
+import { buildContextSnapshot } from "@/lib/personalization/reconsideration";
+import { advancePersonalization, resolvePersonalizationReview, PersonalizationRuntime } from "@/lib/personalization/runtime";
+import { selectPrimaryCoachingTarget } from "@/lib/personalization/primary-target";
+import {
+  AssessmentEvidenceHistory,
+} from "@/lib/personalization/reconsideration-application";
 import {
   AnswerMap,
   ParticipationLevel,
@@ -30,24 +39,10 @@ type CircadianState = {
   participationLevel: ParticipationLevel | null;
   dailyProfile: DailyProfile | null;
   eventStateByDate: Record<string, DailyEventState> | null;
-  previousContextSnapshot: {
-    timeZone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    wakeTime?: string | null;
-    targetBedtime?: string | null;
-    dayLengthMinutes?: number | null;
-    capturedAt?: string | null;
-  } | null;
-  currentContextSnapshot: {
-    timeZone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    wakeTime?: string | null;
-    targetBedtime?: string | null;
-    dayLengthMinutes?: number | null;
-    capturedAt?: string | null;
-  } | null;
+  personalization: PersonalizationRuntime["state"];
+  environment: ReturnType<typeof buildDerivedEnvironment>;
+  primaryTarget: ReturnType<typeof selectPrimaryCoachingTarget>;
+  resolveReconsideration: (signalId: string) => void;
   getEventStateForDate: (dateStr: string) => DailyEventState;
   setEventRecord: (
     dateStr: string,
@@ -77,24 +72,9 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     string,
     DailyEventState
   > | null>(null);
-  const [previousContextSnapshot, setPreviousContextSnapshot] = useState<{
-    timeZone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    wakeTime?: string | null;
-    targetBedtime?: string | null;
-    dayLengthMinutes?: number | null;
-    capturedAt?: string | null;
-  } | null>(null);
-  const [currentContextSnapshot, setCurrentContextSnapshot] = useState<{
-    timeZone?: string | null;
-    latitude?: number | null;
-    longitude?: number | null;
-    wakeTime?: string | null;
-    targetBedtime?: string | null;
-    dayLengthMinutes?: number | null;
-    capturedAt?: string | null;
-  } | null>(null);
+  const [runtimeCheckpoint, setRuntimeCheckpoint] = useState<PersonalizationRuntime | null>(null);
+  const [legacyBaseline, setLegacyBaseline] = useState<LocalAuditState["previousContextSnapshot"]>(null);
+  const [legacyHistory, setLegacyHistory] = useState<AssessmentEvidenceHistory>({});
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hasCompletedAudit, setHasCompletedAudit] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -111,8 +91,9 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         setParticipationLevelState(parsedState.participationLevel ?? null);
         setDailyProfileState(normalizeDailyProfile(parsedState.dailyProfile ?? null, fallbackTimeZone));
         setEventStateByDate(parsedState.eventStateByDate ?? null);
-        setPreviousContextSnapshot(parsedState.previousContextSnapshot ?? null);
-        setCurrentContextSnapshot(parsedState.currentContextSnapshot ?? null);
+        setRuntimeCheckpoint(parsedState.personalizationRuntime?.version === 1 ? parsedState.personalizationRuntime : null);
+        setLegacyBaseline(parsedState.previousContextSnapshot ?? parsedState.currentContextSnapshot ?? null);
+        setLegacyHistory(parsedState.assessmentEvidenceHistory ?? {});
         setLastSavedAt(parsedState.lastSavedAt ?? null);
         setHasCompletedAudit(parsedState.hasCompletedAudit ?? false);
       } catch {
@@ -125,6 +106,34 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setIsHydrated(true);
   }, []);
 
+  // The provider is mounted by pages/_app, independent of the selected route.
+  const now = useLiveClock();
+  const todayKey = localDateKey(now, dailyProfile?.timeZone);
+  const environment = useMemo(() => buildDerivedEnvironment({
+    profile: dailyProfile, date: new Date(`${todayKey}T12:00:00`),
+  }), [dailyProfile, todayKey]);
+  const currentContext = useMemo(() => buildContextSnapshot({
+    profile: dailyProfile, derivedEnvironment: environment,
+  }), [dailyProfile, environment]);
+  const runtimeInput = useMemo(() => ({
+    answers, eventStateByDate, environment, context: currentContext,
+    legacyHistory,
+    legacyBaseline: legacyBaseline ? { ...legacyBaseline, capturedAt: legacyBaseline.capturedAt ?? currentContext.capturedAt } : null,
+  }), [answers, eventStateByDate, environment, currentContext, legacyHistory, legacyBaseline]);
+  const runtime = useMemo(() => advancePersonalization(
+    isHydrated ? runtimeCheckpoint : null, runtimeInput,
+  ), [isHydrated, runtimeCheckpoint, runtimeInput]);
+  useEffect(() => {
+    if (isHydrated && runtime !== runtimeCheckpoint) setRuntimeCheckpoint(runtime);
+  }, [isHydrated, runtime, runtimeCheckpoint]);
+  const primaryTarget = useMemo(() => selectPrimaryCoachingTarget(runtime.state), [runtime.state]);
+  const resolveReconsideration = (signalId: string) => {
+    if (!isHydrated) return;
+    setRuntimeCheckpoint(current => resolvePersonalizationReview(
+      current ?? runtime, runtimeInput, signalId, new Date().toISOString(),
+    ));
+  };
+
   useEffect(() => {
     if (!isHydrated || !clientId) return;
 
@@ -136,8 +145,8 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       participationLevel,
       dailyProfile,
       eventStateByDate,
-      previousContextSnapshot,
-      currentContextSnapshot,
+      personalizationRuntime: runtime,
+      assessmentEvidenceHistory: runtime.history,
     };
 
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -150,8 +159,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     isHydrated,
     lastSavedAt,
     participationLevel,
-    previousContextSnapshot,
-    currentContextSnapshot,
+    runtime,
   ]);
 
   const setAnswer = (questionId: string, value: string) => {
@@ -168,17 +176,6 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   const setDailyProfile = (profile: DailyProfile | null) => {
     const runtimeTimeZone = getRuntimeTimeZone();
     const normalized = normalizeDailyProfile(profile, runtimeTimeZone);
-    const nextCurrentContextSnapshot = {
-      timeZone: normalized?.timeZone ?? null,
-      latitude: normalized?.latitude ?? null,
-      longitude: normalized?.longitude ?? null,
-      wakeTime: normalized?.wakeTime ?? null,
-      targetBedtime: normalized?.targetBedtime ?? null,
-      dayLengthMinutes: null,
-      capturedAt: new Date().toISOString(),
-    };
-    setPreviousContextSnapshot((current) => current ?? nextCurrentContextSnapshot);
-    setCurrentContextSnapshot(nextCurrentContextSnapshot);
     setDailyProfileState(normalized);
   };
 
@@ -233,6 +230,9 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
     setParticipationLevelState(null);
     setDailyProfileState(null);
     setEventStateByDate(null);
+    setRuntimeCheckpoint(null);
+    setLegacyBaseline(null);
+    setLegacyHistory({});
     setLastSavedAt(null);
     setHasCompletedAudit(false);
     window.localStorage.removeItem(STORAGE_KEY);
@@ -249,8 +249,10 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         participationLevel,
         dailyProfile,
         eventStateByDate,
-        previousContextSnapshot,
-        currentContextSnapshot,
+        personalization: runtime.state,
+        environment,
+        primaryTarget,
+        resolveReconsideration,
         getEventStateForDate,
         setEventRecord,
         clearEventRecords,

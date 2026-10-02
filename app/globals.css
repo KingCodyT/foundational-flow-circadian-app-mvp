@@ -196,11 +196,85 @@ a {
 
 .journey-nav a:focus-visible {outline:2px solid #e9b34d;outline-offset:6px;border-radius:4px;}
 
-.timeline-date-navigation {display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:20px 0;}
-.timeline-date-navigation button,.timeline-date-navigation input {padding:10px;border:1px solid currentColor;border-radius:8px;background:transparent;min-height:44px;}
-.timeline-date-navigation label {display:flex;flex-direction:column;gap:4px;}
-.timeline-date-navigation :focus-visible {outline:2px solid currentColor;outline-offset:3px;}
-.timeline-entries {list-style:none;padding:0;display:grid;gap:16px;margin:24px 0;}
-.timeline-entry {padding:20px;border:1px solid var(--color-line);border-radius:16px;background:rgba(255,255,255,.7);overflow-wrap:anywhere;}
-.timeline-entry-kind {font-weight:600;letter-spacing:1px;}
-.timeline-entry details {margin-top:10px;}
+/* Stage 5B: presentation hierarchy; chronology and runtime stay in their owners. */
+.today-content {max-width:760px;margin-inline:auto;gap:22px;}
+.today-intro {max-width:760px;margin-inline:auto;padding:16px 0 28px;min-height:0;}
+.journey .today-intro .today-date {font-size:16px;letter-spacing:.02em;margin-top:12px;}
+.today-intro h1 {font-size:clamp(34px,5vw,54px);margin-bottom:8px;}
+.today-coaching-focus {padding:18px 24px;background:rgba(255,253,250,.65);box-shadow:none;}
+.journey .today-coaching-focus h2 {font-size:11px;letter-spacing:1.8px;}
+.journey .today-coaching-focus h3 {font-size:24px;margin-top:8px;}
+.journey .today-coaching-focus p {font-size:13px;margin-top:8px;text-transform:capitalize;}
+.today-moment {padding:36px 30px;}
+.today-moment h2 {margin-bottom:18px;}
+.today-moment h3 {margin-bottom:20px;}
+.today-moment p {max-width:600px;}
+.today-moment [role="group"] {display:flex;flex-wrap:wrap;gap:12px;margin-top:24px;}
+.journey .today-context {font-size:15px;padding:0 12px;}
+.profile-page,.timeline-page {max-width:800px;margin-inline:auto;}
+.profile-intro,.timeline-intro {padding:18px 0 30px;min-height:0;}
+.profile-intro h1 {font-size:clamp(36px,5vw,54px);}
+.profile-section {padding:26px;margin:18px 0;background:rgba(255,253,250,.85);border:1px solid var(--color-line);border-radius:20px;}
+.profile-facts {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin:24px 0 12px;overflow-wrap:anywhere;}
+.profile-facts p:last-child {overflow-wrap:normal;word-break:normal;}
+.journey .profile-facts p:first-child {font-size:12px;letter-spacing:1px;}
+.journey .profile-facts p:last-child {font-size:21px;color:var(--color-charcoal);}
+.journey .profile-summary {font-size:16px;margin-top:12px;}
+.profile-disclosure {margin-top:16px;border-top:1px solid var(--color-line);padding-top:8px;}
+.profile-disclosure summary,.timeline-disclosure summary {cursor:pointer;min-height:44px;padding:12px 0;font-size:15px;font-weight:600;}
+.profile-disclosure[open]>summary {margin-bottom:12px;}
+.profile-disclosure form {margin-top:18px;}
+.profile-disclosure p {margin-block:12px;}
+.profile-text-link {display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:4px;}
+.profile-toggle {display:flex;align-items:center;gap:12px;min-height:44px;margin-top:24px;}
+.profile-secondary {background:transparent;}
+.assessment-answers>div {padding:16px 0;border-bottom:1px solid var(--color-line);}
+.assessment-answers dt {font-size:16px;line-height:1.5;}
+.assessment-answers dd {margin-top:6px;color:var(--color-muted);overflow-wrap:anywhere;}
+.profile-page #connections {box-shadow:none;background:rgba(255,253,250,.55);}
+.profile-page #wearables {margin-top:16px;}
+.profile-page #wearables>p {font-size:16px;}
+.timeline-day {padding:22px 0 8px;border-bottom:1px solid var(--color-line);}
+.journey .timeline-selected-date {font-family:var(--font-display);font-size:clamp(23px,3vw,30px);color:var(--color-charcoal);}
+.timeline-selected-date span {display:inline-block;margin-left:14px;font-family:var(--font-body);font-size:13px;}
+.timeline-date-navigation {display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:18px 0 12px;}
+.timeline-date-navigation button,.timeline-date-navigation input {padding:10px 14px;border:1px solid var(--color-line);border-radius:20px;background:rgba(255,253,250,.8);min-height:44px;color:var(--color-charcoal);font:inherit;max-width:100%;}
+.timeline-date-navigation button {cursor:pointer;font-size:14px;}
+.timeline-date-navigation label {display:flex;flex-direction:column;gap:6px;font-size:12px;}
+.timeline-date-navigation button:hover {border-color:var(--color-muted);}
+.journey .timeline-zone {font-size:13px;margin:12px 0 24px;overflow-wrap:anywhere;}
+.timeline-entries {list-style:none;padding:0;margin:24px 0;}
+.timeline-entry {display:grid;grid-template-columns:130px minmax(0,1fr);gap:24px;overflow-wrap:anywhere;}
+.timeline-time {font-size:16px;font-weight:600;padding:22px 0;}
+.timeline-story {position:relative;border-left:1px solid var(--color-line);padding:20px 0 28px 26px;min-width:0;}
+.timeline-story:before {content:"";position:absolute;width:9px;height:9px;border-radius:50%;border:1px solid var(--color-muted);background:var(--journey-cream);left:-5px;top:27px;}
+.timeline-entry[data-kind="RECORDED"] .timeline-story:before {background:var(--color-muted);}
+.timeline-entry[data-kind="PLANNED"] .timeline-story:before {border-style:dashed;}
+.journey .timeline-story h2 {font-family:var(--font-display);font-size:24px;font-weight:400;letter-spacing:0;text-transform:none;line-height:1.3;}
+.journey .timeline-entry-kind {font-size:13px;font-weight:600;margin:8px 0;text-transform:capitalize;}
+.journey .timeline-story p {font-size:15px;line-height:1.5;}
+.timeline-disclosure {margin-top:8px;}
+.timeline-disclosure summary {color:var(--color-muted);font-size:13px;font-weight:400;}
+.timeline-disclosure p {margin:10px 0;overflow-wrap:anywhere;}
+.timeline-day-details {border-top:1px solid var(--color-line);padding-top:12px;margin-bottom:24px;}
+.profile-page :focus-visible,.timeline-page :focus-visible,.today-content :focus-visible {outline:2px solid var(--color-charcoal);outline-offset:4px;}
+.profile-disclosure summary:focus-visible,.timeline-disclosure summary:focus-visible {outline:3px solid var(--color-gold);outline-offset:4px;}
+.profile-page input,.profile-page select {max-width:100%;min-width:0;}
+.profile-page input[type="checkbox"],.profile-page input[type="radio"] {flex-shrink:0;}
+.timeline-page button,.profile-page button {min-height:44px;}
+@media(max-width:600px) {
+  .today-intro {padding:16px 4px 24px;}
+  .today-coaching-focus {padding:16px 18px;}
+  .today-moment {padding:30px 22px;}
+  .profile-section {padding:22px 18px;}
+  .profile-facts {grid-template-columns:1fr;gap:22px 16px;}
+  .journey .profile-facts p:last-child {font-size:18px;}
+  .timeline-entry {grid-template-columns:84px minmax(0,1fr);gap:12px;}
+  .timeline-time {font-size:13px;line-height:1.6;}
+  .timeline-story {padding-left:16px;}
+  .journey .timeline-story h2 {font-size:21px;}
+  .timeline-date-navigation {gap:8px;}
+  .timeline-date-navigation label {order:-1;flex-basis:100%;}
+  .timeline-date-navigation input {width:100%;}
+  .timeline-date-navigation button {padding:10px 12px;}
+}

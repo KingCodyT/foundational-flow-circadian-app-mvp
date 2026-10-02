@@ -51,13 +51,15 @@ export function WearableSettingsPanel({ connection, update, timeZone, providers 
     <h2 id="connections-heading" className="text-2xl font-semibold">Connections</h2>
     <section id="wearables" aria-labelledby="wearables-heading" className="mt-6">
       <h3 id="wearables-heading" className="text-xs font-semibold uppercase tracking-[0.22em]">Wearables</h3>
+      <p className="mt-3">Optional · {view.status === "not_connected" || view.status === "disconnected_with_data" ? "Not connected" : wearableStatusLabel(view.status)}</p>
+      <details className="profile-disclosure"><summary>Manage wearables</summary>
       <p className="mt-3">Connect a supported wearable to share optional sleep, activity, and timing information.</p>
       <p className="mt-3">Foundational Flow works fully without a wearable.</p>
       <p role="status" className="mt-5 font-semibold">{view.status === "not_connected" || view.status === "disconnected_with_data" ? "NO WEARABLE CONNECTED" : wearableStatusLabel(view.status)}</p>
       {!view.connected && <>
         {view.status === "disconnected_with_data" && <p className="mt-3">Previously imported wearable data is retained in this app. No wearable is connected and no new data is being imported.</p>}
         {view.status === "needs_attention" && <p className="mt-3">The connection could not be verified. Try connecting again.</p>}
-        <button className="journey-primary mt-4" disabled={connecting} aria-expanded={selecting} aria-controls="wearable-providers" onClick={() => setSelecting(!selecting)}>{connecting ? "Connecting…" : "Connect a wearable"}</button>
+        <button className="journey-outline mt-4" disabled={connecting} aria-expanded={selecting} aria-controls="wearable-providers" onClick={() => setSelecting(!selecting)}>{connecting ? "Connecting…" : "Connect a wearable"}</button>
         {selecting && <div id="wearable-providers" role="region" aria-label="Wearable providers" className="mt-4 space-y-3">
           <h4 className="font-semibold">{providers.length ? "Choose a provider" : "Wearable connections are coming soon"}</h4>
           {providers.length ? providers.map(provider => <button key={provider.id} className="journey-outline" onClick={() => void connect(provider)}>Connect {provider.name}</button>) :
@@ -88,6 +90,7 @@ export function WearableSettingsPanel({ connection, update, timeZone, providers 
         </div>}
       </div>}
       {message && <p className="mt-3" role="status">{message}</p>}
+      </details>
     </section>
   </section>;
 }

@@ -417,7 +417,18 @@ for (const scenario of [
  const h=host(t,base({dailyProfile:{timeZone:scenario.zone,wakeTime:scenario.wake,targetBedtime:scenario.bed,locationPermissionGranted:false}}),scenario.at,true,'/profile');
  const expected=value=>value?new Intl.DateTimeFormat(undefined,{timeZone:'UTC',hour:'numeric',minute:'2-digit'}).format(new Date(`2000-01-01T${value}:00Z`)):'Not set';
  const fact=label=>h.rendered.findAll(n=>n.type?.name==='ProfileFact'&&n.props.label===label)[0].props.value;
- assert.equal(fact('Wake time'),expected(scenario.wake));assert.equal(fact('Sleep window'),expected(scenario.bed));
+ assert.equal(fact('Wake'),expected(scenario.wake));assert.equal(fact('Bedtime'),expected(scenario.bed));
  const saved=h.storage.get(key);h.navigate('/timeline');h.navigate('/profile');
- assert.equal(h.storage.get(key),saved);assert.equal(fact('Wake time'),expected(scenario.wake));
+ assert.equal(h.storage.get(key),saved);assert.equal(fact('Wake'),expected(scenario.wake));
+});
+
+test('Profile assessment presentation exposes no mutation handlers and keeps real provider state intact', t => {
+ const h=host(t,fixture('architecture-v1'),undefined,true,'/profile');
+ const runtime=h.value.runtime,focus=h.value.acceptedFocus,saved=h.storage.get(key),writes=h.writes.length;
+ const disclosure=h.rendered.findByProps({className:'profile-disclosure assessment-disclosure'});
+ assert.equal(disclosure.type,'details');assert.equal(disclosure.props.onToggle,undefined);
+ assert.equal(disclosure.findAllByType('input').length,0);assert.equal(disclosure.findAllByType('form').length,0);
+ assert.equal(disclosure.findAll(n=>Object.keys(n.props).some(k=>/^on[A-Z]/.test(k)&&typeof n.props[k]==='function')).length,0);
+ h.navigate('/timeline');h.navigate('/profile');
+ assert.equal(h.value.runtime,runtime);assert.equal(h.value.acceptedFocus,focus);assert.equal(h.storage.get(key),saved);assert.equal(h.writes.length,writes);
 });

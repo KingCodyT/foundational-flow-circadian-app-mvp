@@ -7,7 +7,7 @@ import { ReminderDeliveryStatus } from "@/components/reminder-delivery-status";
 import { requestBrowserNotificationPermission, registerNotificationServiceWorker } from "@/lib/personalization/background-notification-transport";
 import { hasValidCoordinates } from "@/lib/solar";
 
-export default function DailyProfileForm() {
+export default function DailyProfileForm({ section = "all" }: { section?: "all" | "schedule" | "preferences" } = {}) {
   const { dailyProfile, setDailyProfile } = useCircadian();
   const savedWakeTime = dailyProfile?.wakeTime ?? "07:00";
   const savedBedtime = dailyProfile?.targetBedtime ?? "22:00";
@@ -102,10 +102,10 @@ export default function DailyProfileForm() {
   };
 
   return (
-    <form onSubmit={save} className="space-y-5">
-      <h3 className="text-lg font-semibold">Your schedule</h3>
+    <form onSubmit={section === "preferences" ? event => event.preventDefault() : save} className="space-y-5">
+      <h3 className="text-lg font-semibold">{section === "preferences" ? "Reminder and food preferences" : "Schedule details"}</h3>
       <fieldset disabled={locating} className="space-y-5 disabled:opacity-70">
-        <div className="grid gap-4 sm:grid-cols-2">
+        {section !== "preferences" && <><div className="grid gap-4 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm text-[var(--color-muted)]">Typical wake time</span>
             <input required className="mt-2 block w-full rounded-xl border border-[var(--color-line)] bg-white px-3 py-2" type="time" value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} />
@@ -118,8 +118,8 @@ export default function DailyProfileForm() {
           <label className="block"><span>Your timezone</span><input required className="mt-2 block w-full rounded-xl border p-3" value={timeZone} onChange={event => setTimeZone(event.target.value)} /></label>
         </div>
         {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={saved} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-2.5 text-sm font-semibold disabled:opacity-60">{saved ? "Schedule saved ✓" : "Save schedule"}</button>
-        {dailyProfile && <div className="space-y-3">
+        <button type="submit" disabled={saved} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-2.5 text-sm font-semibold disabled:opacity-60">{saved ? "Schedule saved ✓" : "Save schedule"}</button></>}
+        {section !== "schedule" && dailyProfile && <div className="space-y-3">
           <label className="block"><input type="checkbox" checked={dailyProfile.remindersEnabled === true} onChange={event => setDailyProfile({ ...dailyProfile, remindersEnabled: event.target.checked })}/> Allow notifications for useful reminders</label>
           <p>In-app reminders still work when notifications are off. Browser notification permission is also required.</p>
           {dailyProfile.remindersEnabled && <button type="button" onClick={async () => {
@@ -133,7 +133,7 @@ export default function DailyProfileForm() {
           <ReminderDeliveryStatus />
           <label className="block">Food-timing goal <select value={dailyProfile.foodTimingGoal ?? "observe"} onChange={event => setDailyProfile({ ...dailyProfile, foodTimingGoal: event.target.value as "observe" | "earlier_last_meal" })}><option value="observe">Learn my pattern</option><option value="earlier_last_meal">Try an earlier last meal</option></select></label>
         </div>}
-        <div className="space-y-3">
+        {section !== "preferences" && <div className="space-y-3">
           <p className="text-sm font-semibold">Profile timezone</p>
           <p className="text-sm leading-6 text-[var(--color-muted)]">{savedTimeZone}</p>
           <p className="text-sm font-semibold">Location (optional)</p>
@@ -142,7 +142,7 @@ export default function DailyProfileForm() {
             <button type="button" onClick={requestLocation} className="rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-sm">{locating ? "Finding location…" : hasLocation ? "Update location" : "Use my location"}</button>
             {hasLocation ? <button type="button" onClick={removeLocation} className="rounded-full border border-[var(--color-line)] px-4 py-2 text-sm">Remove location</button> : null}
           </div>
-        </div>
+        </div>}
       </fieldset>
       <p role="status" className="text-sm leading-6 text-[var(--color-muted)]">{locationMessage}</p>
     </form>

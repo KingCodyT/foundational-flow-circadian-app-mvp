@@ -10,12 +10,12 @@ import { FlowShell } from "@/components/flow-shell";
 import { useCircadian } from "@/components/circadian-provider";
 import { profileProgress } from "@/lib/profile-progress";
 
-function formatProfileTime(value?: string | null, timeZone?: string | null) {
-  if (!value) return "Not set";
+function formatProfileTime(value?: string | null) {
+  if (!value || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return "Not set";
   const [hour, minute] = value.split(":").map(Number);
-  const date = new Date();
-  date.setHours(hour, minute, 0, 0);
-  return formatTimeInZone(date, timeZone);
+  // Saved schedule values are wall-clock times, not instants. A fixed UTC
+  // anchor preserves them through locale formatting without device/DST shifts.
+  return formatTimeInZone(new Date(Date.UTC(2000, 0, 1, hour, minute)), "UTC");
 }
 
 function formatSolarTime(value?: string | null, timeZone?: string | null) {
@@ -78,8 +78,8 @@ export default function YouPage() {
         <div className="mt-10 rounded-3xl border border-[var(--color-line)] bg-white/70 p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-muted)]">What we know about your routine</p>
           <div className="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-            <ProfileFact label="Wake time" value={formatProfileTime(dailyProfile?.wakeTime, profileTimeZone)} />
-            <ProfileFact label="Sleep window" value={formatProfileTime(dailyProfile?.targetBedtime, profileTimeZone)} />
+            <ProfileFact label="Wake time" value={formatProfileTime(dailyProfile?.wakeTime)} />
+            <ProfileFact label="Sleep window" value={formatProfileTime(dailyProfile?.targetBedtime)} />
             <ProfileFact label="Timezone" value={dailyProfile?.timeZone ?? "Not set"} />
             <ProfileFact label="Guidance preference" value={participationLabel(participationLevel)} />
             <ProfileFact label="Sunrise" value={formatSolarTime(environment.sunrise, profileTimeZone)} />

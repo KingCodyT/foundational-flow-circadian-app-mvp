@@ -405,3 +405,19 @@ for (const scenario of [
  h.reload();assert.deepEqual(get().historicalContext,original.historicalContext);assert.deepEqual(h.value.acceptedFocus,focus);
  if(changed) assert.equal(get().historicalContextOccurrenceAt,original.at);
 });
+
+for (const scenario of [
+ {zone:'Europe/London',wake:'07:00',bed:'22:00',at:'2026-10-01T12:00:00Z'},
+ {zone:'America/New_York',wake:'02:30',bed:'01:30',at:'2026-03-08T12:00:00Z'},
+ {zone:'Asia/Tokyo',wake:'00:00',bed:'12:00',at:'2026-11-01T12:00:00Z'},
+ {zone:'Europe/London',wake:null,bed:null,at:'2026-10-01T12:00:00Z'},
+]) test(`Profile wall-clock summary preserves saved times: ${scenario.zone} ${scenario.wake}`, t => {
+ const oldTZ=process.env.TZ;process.env.TZ='America/Los_Angeles';
+ t.after(()=>{if(oldTZ===undefined)delete process.env.TZ;else process.env.TZ=oldTZ;});
+ const h=host(t,base({dailyProfile:{timeZone:scenario.zone,wakeTime:scenario.wake,targetBedtime:scenario.bed,locationPermissionGranted:false}}),scenario.at,true,'/profile');
+ const expected=value=>value?new Intl.DateTimeFormat(undefined,{timeZone:'UTC',hour:'numeric',minute:'2-digit'}).format(new Date(`2000-01-01T${value}:00Z`)):'Not set';
+ const fact=label=>h.rendered.findAll(n=>n.type?.name==='ProfileFact'&&n.props.label===label)[0].props.value;
+ assert.equal(fact('Wake time'),expected(scenario.wake));assert.equal(fact('Sleep window'),expected(scenario.bed));
+ const saved=h.storage.get(key);h.navigate('/timeline');h.navigate('/profile');
+ assert.equal(h.storage.get(key),saved);assert.equal(fact('Wake time'),expected(scenario.wake));
+});

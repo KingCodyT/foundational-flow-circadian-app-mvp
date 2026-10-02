@@ -6,6 +6,7 @@ const React = require('react');
 const Renderer = require('react-test-renderer');
 const load = require('./load-typescript.cjs');
 const { CircadianProvider, useCircadian } = load('components/circadian-provider.tsx');
+const { RouterContext } = require('next/dist/shared/lib/router-context.shared-runtime');
 const key = 'foundational-flow-circadian-app-state';
 const fixture = name => JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures/storage', `${name}.json`), 'utf8'));
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -13,28 +14,40 @@ const base = overrides => ({ clientId: 'synthetic-provider', answers: { morning_
   hasCompletedAudit: true, lastSavedAt: null, dailyProfile: { timeZone: 'America/Los_Angeles', wakeTime: '07:00', targetBedtime: '22:30', locationPermissionGranted: true, latitude: 37, longitude: -122 }, ...overrides });
 // Real React hooks/effects via the in-memory renderer, actual provider/clock/storage
 // modules, deterministic Date and timer host only. No browser or delivery bridge.
-function host(t, initial = base(), instant = '2026-09-10T12:00:00Z') {
-  const RealDate = Date, oldWindow = global.window, oldDocument = global.document;
-  let at = instant, renderer, value, route = '/today', writeFailure = false;
+function host(t, initial = base(), instant = '2026-09-10T12:00:00Z', renderPages = false, initialRoute = '/today') {
+  const RealDate = Date, oldWindow = global.window, oldDocument = global.document, oldStorage = global.localStorage, oldSelf = global.self;
+  let at = instant, renderer, value, route = initialRoute, writeFailure = false;
   const timers = new Set(), writes = [];
   const storage = new Map([[key, typeof initial === 'string' ? initial : JSON.stringify(initial)]]);
   global.Date = class extends RealDate { constructor(...args) { super(...(args.length ? args : [at])); } static now() { return new RealDate(at).getTime(); } };
   global.window = {
     localStorage: { getItem: k => storage.get(k) ?? null, setItem(k, data) { if (writeFailure && k === key) throw Error('quota'); writes.push(k); storage.set(k, data); } },
     setInterval: fn => { timers.add(fn); return fn; }, clearInterval: fn => timers.delete(fn),
-    addEventListener() {}, removeEventListener() {},
+    addEventListener() {}, removeEventListener() {}, scrollTo() {},
   };
+  global.self = { setTimeout: () => 0, clearTimeout() {} }; // No viewport/prefetch work in the in-memory renderer.
+  global.localStorage = global.window.localStorage;
+  global.window.localStorage.removeItem = k => storage.delete(k);
   global.document = { visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
   function Probe({ name }) { value = useCircadian(); return React.createElement('route', { name }); }
-  const tree = () => React.createElement(CircadianProvider, null, React.createElement(Probe, { key: route, name: route }));
+  function navigate(next) { route = next; renderer.update(tree()); }
+  const tree = () => {
+    if (!renderPages) return React.createElement(CircadianProvider, null, React.createElement(Probe, { key: route, name: route }));
+    const url = new URL(route, 'https://synthetic.invalid');
+    const router = { pathname: url.pathname, route: url.pathname, asPath: route, query: Object.fromEntries(url.searchParams), isReady: true,
+      push: next => { navigate(next); return Promise.resolve(true); }, prefetch: () => Promise.resolve() };
+    const Page = load(`pages/${url.pathname.slice(1)}.tsx`).default;
+    return React.createElement(RouterContext.Provider, { value: router }, React.createElement(CircadianProvider, null,
+      React.createElement(Probe, { name: route }), React.createElement(Page)));
+  };
   const mount = () => Renderer.act(() => { renderer = Renderer.create(tree()); });
   t.after(() => {
     if (renderer) Renderer.act(() => renderer.unmount());
-    global.Date = RealDate; global.window = oldWindow; global.document = oldDocument;
+    global.Date = RealDate; global.window = oldWindow; global.document = oldDocument; global.localStorage = oldStorage; global.self = oldSelf;
   });
   mount();
   return {
-    get value() { return value; }, storage, writes,
+    get value() { return value; }, get rendered() { return renderer.root; }, storage, writes,
     action(fn) { Renderer.act(() => fn(value)); return value; },
     navigate(next) { route = next; Renderer.act(() => renderer.update(tree())); return value; },
     tick(next) { at = next; Renderer.act(() => [...timers].forEach(fn => fn())); return value; },
@@ -215,4 +228,79 @@ test('persisted food snapshots do not resurrect a deleted date or stale fallback
   assert.equal(h.persisted().personalizationRuntime.foodContexts[firstId], undefined);
   const checkpoint = clone(h.value.runtime);
   h.reload(); assert.deepEqual(clone(h.value.runtime), checkpoint);
+});
+
+// Stage 3: mount real canonical page components under the same provider and
+// Next router context. Navigation is simulated in memory; no browser is run.
+test('canonical pages and back/forward-style navigation preserve the complete accepted runtime', t => {
+  const h = host(t, base(), undefined, true);
+  h.action(v => v.setDailyProfile({ ...v.dailyProfile, timeZone: 'Europe/London' }));
+  assert.equal(signal(h).coachingState, 'ESTABLISHED');
+  assert.ok(signal(h).reconsideration);
+  const runtime = h.value.runtime, focus = h.value.acceptedFocus, saved = h.storage.get(key), writes = h.writes.length;
+  for (const route of ['/timeline', '/profile', '/timeline', '/today', '/profile', '/today?view=overview']) {
+    h.navigate(route);
+    const nav = h.rendered.findByProps({ 'aria-label': 'Primary navigation' });
+    const links = nav.findAllByType('a');
+    assert.deepEqual(links.map(a => a.props.href), ['/today', '/timeline', '/profile']);
+    assert.deepEqual(links.map(a => a.findByType('span').children.join('')), ['Today', 'Timeline', 'Profile']);
+    assert.deepEqual(links.filter(a => a.props['aria-current'] === 'page').map(a => a.props.href), [route.split('?')[0]]);
+    assert.equal(h.value.runtime, runtime);
+    assert.equal(h.value.acceptedFocus, focus);
+    assert.equal(h.storage.get(key), saved);
+    assert.equal(h.writes.length, writes);
+  }
+});
+
+test('real onboarding recovers a draft, preserves five stages and hands off to Today without a second runtime transition', t => {
+  const h = host(t, base({ hasCompletedAudit: false }), undefined, true);
+  const draft = { ...h.value.dailyProfile, displayName: 'Synthetic', lastMealTime: '18:00', locationPermissionGranted: false, latitude: undefined, longitude: undefined };
+  h.storage.set('foundational-flow-onboarding-draft', JSON.stringify({ profile: draft, index: 0 }));
+  h.navigate('/audit');
+  const text = node => node.children.map(c => typeof c === 'string' ? c : text(c)).join('');
+  const button = label => h.rendered.findAllByType('button').find(b => text(b).startsWith(label));
+  const stages = ['Basics', 'Schedule', 'Environment', 'Your Reality', 'Finish'];
+  for (let i = 0; i < 5; i++) {
+    const steps = h.rendered.findByProps({ 'aria-label': 'Setup progress' }).findAllByType('li');
+    assert.deepEqual(steps.map(n => n.findByType('small').children.join('')), stages);
+    assert.equal(steps[i].props['aria-current'], 'step');
+    assert.equal(h.rendered.findByProps({ className: 'journey  journey-onboarding' }).props.style['--journey-image'], `url('/approved-journey/landscape-${i+1}.png')`);
+    if (i === 1) {
+      Renderer.act(() => button('Save and Finish Later').props.onClick());
+      assert.equal(JSON.parse(h.storage.get('foundational-flow-onboarding-draft')).index, 1);
+      h.navigate('/profile'); h.navigate('/audit');
+      assert.equal(h.rendered.findByProps({ 'aria-label': 'Setup progress' }).findAllByType('li')[1].props['aria-current'], 'step');
+    }
+    if (i < 4) Renderer.act(() => button('Next:').props.onClick());
+  }
+  assert.equal(h.value.dailyProfile.displayName, 'Synthetic');
+  assert.equal(h.value.dailyProfile.timeZone, draft.timeZone);
+  assert.equal(h.value.dailyProfile.lastMealTime, '18:00');
+  assert.equal(h.value.dailyProfile.locationPermissionGranted, false);
+  assert.equal(h.value.hasCompletedAudit, true);
+  assert.equal(h.storage.has('foundational-flow-onboarding-draft'), false);
+  const runtime = h.value.runtime, focus = h.value.acceptedFocus;
+  const accepted = clone(h.persisted().personalizationRuntime);
+  Renderer.act(() => button('Continue to Today').props.onClick());
+  assert.equal(h.rendered.findByType('route').props.name, '/today?view=overview');
+  assert.equal(h.value.runtime, runtime); assert.equal(h.value.acceptedFocus, focus);
+  // Existing first-run guidance may be cached on first entry; it must not
+  // change accepted personalization, focus or evidence.
+  assert.deepEqual(h.persisted().personalizationRuntime, accepted);
+  assert.deepEqual(h.persisted().acceptedFocus, focus);
+  const writes = h.writes.length;
+  h.navigate('/profile'); h.navigate('/today');
+  assert.equal(h.value.runtime, runtime); assert.equal(h.value.acceptedFocus, focus);
+  assert.equal(h.writes.length, writes);
+});
+
+for (const route of ['/today', '/timeline', '/profile']) test(`direct ${route} hydration and reload preserve accepted state`, t => {
+  const h = host(t, base(), undefined, true, route);
+  h.action(v => v.setDailyProfile({ ...v.dailyProfile, timeZone: 'Europe/London' }));
+  const runtime = clone(h.value.runtime), focus = clone(h.value.acceptedFocus);
+  h.reload();
+  assert.deepEqual(h.value.runtime, runtime);
+  assert.deepEqual(h.value.acceptedFocus, focus);
+  const links = h.rendered.findByProps({ 'aria-label': 'Primary navigation' }).findAllByType('a');
+  assert.deepEqual(links.filter(a => a.props['aria-current'] === 'page').map(a => a.props.href), [route]);
 });

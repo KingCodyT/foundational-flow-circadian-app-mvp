@@ -9,8 +9,13 @@ test('Today contains only focus, one reminder or silence, and small progress', (
   assert.match(source, /Your current coaching focus/);
   assert.match(source, /Patterns over time/);
   for (const response of ['Done', 'Not today', 'Adjust']) assert.ok(source.includes(response));
-  assert.doesNotMatch(read('components/journey-design.tsx'), /href="\/timeline"|<span>RHYTHM<\/span>/);
+  assert.doesNotMatch(read('components/journey-design.tsx'), /<span>(NOW|RHYTHM|YOU)<\/span>/);
 });
-test('legacy daily routes return to the coaching surface', () => {
-  for (const route of ['timeline', 'rhythm', 'my-day']) assert.match(read(`pages/${route}.tsx`), /"\/today"/);
+test('Timeline is a dedicated scaffold, with historical semantics deferred', () => {
+  assert.match(read('pages/timeline.tsx'), /views\/timeline-page/);
+  assert.doesNotMatch(read('pages/timeline.tsx'), /redirect|getServerSideProps/);
+  const source = read('views/timeline-page.tsx');
+  assert.match(source, /<FlowShell>/);
+  assert.match(source, /<h1>Timeline<\/h1>/);
+  assert.doesNotMatch(source, /useCircadian|useEffect|date-navigation|type="date"|setDailyProfile/);
 });

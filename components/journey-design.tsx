@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useRouter } from "next/router";
 import type { CSSProperties, ReactNode } from "react";
 
 export function RhythmIcon({ kind = "sun" }: { kind?: string }) {
@@ -12,6 +13,18 @@ export function JourneyBrand() {
 export function JourneyFrame({ children, image = 1, night = false, onboarding = false }: { children: ReactNode; image?: number; night?: boolean; onboarding?: boolean }) {
   return <div className={`journey ${night ? "journey-night" : ""} ${onboarding ? "journey-onboarding" : ""}`} style={{"--journey-image": `url('/approved-journey/landscape-${image}.png')`} as CSSProperties}><div className="journey-landscape"/><div className="journey-inner"><JourneyBrand/>{children}</div>{!onboarding && <JourneyNav/>}</div>;
 }
-export function JourneyNav() { return <nav className="journey-nav" aria-label="Primary navigation"><Link href="/today"><RhythmIcon/><span>NOW</span></Link><Link href="/profile"><RhythmIcon kind="person"/><span>YOU</span></Link></nav>; }
+const destinations = [
+  { href: "/today", label: "Today", icon: "sun" },
+  { href: "/timeline", label: "Timeline", icon: "clock" },
+  { href: "/profile", label: "Profile", icon: "person" },
+] as const;
+export function JourneyNav() {
+  const { pathname } = useRouter();
+  return <nav className="journey-nav" aria-label="Primary navigation">
+    {destinations.map(({ href, label, icon }) => <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined}>
+      <RhythmIcon kind={icon}/><span>{label}</span>
+    </Link>)}
+  </nav>;
+}
 export function JourneyCard({ children, className = "" }: { children: ReactNode; className?: string }) { return <section className={`journey-card ${className}`}>{children}</section>; }
 export function Segments({ label, value, options, onChange }: { label: string; value?: string | null; options: readonly (readonly [string,string])[]; onChange: (value: string) => void }) { return <fieldset className="journey-field"><legend>{label}</legend><div className="journey-segments">{options.map(([key,text]) => <label key={key} className={value === key ? "selected" : ""}><input type="radio" name={label} value={key} checked={value === key} onChange={() => onChange(key)}/><span>{text}</span></label>)}</div></fieldset>; }

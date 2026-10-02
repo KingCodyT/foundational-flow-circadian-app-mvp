@@ -18,7 +18,7 @@ test('finish persists the profile before completing onboarding', () => {
   assert.ok(save >= 0);
   assert.ok(complete > save);
   assert.match(source, /Your profile at a glance/i);
-  assert.match(source, /See What Matters Now →/i);
+  assert.match(source, /Continue to Today →/i);
 });
 
 test('step transitions and browser location data are guarded', () => {

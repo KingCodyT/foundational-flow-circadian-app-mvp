@@ -8,7 +8,7 @@ import type { ContextSnapshot } from "./reconsideration";
 import { SignalClassification, CoachingState } from "./types";
 import { SIGNAL_REGISTRY } from "./signal-registry";
 import { applyCircadianFoodCoachingEvidence } from "./circadian-food-signal-integration";
-import type { FoodTimingEvidence } from "./circadian-food-timing";
+import { historicalFoodContextIsApplicable, type FoodTimingEvidence } from "./circadian-food-timing";
 import type { AcceptedFocus } from "./storage-migration";
 import { selectPrimaryCoachingTarget, resolveCoachingFocus } from "./primary-target";
 import type { Day1PersonalizationResult } from "./day1";
@@ -56,7 +56,9 @@ function foodInputs(input: RuntimeInput) {
     const { capturedAt: _capturedAt, ...historical } = item.historicalContext ?? {};
     const fallback = { timeZone: input.profile?.timeZone ?? null, wakeTime: input.profile?.wakeTime ?? null,
       targetBedtime: input.profile?.targetBedtime ?? null };
-    return [item.id, { at: item.at, context: item.historicalContext ? historical : fallback }];
+    return [item.id, { at: item.at, context: item.historicalContextOccurrenceAt && !historicalFoodContextIsApplicable(item)
+      ? { unavailable: true, originalOccurrenceAt: item.historicalContextOccurrenceAt }
+      : item.historicalContext ? historical : fallback }];
   }));
   return {
     records, contexts,

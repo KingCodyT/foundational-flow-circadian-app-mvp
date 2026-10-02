@@ -195,3 +195,12 @@ a {
 .journey-reminder {margin-top:14px;}.journey-reminder .journey-outline {width:100%;}.journey-reminder p {font-size:14px;margin-top:12px;}
 
 .journey-nav a:focus-visible {outline:2px solid #e9b34d;outline-offset:6px;border-radius:4px;}
+
+.timeline-date-navigation {display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:20px 0;}
+.timeline-date-navigation button,.timeline-date-navigation input {padding:10px;border:1px solid currentColor;border-radius:8px;background:transparent;min-height:44px;}
+.timeline-date-navigation label {display:flex;flex-direction:column;gap:4px;}
+.timeline-date-navigation :focus-visible {outline:2px solid currentColor;outline-offset:3px;}
+.timeline-entries {list-style:none;padding:0;display:grid;gap:16px;margin:24px 0;}
+.timeline-entry {padding:20px;border:1px solid var(--color-line);border-radius:16px;background:rgba(255,255,255,.7);overflow-wrap:anywhere;}
+.timeline-entry-kind {font-weight:600;letter-spacing:1px;}
+.timeline-entry details {margin-top:10px;}

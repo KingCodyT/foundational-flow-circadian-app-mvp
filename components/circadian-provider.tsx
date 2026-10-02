@@ -466,24 +466,15 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         dailyProfile?.timeZone ?? getRuntimeTimeZone(),
       );
       const preserved = normalizeFoodTimingEvidence(location.evidence);
+      // A same-instant edit is not permission to refresh historical context.
+      if (Date.parse(preserved.at) === nextAt.getTime()) { didUpdate = true; return current; }
       const updated = normalizeFoodTimingEvidence({
         ...preserved,
         at: nextAt.toISOString(),
         updatedAt,
-        historicalContext: {
-          ...preserved.historicalContext,
-          ...captureHistoricalBiologicalContext({
-            at: nextAt,
-            profile: {
-              wakeTime: dailyProfile?.wakeTime ?? null,
-              targetBedtime: dailyProfile?.targetBedtime ?? null,
-              lastMealTime: dailyProfile?.lastMealTime ?? null,
-              timeZone: dailyProfile?.timeZone ?? getRuntimeTimeZone(),
-              latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
-              longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
-            },
-          }),
-        },
+        // Retain the original snapshot (including unknown fields) and the
+        // occurrence it described. No historical profile lookup exists here.
+        historicalContextOccurrenceAt: preserved.historicalContextOccurrenceAt ?? preserved.at,
       });
 
       const sourceBucket = [...(next[location.date] ?? [])];

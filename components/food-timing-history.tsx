@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useCircadian } from "./circadian-provider";
-import { useLiveClock } from "@/hooks/use-live-clock";
+import { timelineFood, validTimelineDate } from "@/lib/timeline";
 import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
 import { scheduleTime } from "@/lib/schedule-time";
 import { buildFoodJourneySnapshot } from "@/lib/personalization/circadian-food-journey";
@@ -52,9 +52,8 @@ function getFocusableElements(container: HTMLElement | null) {
   ).filter((element) => !element.hasAttribute("hidden"));
 }
 
-export default function FoodTimingHistory() {
-  const { dailyProfile, getFoodTimingEvidenceForDate, recordFoodTimingAction, updateFoodTimingAction, deleteFoodTimingAction } = useCircadian();
-  const now = useLiveClock();
+export default function FoodTimingHistory({ selectedDate, displayTimeZone }: { selectedDate?: string; displayTimeZone?: string } = {}) {
+  const { dailyProfile, environment, foodTimingEvidenceByDate, now, recordFoodTimingAction, updateFoodTimingAction, deleteFoodTimingAction } = useCircadian();
   const lastMealTapAtMsRef = useRef(0);
   const [timeDialogMode, setTimeDialogMode] = useState<"add" | "edit" | null>(null);
   const [timeDialogEvidenceId, setTimeDialogEvidenceId] = useState<string | null>(null);
@@ -70,10 +69,12 @@ export default function FoodTimingHistory() {
   const dialogHourRef = useRef<HTMLSelectElement | null>(null);
   const dialogTriggerRef = useRef<HTMLElement | null>(null);
   const mealSavedTimeoutRef = useRef<number | null>(null);
-  const profileTimeZone = dailyProfile?.timeZone ?? null;
+  const profileTimeZone = displayTimeZone || dailyProfile?.timeZone || environment.timezone || "UTC";
   const todayKey = localDateKey(now, profileTimeZone);
+  const dateKey = selectedDate && validTimelineDate(selectedDate) ? selectedDate : todayKey;
+  const [dialogDate, setDialogDate] = useState(dateKey);
 
-  const foodTimingSnapshot = buildFoodJourneySnapshot({ evidence: getFoodTimingEvidenceForDate(todayKey), events: [] });
+  const foodTimingSnapshot = buildFoodJourneySnapshot({ evidence: timelineFood(foodTimingEvidenceByDate, dateKey, profileTimeZone), events: [] });
   const foodTimingOwnsCurrentMoment = false;
   const mealEntries = [...foodTimingSnapshot.meals].sort((a, b) => {
     const aTime = new Date(a.at).getTime();
@@ -114,6 +115,7 @@ export default function FoodTimingHistory() {
     setTimeDialogMode(input.mode);
     setTimeDialogEvidenceId(input.evidenceId ?? null);
     setTimeDialogBaseDate(new Date(input.at));
+    setDialogDate(localDateKey(input.at, profileTimeZone));
     setTimeDialogHour(parts.hour);
     setTimeDialogMinute(parts.minute);
     setTimeDialogMeridiem(parts.meridiem);
@@ -137,13 +139,19 @@ export default function FoodTimingHistory() {
   };
 
   const saveTimeDialog = () => {
-    if (!timeDialogBaseDate) {
+    if (!timeDialogBaseDate || !validTimelineDate(dialogDate)) {
       setTimeDialogError("Choose a valid meal start time.");
       return;
     }
 
+    const originalParts = toTwelveHourParts(timeDialogBaseDate, profileTimeZone);
+    const unchanged = timeDialogMode === "edit" && dialogDate === localDateKey(timeDialogBaseDate, profileTimeZone)
+      && timeDialogHour === originalParts.hour && timeDialogMinute === originalParts.minute && timeDialogMeridiem === originalParts.meridiem;
+    // Preserve seconds and the original occurrence in a repeated DST hour when
+    // the user has not changed the date/time. No evidence edit is needed.
+    if (unchanged) { closeTimeDialog(); return; }
     const parsed = buildDateWithTime({
-      baseDate: timeDialogBaseDate,
+      baseDate: scheduleTime(dialogDate, "12:00", profileTimeZone) ?? timeDialogBaseDate,
       timeZone: profileTimeZone,
       hour: timeDialogHour,
       minute: timeDialogMinute,
@@ -265,6 +273,7 @@ export default function FoodTimingHistory() {
       <div className="mt-3 flex flex-wrap gap-3">
         <button
           type="button"
+          disabled={dateKey !== todayKey}
           onClick={recordMealNow}
           className={`inline-flex min-h-12 w-full items-center justify-center rounded-full px-6 py-3 text-base font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] focus-visible:ring-offset-2 active:translate-y-px sm:w-auto ${foodTimingOwnsCurrentMoment ? "bg-[var(--color-charcoal)] text-[var(--color-cream)] hover:bg-[var(--color-gold)] hover:text-[var(--color-charcoal)]" : "border border-[var(--color-line)] bg-white text-[var(--color-charcoal)] hover:border-[var(--color-charcoal)]"}`}
         >
@@ -273,7 +282,7 @@ export default function FoodTimingHistory() {
         <button
           type="button"
           onClick={(event) =>
-            openTimeDialog({ mode: "add", at: now, trigger: event.currentTarget })
+            openTimeDialog({ mode: "add", at: dateKey === todayKey ? now : scheduleTime(dateKey, "12:00", profileTimeZone)!, trigger: event.currentTarget })
           }
           className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-[var(--color-line)] bg-white px-6 py-3 text-base font-semibold text-[var(--color-charcoal)] transition hover:border-[var(--color-charcoal)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-gold)] focus-visible:ring-offset-2 active:translate-y-px sm:w-auto"
         >
@@ -320,9 +329,9 @@ export default function FoodTimingHistory() {
       ) : null}
 
       <div className="mt-2 border-t border-[var(--color-line)] pt-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">Meal times today</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">Meal times · {dateKey} · {profileTimeZone}</p>
         {mealEntries.length === 0 ? (
-          <p className="mt-2 text-sm text-[var(--color-muted)]">No meal times saved today.</p>
+          <p className="mt-2 text-sm text-[var(--color-muted)]">No meal times saved for this date.</p>
         ) : (
           <div className="mt-2 space-y-1.5">
             {mealEntries.map((meal) => {
@@ -373,6 +382,8 @@ export default function FoodTimingHistory() {
                   saveTimeDialog();
                 }}
               >
+                <p>Meal times use {profileTimeZone}. When clocks change, a repeated time uses the first occurrence and a skipped time moves forward.</p>
+                <label>Meal date<input type="date" value={dialogDate} max={todayKey} onChange={e => setDialogDate(e.target.value)}/></label>
                 <fieldset aria-label={timeDialogMode === "add" ? "Add a meal time" : "Change time"}>
                   <div className="flex flex-wrap items-end gap-2">
                     <div>

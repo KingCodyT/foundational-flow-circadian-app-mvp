@@ -10,6 +10,9 @@ export type FoodTimingEvidence = {
   updatedAt?: string | null;
   source: "USER";
   historicalContext?: HistoricalBiologicalContext | null;
+  // Original occurrence described by the retained snapshot, before an edit.
+  // A differing occurrence has unknown context, not current-profile context.
+  historicalContextOccurrenceAt?: string;
 };
 
 export type FoodTimingAnchors = {
@@ -56,7 +59,15 @@ function minutesBetween(later: Date | null, earlier: Date | null) {
   return Math.round((later.getTime() - earlier.getTime()) / 60000);
 }
 
+export function historicalFoodContextIsApplicable(evidence: FoodTimingEvidence): boolean {
+  return Boolean(evidence.historicalContext && (!evidence.historicalContextOccurrenceAt ||
+    Date.parse(evidence.historicalContextOccurrenceAt) === Date.parse(evidence.at)));
+}
+
 function anchorsForEvidence(evidence: FoodTimingEvidence, fallback: FoodTimingAnchors): FoodTimingAnchors {
+  if (evidence.historicalContextOccurrenceAt && !historicalFoodContextIsApplicable(evidence)) {
+    return { wakeAt: null, morningLightAt: null, sunsetAt: null, darknessAt: null, targetSleepAt: null };
+  }
   const context = evidence.historicalContext;
   if (!context) return fallback;
   return {

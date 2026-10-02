@@ -5,7 +5,7 @@ Foundational Flow is a local-first Next.js app organized around Today, Timeline,
 ## Current experience
 
 - `/today`: current coaching focus, one relevant reminder or silence, and a small pattern summary. Meal recording and editing remain available.
-- `/timeline`: a dedicated shared-shell scaffold. Historical browsing, recommendation history and the complete Timeline read model are deferred to Stage 4.
+- `/timeline`: a read-only historical view with calendar-date navigation, separately labeled recorded events, saved biological context, persisted plans and genuine delivered-guidance records. Missing historical context or guidance is not reconstructed.
 - `/profile`: profile/preferences and existing meal history.
 - `/audit` (also `/`): five-stage onboarding (Basics, Schedule, Environment, Your Reality, Finish), retaining draft recovery, optional location, saved profile/timezone and approved artwork. Finish hands into `/today?view=overview`.
 - `/dev/evidence`: development-only evidence controls; production requests return 404.
@@ -64,3 +64,13 @@ Without a valid saved wake time, the schedule uses 07:00 on the requested local 
 ## Historical reference
 
 `supabase/schema.sql` is the unused Build 1 table definition, retained for existing installations as a historical reference. It is not a setup step for this app. Its score, insight, and protocol columns do not describe the current local state. The old audit API and protocol email endpoint are absent.
+
+## Historical Timeline (Stage 4)
+
+Timeline groups records by calendar date in the saved profile timezone and keeps the original timestamps, offsets and historical timezone provenance visible. All stored food buckets are scanned without rebucketing; stable IDs prevent duplicate display after moves. Date selection is a validated URL query and never changes the provider runtime date or accepted personalization.
+
+Completed actions use occurrence timestamps. Skipped actions and food intentions remain status statements. Unknown event occurrence times remain unknown. Historical food context is read from each saved record; no current location/schedule is applied to old meals. Future dates contain only genuinely persisted plans. Existing delivery records can prove guidance existed, but missing original text is labeled unavailable. New recommendation archival is deferred; the existing bounded notification retention is not a complete guidance history.
+
+The existing meal editor supports a selected date and date moves through the existing provider APIs. Unchanged date/time edits are no-ops, preserving ambiguous DST instants and seconds. Explicit edits preserve IDs, receipt provenance and the original historical context snapshot. An additive original-occurrence marker binds that snapshot to its original instant. Context for a changed occurrence is unavailable unless that same original instant is restored; current profile/environment is never used to replace the snapshot. Timeline retains the old snapshot as provenance, and food interpretation does not use it or a current-profile fallback for the changed occurrence. Changed ambiguous/nonexistent wall times use the existing schedule resolver (earlier repeated time / forward through a gap). Original record timestamps remain inspectable.
+
+Final Timeline visual approval and real-browser interaction/accessibility validation are pending. No notification or wearable delivery is activated by Timeline.

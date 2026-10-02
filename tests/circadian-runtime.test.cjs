@@ -23,14 +23,14 @@ function host(t, initial = base(), instant = '2026-09-10T12:00:00Z', renderPages
   global.window = {
     localStorage: { getItem: k => storage.get(k) ?? null, setItem(k, data) { if (writeFailure && k === key) throw Error('quota'); writes.push(k); storage.set(k, data); } },
     setInterval: fn => { timers.add(fn); return fn; }, clearInterval: fn => timers.delete(fn),
-    addEventListener() {}, removeEventListener() {}, scrollTo() {},
+    addEventListener() {}, removeEventListener() {}, scrollTo() {}, setTimeout: () => 0, clearTimeout() {},
   };
   global.self = { setTimeout: () => 0, clearTimeout() {} }; // No viewport/prefetch work in the in-memory renderer.
   global.localStorage = global.window.localStorage;
   global.window.localStorage.removeItem = k => storage.delete(k);
   global.document = { visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
   function Probe({ name }) { value = useCircadian(); return React.createElement('route', { name }); }
-  function navigate(next) { route = next; renderer.update(tree()); }
+  function navigate(next) { route = typeof next === "string" ? next : `${next.pathname}?${new URLSearchParams(next.query)}`; renderer.update(tree()); }
   const tree = () => {
     if (!renderPages) return React.createElement(CircadianProvider, null, React.createElement(Probe, { key: route, name: route }));
     const url = new URL(route, 'https://synthetic.invalid');
@@ -197,13 +197,13 @@ test('provider location, schedule and seasonal changes stay contextual with stab
   assert.deepEqual(signal(h).evidence, original.evidence); assert.deepEqual(signal(h).confidence, original.confidence);
   assert.deepEqual(h.value.acceptedFocus, focus); h.reload(); assert.deepEqual(h.value.acceptedFocus, focus);
 });
-test('provider same-instant meal edit after profile change records historical context review, not new behavior', t => {
+test('provider same-instant meal edit after profile change preserves historical context without manufactured review', t => {
   const h = host(t, base({ answers: { late_meals_stimulants: 'within_1_hour' } })); let id;
   h.action(v => { id = v.recordFoodTimingAction('2026-09-01', 'MEAL_STARTED', '2026-09-01T18:00:00-07:00'); });
   const original = clone(signal(h, 'last_meal_timing')), keyBefore = h.value.runtime.evidenceKeys.last_meal_timing;
   h.action(v => v.setDailyProfile({ ...v.dailyProfile, targetBedtime: '20:30' }));
   h.action(v => v.updateFoodTimingAction(id, '2026-09-01T18:00:00-07:00'));
-  assert.ok(signal(h, 'last_meal_timing').reconsideration.reasons.includes('HISTORICAL_FOOD_CONTEXT_CHANGED'));
+  assert.ok(!signal(h, 'last_meal_timing').reconsideration?.reasons.includes('HISTORICAL_FOOD_CONTEXT_CHANGED'));
   assert.equal(h.value.runtime.evidenceKeys.last_meal_timing, keyBefore);
   assert.deepEqual(signal(h, 'last_meal_timing').confidence, original.confidence);
   assert.deepEqual(signal(h, 'last_meal_timing').evidence, original.evidence);
@@ -303,4 +303,105 @@ for (const route of ['/today', '/timeline', '/profile']) test(`direct ${route} h
   assert.deepEqual(h.value.acceptedFocus, focus);
   const links = h.rendered.findByProps({ 'aria-label': 'Primary navigation' }).findAllByType('a');
   assert.deepEqual(links.filter(a => a.props['aria-current'] === 'page').map(a => a.props.href), [route]);
+});
+
+test('Timeline date controls and reload are read-only across historical and future dates', t => {
+ const h=host(t,base(),undefined,true,'/timeline?date=2026-09-01');
+ h.action(v=>v.setDailyProfile({...v.dailyProfile,timeZone:'Europe/London'}));
+ const runtime=h.value.runtime,focus=h.value.acceptedFocus,candidate=clone(h.value.candidateTarget),saved=h.storage.get(key),writes=h.writes.length;
+ const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
+ const button=label=>h.rendered.findAllByType('button').find(b=>text(b)===label);
+ const dateInput=()=>h.rendered.findByProps({'aria-label':'Timeline date'}).findByType('input');
+ assert.equal(dateInput().props.value,'2026-09-01');
+ Renderer.act(()=>button('Previous day').props.onClick());assert.equal(dateInput().props.value,'2026-08-31');
+ Renderer.act(()=>button('Next day').props.onClick());assert.equal(dateInput().props.value,'2026-09-01');
+ Renderer.act(()=>dateInput().props.onChange({target:{value:'2030-01-01'}}));assert.equal(dateInput().props.value,'2030-01-01');
+ Renderer.act(()=>button('Return to Today').props.onClick());assert.equal(dateInput().props.value,h.value.environment.localDate);
+ assert.equal(h.value.runtime,runtime);assert.equal(h.value.acceptedFocus,focus);assert.deepEqual(clone(h.value.candidateTarget),candidate);
+ assert.equal(h.storage.get(key),saved);assert.equal(h.writes.length,writes);
+ h.navigate('/timeline?date=2026-09-01');h.reload();assert.equal(dateInput().props.value,'2026-09-01');
+ assert.deepEqual(clone(h.value.runtime),clone(runtime));assert.deepEqual(h.value.acceptedFocus,focus);
+});
+
+test('Timeline existing meal editor moves historical evidence with its ID and receipt provenance', t => {
+ const food={id:'historical-meal',action:'MEAL_STARTED',source:'USER',at:'2026-09-01T18:00:00-07:00',recordedAt:'2026-09-02T12:00:00Z',updatedAt:'2026-09-02T12:00:00Z'};
+ const h=host(t,base({foodTimingEvidenceByDate:{'2026-09-01':[food]}}),undefined,true,'/timeline?date=2026-09-01');
+ const focus=clone(h.value.acceptedFocus),unrelated=signal(h);
+ const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
+ const change=h.rendered.findAllByType('button').find(b=>text(b)==='Change time');
+ Renderer.act(()=>change.props.onClick({currentTarget:null}));
+ const dialog=h.rendered.findByProps({role:'dialog'});
+ Renderer.act(()=>dialog.findByProps({type:'date'}).props.onChange({target:{value:'2026-08-31'}}));
+ Renderer.act(()=>dialog.findByType('form').props.onSubmit({preventDefault(){}}));
+ const moved=h.value.foodTimingEvidenceByDate['2026-08-31'][0];
+ assert.equal(moved.id,food.id);assert.equal(moved.recordedAt,food.recordedAt);
+ assert.equal(moved.at,'2026-09-01T01:00:00.000Z');assert.equal(moved.updatedAt,'2026-09-10T12:00:00.000Z');
+ assert.equal(moved.historicalContext,undefined);assert.equal(moved.historicalContextOccurrenceAt, food.at);assert.equal(signal(h),unrelated);assert.deepEqual(h.value.acceptedFocus,focus);
+ const read=()=>h.rendered.findByProps({'aria-label':'Timeline entries'}).findAllByType('li').filter(n=>text(n).includes('User food record'));
+ assert.equal(read().length,0);h.navigate('/timeline?date=2026-08-31');assert.equal(read().length,1);
+ h.reload();assert.equal(read().length,1);assert.equal(h.value.foodTimingEvidenceByDate['2026-08-31'][0].id,food.id);
+});
+
+test('saving an unchanged historical meal preserves the later repeated DST instant and seconds', t => {
+ const food={id:'dst-meal',action:'MEAL_STARTED',source:'USER',at:'2026-11-01T01:30:25-08:00',recordedAt:'2026-11-01T12:00:00Z'};
+ const h=host(t,base({foodTimingEvidenceByDate:{'2026-11-01':[food]}}),'2026-11-02T12:00:00Z',true,'/timeline?date=2026-11-01');
+ const stored=h.storage.get(key),runtime=h.value.runtime;
+ const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
+ Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Change time').props.onClick({currentTarget:null}));
+ Renderer.act(()=>h.rendered.findByProps({role:'dialog'}).findByType('form').props.onSubmit({preventDefault(){}}));
+ assert.equal(h.storage.get(key),stored);assert.equal(h.value.runtime,runtime);
+});
+
+test('historical Timeline edit must preserve a genuine snapshot instead of recapturing the current profile', t => {
+ const context={capturedAt:'2026-09-01T18:00:00-07:00',timeZone:'America/Los_Angeles',latitude:37,longitude:-122,wakeAt:'2026-09-01T07:00:00-07:00',morningLightAt:null,sunriseAt:'2026-09-01T06:30:00-07:00',sunsetAt:'2026-09-01T19:30:00-07:00',targetSleepAt:'2026-09-01T22:30:00-07:00',retainedExtension:'keep'};
+ const food={id:'historical-context',action:'MEAL_STARTED',source:'USER',at:'2026-09-01T18:00:00-07:00',historicalContext:context};
+ const initial=base({dailyProfile:{timeZone:'Asia/Tokyo',wakeTime:'10:00',targetBedtime:'02:00',locationPermissionGranted:true,latitude:35.7,longitude:139.7},foodTimingEvidenceByDate:{'2026-09-01':[food]}});
+ const h=host(t,initial,undefined,true,'/timeline?date=2026-09-02');
+ const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
+ Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Change time').props.onClick({currentTarget:null}));
+ const dialog=h.rendered.findByProps({role:'dialog'});
+ Renderer.act(()=>dialog.findByProps({type:'date'}).props.onChange({target:{value:'2026-09-03'}}));
+ Renderer.act(()=>dialog.findByType('form').props.onSubmit({preventDefault(){}}));
+ const edited=Object.values(h.value.foodTimingEvidenceByDate).flat().find(e=>e.id===food.id);
+ assert.deepEqual(edited.historicalContext,context);
+});
+
+for (const scenario of [
+ {name:'unchanged historical occurrence',date:null,hour:null,zone:'America/Los_Angeles',snapshot:true},
+ {name:'historical time change',date:null,hour:'7',zone:'America/Los_Angeles',snapshot:true},
+ {name:'cross-date historical move',date:'2026-08-31',hour:null,zone:'America/Los_Angeles',snapshot:true},
+ {name:'travel timezone edit',date:'2026-09-03',hour:null,zone:'Asia/Tokyo',snapshot:true},
+ {name:'legacy missing-context edit',date:'2026-08-31',hour:null,zone:'America/Los_Angeles',snapshot:false},
+]) test(`real historical editor: ${scenario.name} preserves provenance without current-context fabrication`, t => {
+ const context={capturedAt:'2026-09-01T18:00:00-07:00',timeZone:'America/Los_Angeles',latitude:37,longitude:-122,wakeAt:'2026-09-01T07:00:00-07:00',morningLightAt:null,sunriseAt:null,sunsetAt:'2026-09-01T19:30:00-07:00',targetSleepAt:'2026-09-01T22:30:00-07:00',extension:{keep:'original'}};
+ const food={id:'preserve-context',action:'MEAL_STARTED',source:'USER',at:'2026-09-01T18:00:00-07:00',recordedAt:'2026-09-02T12:00:00Z',...(scenario.snapshot?{historicalContext:context}:{})};
+ const profile={timeZone:scenario.zone,wakeTime:'10:00',targetBedtime:'02:00',latitude:35.7,longitude:139.7,locationPermissionGranted:true};
+ const date=scenario.zone==='Asia/Tokyo'?'2026-09-02':'2026-09-01';
+ const h=host(t,base({dailyProfile:profile,foodTimingEvidenceByDate:{'2026-09-01':[food]}}),undefined,true,`/timeline?date=${date}`);
+ const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
+ const get=()=>Object.values(h.value.foodTimingEvidenceByDate).flat().find(e=>e.id===food.id);
+ const original=clone(get()),key=h.value.runtime.inputKey,foodKey=h.value.runtime.evidenceKeys.last_meal_timing,focus=clone(h.value.acceptedFocus),unrelated=signal(h),writes=h.writes.length;
+ Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Change time').props.onClick({currentTarget:null}));
+ const dialog=h.rendered.findByProps({role:'dialog'});
+ if(scenario.date) Renderer.act(()=>dialog.findByProps({type:'date'}).props.onChange({target:{value:scenario.date}}));
+ if(scenario.hour) Renderer.act(()=>dialog.findByProps({id:'food-time-hour'}).props.onChange({target:{value:scenario.hour}}));
+ Renderer.act(()=>dialog.findByType('form').props.onSubmit({preventDefault(){}}));
+ const changed=Boolean(scenario.date||scenario.hour);
+ assert.deepEqual(get().historicalContext,original.historicalContext);
+ assert.equal(get().recordedAt,original.recordedAt);assert.equal(get().id,original.id);
+ assert.equal(signal(h),unrelated);assert.deepEqual(h.value.acceptedFocus,focus);
+ if(changed) {
+   assert.notEqual(get().at,original.at);assert.notEqual(h.value.runtime.inputKey,key);assert.notEqual(h.value.runtime.evidenceKeys.last_meal_timing,foodKey);
+   assert.equal(get().historicalContextOccurrenceAt,original.at);
+   const {buildTimeline}=load('lib/timeline.ts');
+   const {localDateKey}=load('lib/live-clock.ts');
+   const selected=localDateKey(new Date(get().at),scenario.zone);
+   const entries=buildTimeline({date:selected,today:'2026-09-10',timeZone:scenario.zone,food:h.value.foodTimingEvidenceByDate});
+   assert.equal(entries.filter(e=>e.kind==='CONTEXT'&&e.status==='saved').length,0);
+   assert.match(entries.find(e=>e.kind==='CONTEXT').details,/edited occurrence is unavailable/);
+   const before=h.storage.get('foundational-flow-circadian-app-state');
+   h.navigate(`/timeline?date=${selected}`);assert.equal(h.storage.get('foundational-flow-circadian-app-state'),before);
+ } else {assert.deepEqual(get(),original);assert.equal(h.writes.length,writes);}
+ h.reload();assert.deepEqual(get().historicalContext,original.historicalContext);assert.deepEqual(h.value.acceptedFocus,focus);
+ if(changed) assert.equal(get().historicalContextOccurrenceAt,original.at);
 });

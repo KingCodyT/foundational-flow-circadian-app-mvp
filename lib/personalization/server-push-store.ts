@@ -28,6 +28,14 @@ export type ServerPushScheduleRecord = {
     validUntil?: string | null;
   };
   createdAt: string;
+  state?: "scheduled" | "sent" | "delivered" | "deferred" | "completed" | "suppressed" | "failed";
+  reason?: string;
+  updatedAt?: string;
+  actionToken?: string;
+  dateKey?: string;
+  timeZone?: string;
+  deliveredAt?: string;
+
 };
 
 export type ServerPushDeliveryRecord = {
@@ -40,19 +48,19 @@ export type ServerPushDeliveryRecord = {
 
 function getRedisConfig() {
   const url =
-    process.env.KV_REST_API_URL ??
-    process.env.UPSTASH_REDIS_REST_URL ??
+    process.env.KV_REST_API_URL ||
+    process.env.UPSTASH_REDIS_REST_URL ||
     null;
   const token =
-    process.env.KV_REST_API_TOKEN ??
-    process.env.UPSTASH_REDIS_REST_TOKEN ??
+    process.env.KV_REST_API_TOKEN ||
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
     null;
 
   if (!url || !token) return null;
   return { url: url.replace(/\/$/, ""), token };
 }
 
-async function redisCommand<T>(command: RedisCommandArg[]): Promise<T> {
+export async function redisCommand<T>(command: RedisCommandArg[]): Promise<T> {
   const config = getRedisConfig();
   if (!config) throw new Error("push_store_unavailable");
 
@@ -63,6 +71,7 @@ async function redisCommand<T>(command: RedisCommandArg[]): Promise<T> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(command),
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) throw new Error(`push_store_error:${response.status}`);

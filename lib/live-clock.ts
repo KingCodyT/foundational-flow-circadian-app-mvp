@@ -29,6 +29,12 @@ export function localDateKey(date: Date, timeZone?: string | null): string {
   return `${year}-${month}-${day}`;
 }
 
+export function dateTimeLocalToDate(value: string): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
 export function formatTimeInZone(date: Date | null, timeZone?: string | null) {
   if (!date || !Number.isFinite(date.getTime())) return "--:--";
 

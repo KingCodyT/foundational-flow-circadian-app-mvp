@@ -15,7 +15,7 @@ export type VoiceRelationshipOutput = {
 
 function evidenceActionForEvent(name?: string | null): string | null {
   if (!name) return null;
-  if (name === "Last Meal") return "I’ve finished eating";
+  if (name === "Last Meal" || name === "Your usual last meal" || name === "Suggested last meal") return "I’ve finished eating";
   if (name === "Morning Light") return "I’m outside";
   if (name === "Sunset") return "I’ve adjusted my light";
   if (name === "Dim the House") return "My environment is dim";

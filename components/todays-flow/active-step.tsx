@@ -4,25 +4,27 @@ import { useMemo, useState } from "react";
 import { buildTodaysFlow, FlowEvent } from "@/lib/flow-engine";
 import { useCircadian } from "@/components/circadian-provider";
 import { useLiveClock } from "@/hooks/use-live-clock";
-import { localDateKey } from "@/lib/live-clock";
+import { localDateKey, formatTimeInZone } from "@/lib/live-clock";
 import EventRow from "@/components/todays-flow/event-row";
 
-function formatWindow(e: FlowEvent) {
+function formatWindow(e: FlowEvent, timeZone?: string | null) {
   if (!e) return "";
   if (e.end) {
-    return `${e.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${e.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    return `${formatTimeInZone(e.start, timeZone)} - ${formatTimeInZone(e.end, timeZone)}`;
   }
-  return e.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return formatTimeInZone(e.start, timeZone);
 }
 
 export default function ActiveStep() {
   const { dailyProfile, participationLevel, eventStateByDate, getEventStateForDate, setEventRecord } = useCircadian();
   const now = useLiveClock();
-  const todayKey = localDateKey(now);
+  const todayKey = localDateKey(now, dailyProfile?.timeZone);
 
   const profileInput = useMemo(() => ({
     wakeTime: dailyProfile?.wakeTime ?? null,
+    timeZone: dailyProfile?.timeZone ?? null,
     targetBedtime: dailyProfile?.targetBedtime ?? null,
+    lastMealTime: dailyProfile?.lastMealTime ?? null,
     latitude: dailyProfile?.locationPermissionGranted ? dailyProfile.latitude ?? null : null,
     longitude: dailyProfile?.locationPermissionGranted ? dailyProfile.longitude ?? null : null,
   }), [dailyProfile]);
@@ -61,7 +63,7 @@ export default function ActiveStep() {
             <div className="mt-4 flex items-center justify-between">
               <div>
                 <p className="text-sm text-[var(--color-muted)]">When</p>
-                <p className="font-semibold">{formatWindow(activeEvent)}</p>
+                <p className="font-semibold">{formatWindow(activeEvent, dailyProfile?.timeZone)}</p>
               </div>
               <div className="flex gap-3">
                 <button onClick={() => handleDone(activeEvent)} disabled={!canAct(activeEvent)} className="inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm">Done</button>
@@ -79,7 +81,7 @@ export default function ActiveStep() {
             <div className="mt-4 border-t pt-4">
               <p className="text-xs uppercase text-[var(--color-muted)]">Coming up</p>
               <h3 className="mt-2 font-semibold">{next.name}</h3>
-              <p className="text-sm text-[var(--color-muted)]">{formatWindow(next)}</p>
+              <p className="text-sm text-[var(--color-muted)]">{formatWindow(next, dailyProfile?.timeZone)}</p>
               <p className="mt-2 text-sm text-[var(--color-muted)]">{next.guidance}</p>
             </div>
           </>
@@ -101,7 +103,7 @@ export default function ActiveStep() {
       {showPlan && (
         <div className="space-y-3">
           {events.map((e) => (
-            <EventRow key={e.id} e={e} />
+            <EventRow key={e.id} e={e} timeZone={dailyProfile?.timeZone} />
           ))}
         </div>
       )}

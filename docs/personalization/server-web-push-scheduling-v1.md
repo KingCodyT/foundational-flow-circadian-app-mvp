@@ -1,5 +1,7 @@
 # Server-Side Web Push Scheduling + Subscription v1
 
+Historical design note. Current delivery behavior, configuration diagnosis, and phone-test instructions are in [Reminder delivery review](../reminder-delivery-review.md). In particular, near-due delivery is now server-scheduled, and push-service acceptance is no longer counted as device delivery.
+
 ## Purpose
 
 This layer gives Foundational Flow a durable server-side delivery path for an **already-approved future notification**. It does not create biological guidance and it does not move coaching decisions out of the existing personalization engine.

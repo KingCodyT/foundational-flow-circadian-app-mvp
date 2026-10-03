@@ -1,0 +1,116 @@
+{
+  "clientId": "synthetic-architecture",
+  "answers": {
+    "morning_light_timing": "within_15"
+  },
+  "hasCompletedAudit": true,
+  "lastSavedAt": null,
+  "dailyProfile": {
+    "wakeTime": "07:00",
+    "targetBedtime": "22:00",
+    "timeZone": "Europe/London",
+    "locationPermissionGranted": false
+  },
+  "personalizationRuntime": {
+    "version": 1,
+    "state": {
+      "generatedAt": "2026-08-19T07:08:00-07:00",
+      "perSignal": {
+        "morning_light_timing": {
+          "id": "morning_light_timing",
+          "classification": "BEHAVIOR",
+          "coachingState": "ESTABLISHED",
+          "evidence": [
+            {
+              "source": [
+                "QUESTIONNAIRE"
+              ],
+              "questionId": "morning_light_timing",
+              "answer": "within_15",
+              "answerScore": 100,
+              "futureEvidence": "retain"
+            }
+          ],
+          "confidence": {
+            "score": 0.9,
+            "lastEvidenceAt": "2026-08-19T07:08:00-07:00",
+            "futureConfidence": "retain"
+          },
+          "reconsideration": {
+            "status": "pending",
+            "reasons": [
+              "TIMEZONE_CHANGED"
+            ],
+            "evidence": [],
+            "observedAt": "2026-08-20T10:00:00Z",
+            "futureReview": "retain"
+          },
+          "futureSignal": "retain"
+        }
+      }
+    },
+    "baselines": {
+      "morning_light_timing": {
+        "timeZone": "America/Los_Angeles",
+        "futureBaseline": "retain"
+      }
+    },
+    "observedAnswers": {
+      "morning_light_timing": "within_15"
+    },
+    "acceptedAnswers": {
+      "morning_light_timing": "within_15"
+    },
+    "history": {
+      "morning_light_timing": [
+        {
+          "questionId": "morning_light_timing",
+          "answer": "within_15",
+          "source": [
+            "QUESTIONNAIRE"
+          ],
+          "futureHistory": "retain"
+        }
+      ]
+    },
+    "acknowledgedHistory": {
+      "morning_light_timing": "old-history-key"
+    },
+    "evidenceKeys": {
+      "morning_light_timing": "[\"within_15\",null]"
+    },
+    "resolutions": [
+      {
+        "status": "resolved",
+        "signalId": "meal_timing",
+        "resolvedAt": "2026-08-18T10:00:00Z",
+        "review": {
+          "reasons": [
+            "TIMEZONE_CHANGED"
+          ],
+          "evidence": []
+        },
+        "priorSignal": {
+          "coachingState": "ESTABLISHED",
+          "evidence": []
+        },
+        "futureResolution": "retain"
+      }
+    ],
+    "inputKey": "legacy-key-without-food",
+    "futureRuntime": "retain"
+  },
+  "assessmentEvidenceHistory": {
+    "morning_light_timing": [
+      {
+        "questionId": "morning_light_timing",
+        "answer": "within_15",
+        "source": [
+          "QUESTIONNAIRE"
+        ],
+        "futureHistory": "retain"
+      }
+    ]
+  },
+  "futureRoot": "retain"
+}

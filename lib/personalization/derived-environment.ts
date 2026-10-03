@@ -1,3 +1,4 @@
+import { localDateKey } from "../live-clock";
 import { getSolarTimes, hasValidCoordinates, SolarTimes } from "../solar";
 import { DailyProfile } from "@/types/circadian";
 import { Confidence } from "./types";
@@ -47,7 +48,7 @@ export function buildDerivedEnvironment(opts?: { profile?: DailyProfile | null; 
   const longitude = locationAvailable ? profile!.longitude! : null;
 
   // Reuse existing solar calculation module. It returns local Date objects when available.
-  const solar = getSolarTimes(date, latitude ?? null, longitude ?? null);
+  const solar = getSolarTimes(date, latitude ?? null, longitude ?? null, profile?.timeZone);
 
   // Saved profile timezone is authoritative when available. Runtime timezone remains useful context evidence.
   const tz = profile?.timeZone || (() => {
@@ -58,12 +59,13 @@ export function buildDerivedEnvironment(opts?: { profile?: DailyProfile | null; 
     }
   })();
 
-  const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const localDate = localDateKey(date, tz);
+  const [year, month, day] = localDate.split("-").map(Number);
 
   // day-of-year
   // Calendar arithmetic must not lose an hour across daylight saving changes.
-  const startOfYear = Date.UTC(date.getFullYear(), 0, 0);
-  const diff = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - startOfYear;
+  const startOfYear = Date.UTC(year, 0, 0);
+  const diff = Date.UTC(year, month - 1, day) - startOfYear;
   const oneDay = 1000 * 60 * 60 * 24;
   const dayOfYear = Math.floor(diff / oneDay);
 

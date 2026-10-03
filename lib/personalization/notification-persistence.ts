@@ -4,6 +4,8 @@ import {
 } from "./notification-runtime";
 
 export type NotificationPersistenceState = {
+  deliveryStatus?: { id: string; status: "Scheduled" | "Delivered" | "Deferred" | "Completed" | "Suppressed" | "Failed"; at: string; reason?: string; scheduledFor?: string } | null;
+  lastNotification?: ScheduledNotificationRecord | null;
   scheduledNotification: ScheduledNotificationRecord | null;
   deliveredNotifications: DeliveredNotificationRecord[];
   materialChangeKeys: Record<string, string>;
@@ -49,7 +51,7 @@ export function pruneNotificationPersistenceState(
     } else {
       const ageMs =
         now.getTime() - new Date(scheduledNotification.scheduledFor).getTime();
-      if (ageMs < 0 || ageMs > SCHEDULED_RETENTION_MS) {
+      if (ageMs < -SCHEDULED_RETENTION_MS || ageMs > SCHEDULED_RETENTION_MS || (scheduledNotification.validUntil && Date.parse(scheduledNotification.validUntil) < now.getTime())) {
         scheduledNotification = null;
       }
     }
@@ -61,6 +63,8 @@ export function pruneNotificationPersistenceState(
       : {};
 
   return {
+    deliveryStatus: state?.deliveryStatus ?? null,
+    lastNotification: state?.lastNotification ?? null,
     scheduledNotification,
     deliveredNotifications: delivered,
     materialChangeKeys,

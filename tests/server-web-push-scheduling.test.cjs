@@ -48,6 +48,7 @@ test('server push store recognizes Vercel KV-style REST configuration', () => {
 test('VAPID public key is exposed only when both VAPID keys exist', () => {
   withEnv(
     {
+      WEB_PUSH_VAPID_SUBJECT: 'mailto:test@example.invalid',
       WEB_PUSH_VAPID_PUBLIC_KEY: 'public-key',
       WEB_PUSH_VAPID_PRIVATE_KEY: null,
     },
@@ -59,6 +60,7 @@ test('VAPID public key is exposed only when both VAPID keys exist', () => {
 
   withEnv(
     {
+      WEB_PUSH_VAPID_SUBJECT: 'mailto:test@example.invalid',
       WEB_PUSH_VAPID_PUBLIC_KEY: 'public-key',
       WEB_PUSH_VAPID_PRIVATE_KEY: 'private-key',
     },

@@ -12,6 +12,11 @@ export type ScheduledNotificationRecord = {
   body: string;
   scheduledFor: string;
   validUntil?: string | null;
+  timeZone?: string;
+  dateKey?: string;
+  clientId?: string;
+  actionToken?: string;
+
 };
 
 export type DeliveredNotificationRecord = {

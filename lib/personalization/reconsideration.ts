@@ -6,7 +6,8 @@ export type ReconsiderationReason =
   | "LOCATION_CHANGED"
   | "SCHEDULE_CHANGED"
   | "SEASONAL_CONTEXT_CHANGED"
-  | "EVIDENCE_CONFLICT";
+  | "EVIDENCE_CONFLICT"
+  | "HISTORICAL_FOOD_CONTEXT_CHANGED";
 
 export type ContextSnapshot = {
   timeZone?: string | null;

@@ -7,7 +7,8 @@ const cache = new Map();
 // Use the project's existing TypeScript compiler; no runtime dependency needed.
 function load(relativePath) {
   let filename = path.resolve(root, relativePath);
-  if (!path.extname(filename)) filename += '.ts';
+  if (!path.extname(filename)) filename += fs.existsSync(filename + '.ts') ? '.ts' : '.tsx';
+  if (filename.endsWith('.json')) return { default: JSON.parse(fs.readFileSync(filename, 'utf8')) };
   if (cache.has(filename)) return cache.get(filename).exports;
   const mod = { exports: {} };
   cache.set(filename, mod);

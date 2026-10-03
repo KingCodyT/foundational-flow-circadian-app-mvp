@@ -1,9 +1,10 @@
 "use client";
 
+import { formatTimeInZone } from "@/lib/live-clock";
 import { FlowEvent } from "@/lib/flow-engine";
 
-export default function EventRow({ e }: { e: FlowEvent }) {
-  const timeLabel = e.end ? `${e.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${e.end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : e.start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+export default function EventRow({ e, timeZone }: { e: FlowEvent; timeZone?: string | null }) {
+  const timeLabel = e.end ? `${formatTimeInZone(e.start, timeZone)} - ${formatTimeInZone(e.end, timeZone)}` : formatTimeInZone(e.start, timeZone);
   return (
     <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
       <div>

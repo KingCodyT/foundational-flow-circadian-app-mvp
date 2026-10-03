@@ -1,3 +1,5 @@
+import { localDateKey } from "./live-clock";
+
 // Basic solar timing utilities adapted from NOAA algorithms.
 // UTC instants for the requested local calendar date; format in the runtime timezone.
 // https://gml.noaa.gov/grad/solcalc/solareqns.PDF
@@ -118,7 +120,7 @@ export type SolarTimes = {
   dayLengthMinutes: number | null;
 };
 
-export function getSolarTimes(date: Date, latitude?: number | null, longitude?: number | null): SolarTimes {
+export function getSolarTimes(date: Date, latitude?: number | null, longitude?: number | null, timeZone?: string | null): SolarTimes {
   if (!Number.isFinite(date.getTime()) || !hasValidCoordinates(latitude, longitude)) {
     return { sunrise: null, sunset: null, solarNoon: null, dayLengthMinutes: null };
   }
@@ -126,7 +128,8 @@ export function getSolarTimes(date: Date, latitude?: number | null, longitude?: 
   // NOAA produces minutes relative to UTC midnight, not local midnight.
   // Do not wrap at 24 hours: eastern sunrise can be on the previous UTC day,
   // and western sunset can be on the following UTC day.
-  const utcMidnight = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const [year, month, day] = localDateKey(date, timeZone).split("-").map(Number);
+  const utcMidnight = Date.UTC(year, month - 1, day);
   const jd = toJulian(new Date(utcMidnight));
   const lat = latitude!;
   const lon = longitude!;

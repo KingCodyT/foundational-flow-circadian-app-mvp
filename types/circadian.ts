@@ -35,6 +35,29 @@ export type CategoryDefinition = {
 export type ParticipationLevel = "BASELINE" | "GUIDED_FLOW" | "FULL_FLOW";
 
 export type DailyProfile = {
+  displayName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  activityLevel?: string;
+  locationLabel?: string;
+  foodPreference?: "omnivore" | "plant";
+  foodDairyFree?: boolean;
+  foodQuick?: boolean;
+  foodRegion?: string; // Explicit regional harvest calendar override; empty uses saved coordinates.
+  temperatureUnit?: string;
+  timeFormat?: string;
+  firstCaffeineTime?: string;
+  napPattern?: string;
+  typicalEnvironment?: string;
+  elevation?: string;
+  upcomingTravel?: boolean;
+  caffeineUse?: string;
+  realityNotes?: string;
+  showPerspective?: boolean;
+  remindersEnabled?: boolean;
+  mealRemindersEnabled?: boolean;
+  foodTimingGoal?: "observe" | "earlier_last_meal";
+  coachingTargetSignalId?: string | null;
   wakeTime: string | null; // HH:MM local
   targetBedtime: string | null; // HH:MM local
   timeZone?: string | null; // IANA timezone for the user's saved biological context
@@ -57,6 +80,7 @@ export type EventStatus =
   | "missed";
 
 export type EventRecord = {
+  remindAt?: string; // user-adjusted reminder time; never a schedule anchor
   status: EventStatus;
   at: string; // ISO timestamp when action occurred (completed/skipped)
 };

@@ -1,16 +1,16 @@
 # Foundational Flow Circadian App MVP
 
-Foundational Flow is a local-first Next.js app organized around NOW, RHYTHM, and YOU. The current branch is the implementation source of truth.
+Foundational Flow is a local-first Next.js app organized around Today, Timeline, and Profile. The current branch is the implementation source of truth.
 
 ## Current experience
 
-- `/now`: current guidance, the next upcoming event, and available sunrise/sunset context. Confirming an action saves dated behavioral evidence.
-- `/rhythm`: today's timeline using the engine's current, upcoming, completed, skipped, and missed statuses.
-- `/you` (also `/`): profile/environment facts, behavioral coaching states, confidence, and the primary coaching target.
-- `/audit`: five-stage onboarding (Basics, Schedule, Environment, Your Reality, Finish). Finishing saves the initial profile and opens a profile-at-a-glance confirmation before NOW.
-- `/dev/evidence`: evidence test controls in local development only. Production HTML and Next data requests return 404.
+- `/today`: current coaching focus, one relevant reminder or silence, and a small pattern summary. Meal recording and editing remain available.
+- `/timeline`: a read-only historical view with calendar-date navigation, separately labeled recorded events, saved biological context, persisted plans and genuine delivered-guidance records. Missing historical context or guidance is not reconstructed.
+- `/profile`: profile/preferences and existing meal history.
+- `/audit` (also `/`): five-stage onboarding (Basics, Schedule, Environment, Your Reality, Finish), retaining draft recovery, optional location, saved profile/timezone and approved artwork. Finish hands into `/today?view=overview`.
+- `/dev/evidence`: development-only evidence controls; production requests return 404.
 
-The legacy `/dashboard`, `/results`, and `/tracker` routes show YOU; `/season` shows RHYTHM; `/todays-flow` and `/protocol` show NOW. These are compatibility aliases, not separate legacy features.
+Compatibility redirects preserve query parameters: `/rhythm`, `/my-day`, `/season` → `/timeline`; `/now`, `/todays-flow`, `/protocol` → `/today`; `/you`, `/my-profile`, `/dashboard`, `/results`, `/tracker` → `/profile`.
 
 ## Personalization and persistence
 
@@ -20,7 +20,7 @@ Question option `score` values remain necessary for initial coaching-state mappi
 
 `components/circadian-provider.tsx` persists answers, assessment completion, client ID, save timestamp, daily profile/location, participation level, and dated event records in browser local storage under `foundational-flow-circadian-app-state`. The legacy audit names and storage key are retained for compatibility. No server persistence or email service is wired into the current app. No service credentials are required.
 
-YOU exposes profile and participation controls under “Edit profile & preferences.” Saved wake/bed times immediately update the rhythm; browser location can be requested, updated, or removed without changing assessment answers. Location errors are shown inline and preserve any previously saved location. Participation is stored and passed to the flow engine; it does not currently change the generated schedule, and the control states that limitation.
+Profile exposes profile and participation controls under “Edit profile & preferences.” Saved wake/bed times immediately update the rhythm; browser location can be requested, updated, or removed without changing assessment answers. Location errors are shown inline and preserve any previously saved location. Participation is stored and passed to the flow engine; it does not currently change the generated schedule, and the control states that limitation.
 
 ## Local development
 
@@ -53,12 +53,24 @@ Sources: [NOAA equations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF) and [
 
 ## Navigation and scheduling
 
-NOW and RHYTHM refresh every 15 seconds and immediately when the tab regains focus or visibility. Their local date key advances at midnight, selecting that day's saved events. YOU also refreshes its solar context on a new day. Timers/listeners are removed on unmount; refreshes do not create completion evidence. NOW rechecks event eligibility and the current date when a confirmation is clicked.
+The single root provider owns the live clock, saved-timezone runtime date and shared personalization state. Routes consume that state; navigation does not rebuild or reset accepted focus, evidence, confidence, reconsideration or Established progress. Initial first-run guidance caching remains intact and is separate from personalization.
 
-Assessment and main views share `FlowShell` with NOW/RHYTHM/YOU navigation, including on narrow screens. Assessment completion still navigates to YOU. The obsolete navigation shell has been removed.
+The shared journey navigation exposes exactly Today / Timeline / Profile. The active canonical link has `aria-current="page"`, a visible indicator and keyboard focus styling. The onboarding Finish screen uses the same navigation; its button goes to Today. No Stage 4 historical functionality is included yet.
+
+Stage 3 non-browser validation uses `npm run test:non-browser` and `node node_modules/typescript/bin/tsc --noEmit --incremental false`. It mounts real page components under one provider, tests route changes and onboarding handoff, and exercises all legacy redirect functions. Browser history, responsive visual and keyboard testing in a real browser remain deferred to authorized browser validation.
 
 Without a valid saved wake time, the schedule uses 07:00 on the requested local date; opening the app later does not move event times. An absent bedtime retains the existing fallback of 15 hours after wake. Saved answers, profile, participation, and dated evidence keep their existing storage format.
 
 ## Historical reference
 
 `supabase/schema.sql` is the unused Build 1 table definition, retained for existing installations as a historical reference. It is not a setup step for this app. Its score, insight, and protocol columns do not describe the current local state. The old audit API and protocol email endpoint are absent.
+
+## Historical Timeline (Stage 4)
+
+Timeline groups records by calendar date in the saved profile timezone and keeps the original timestamps, offsets and historical timezone provenance visible. All stored food buckets are scanned without rebucketing; stable IDs prevent duplicate display after moves. Date selection is a validated URL query and never changes the provider runtime date or accepted personalization.
+
+Completed actions use occurrence timestamps. Skipped actions and food intentions remain status statements. Unknown event occurrence times remain unknown. Historical food context is read from each saved record; no current location/schedule is applied to old meals. Future dates contain only genuinely persisted plans. Existing delivery records can prove guidance existed, but missing original text is labeled unavailable. New recommendation archival is deferred; the existing bounded notification retention is not a complete guidance history.
+
+The existing meal editor supports a selected date and date moves through the existing provider APIs. Unchanged date/time edits are no-ops, preserving ambiguous DST instants and seconds. Explicit edits preserve IDs, receipt provenance and the original historical context snapshot. An additive original-occurrence marker binds that snapshot to its original instant. Context for a changed occurrence is unavailable unless that same original instant is restored; current profile/environment is never used to replace the snapshot. Timeline retains the old snapshot as provenance, and food interpretation does not use it or a current-profile fallback for the changed occurrence. Changed ambiguous/nonexistent wall times use the existing schedule resolver (earlier repeated time / forward through a gap). Original record timestamps remain inspectable.
+
+Final Timeline visual approval and real-browser interaction/accessibility validation are pending. No notification or wearable delivery is activated by Timeline.

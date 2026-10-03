@@ -24,6 +24,14 @@ export type InitialSignalState = {
   coachingState?: CoachingState; // only for BEHAVIOR signals
   // Internal confidence in the coachingState estimate (Phase 2C)
   confidence?: import("./types").Confidence;
+  reconsideration?: {
+    status: "pending";
+    signalId: string;
+    shouldReconsider: true;
+    reasons: import("./reconsideration").ReconsiderationReason[];
+    observedAt: string;
+    evidence: import("./reconsideration").SignalEvidenceFragment[];
+  };
   evidence: InitialSignalEvidence[]; // one or more pieces of evidence
   notes?: string[];
 };

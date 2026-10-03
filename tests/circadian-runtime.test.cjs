@@ -323,12 +323,43 @@ test('Timeline date controls and reload are read-only across historical and futu
  assert.deepEqual(clone(h.value.runtime),clone(runtime));assert.deepEqual(h.value.acceptedFocus,focus);
 });
 
+test('Timeline compact meal controls save, edit, reload, and remove without duplicate cards', t => {
+ const h=host(t,base(),undefined,true,'/timeline?date=2026-09-10');
+ const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
+ const button=label=>h.rendered.findAllByType('button').find(b=>text(b)===label);
+ assert.match(text(h.rendered.findByProps({'aria-label':'Day recap'})),/Your recorded activities will appear here/);
+ assert.equal(button("I'm eating now"),undefined);
+ Renderer.act(()=>button('Add a meal').props.onClick({currentTarget:null}));
+ Renderer.act(()=>h.rendered.findByProps({role:'dialog'}).findByType('form').props.onSubmit({preventDefault(){}}));
+ const list=()=>h.rendered.findByProps({'aria-label':'Timeline entries'});
+ assert.equal(list().findAllByType('li').length,1);
+ assert.match(text(list()),/Meal time saved/);
+ assert.doesNotMatch(text(list()),/Recorded meal|Completed|Record details/);
+ assert.equal(h.rendered.findAllByProps({'aria-label':'Food timing next step'}).length,0);
+ h.reload();
+ assert.equal(list().findAllByType('li').length,1);
+ Renderer.act(()=>button('Edit').props.onClick({currentTarget:null}));
+ Renderer.act(()=>h.rendered.findByProps({id:'food-time-hour'}).props.onChange({target:{value:'4'}}));
+ Renderer.act(()=>h.rendered.findByProps({role:'dialog'}).findByType('form').props.onSubmit({preventDefault(){}}));
+ assert.equal(Object.values(h.value.foodTimingEvidenceByDate).flat().length,1);
+ assert.match(text(list()),/Meal time saved/);
+ Renderer.act(()=>button('Edit').props.onClick({currentTarget:null}));
+ Renderer.act(()=>button('Remove time').props.onClick());
+ Renderer.act(()=>button('Remove').props.onClick());
+ assert.equal(h.rendered.findAllByProps({'aria-label':'Timeline entries'}).length,0);
+ assert.match(text(h.rendered),/Meal time removed/);
+ h.navigate('/timeline?date=2026-09-09');
+ Renderer.act(()=>button('Add a meal').props.onClick({currentTarget:null}));
+ Renderer.act(()=>h.rendered.findByProps({role:'dialog'}).findByType('form').props.onSubmit({preventDefault(){}}));
+ assert.equal(list().findAllByType('li').length,1);
+});
+
 test('Timeline existing meal editor moves historical evidence with its ID and receipt provenance', t => {
  const food={id:'historical-meal',action:'MEAL_STARTED',source:'USER',at:'2026-09-01T18:00:00-07:00',recordedAt:'2026-09-02T12:00:00Z',updatedAt:'2026-09-02T12:00:00Z'};
  const h=host(t,base({foodTimingEvidenceByDate:{'2026-09-01':[food]}}),undefined,true,'/timeline?date=2026-09-01');
  const focus=clone(h.value.acceptedFocus),unrelated=signal(h);
  const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
- const change=h.rendered.findAllByType('button').find(b=>text(b)==='Change time');
+ const change=h.rendered.findAllByType('button').find(b=>text(b)==='Edit');
  Renderer.act(()=>change.props.onClick({currentTarget:null}));
  const dialog=h.rendered.findByProps({role:'dialog'});
  Renderer.act(()=>dialog.findByProps({type:'date'}).props.onChange({target:{value:'2026-08-31'}}));
@@ -337,7 +368,7 @@ test('Timeline existing meal editor moves historical evidence with its ID and re
  assert.equal(moved.id,food.id);assert.equal(moved.recordedAt,food.recordedAt);
  assert.equal(moved.at,'2026-09-01T01:00:00.000Z');assert.equal(moved.updatedAt,'2026-09-10T12:00:00.000Z');
  assert.equal(moved.historicalContext,undefined);assert.equal(moved.historicalContextOccurrenceAt, food.at);assert.equal(signal(h),unrelated);assert.deepEqual(h.value.acceptedFocus,focus);
- const read=()=>h.rendered.findByProps({'aria-label':'Timeline entries'}).findAllByType('li').filter(n=>text(n).includes('User food record'));
+ const read=()=>h.rendered.findAllByProps({'aria-label':'Timeline entries'}).flatMap(list=>list.findAllByType('li')).filter(n=>text(n).includes('Meal'));
  assert.equal(read().length,0);h.navigate('/timeline?date=2026-08-31');assert.equal(read().length,1);
  h.reload();assert.equal(read().length,1);assert.equal(h.value.foodTimingEvidenceByDate['2026-08-31'][0].id,food.id);
 });
@@ -347,7 +378,7 @@ test('saving an unchanged historical meal preserves the later repeated DST insta
  const h=host(t,base({foodTimingEvidenceByDate:{'2026-11-01':[food]}}),'2026-11-02T12:00:00Z',true,'/timeline?date=2026-11-01');
  const stored=h.storage.get(key),runtime=h.value.runtime;
  const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
- Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Change time').props.onClick({currentTarget:null}));
+ Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Edit').props.onClick({currentTarget:null}));
  Renderer.act(()=>h.rendered.findByProps({role:'dialog'}).findByType('form').props.onSubmit({preventDefault(){}}));
  assert.equal(h.storage.get(key),stored);assert.equal(h.value.runtime,runtime);
 });
@@ -358,7 +389,7 @@ test('historical Timeline edit must preserve a genuine snapshot instead of recap
  const initial=base({dailyProfile:{timeZone:'Asia/Tokyo',wakeTime:'10:00',targetBedtime:'02:00',locationPermissionGranted:true,latitude:35.7,longitude:139.7},foodTimingEvidenceByDate:{'2026-09-01':[food]}});
  const h=host(t,initial,undefined,true,'/timeline?date=2026-09-02');
  const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
- Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Change time').props.onClick({currentTarget:null}));
+ Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Edit').props.onClick({currentTarget:null}));
  const dialog=h.rendered.findByProps({role:'dialog'});
  Renderer.act(()=>dialog.findByProps({type:'date'}).props.onChange({target:{value:'2026-09-03'}}));
  Renderer.act(()=>dialog.findByType('form').props.onSubmit({preventDefault(){}}));
@@ -381,7 +412,7 @@ for (const scenario of [
  const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
  const get=()=>Object.values(h.value.foodTimingEvidenceByDate).flat().find(e=>e.id===food.id);
  const original=clone(get()),key=h.value.runtime.inputKey,foodKey=h.value.runtime.evidenceKeys.last_meal_timing,focus=clone(h.value.acceptedFocus),unrelated=signal(h),writes=h.writes.length;
- Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Change time').props.onClick({currentTarget:null}));
+ Renderer.act(()=>h.rendered.findAllByType('button').find(b=>text(b)==='Edit').props.onClick({currentTarget:null}));
  const dialog=h.rendered.findByProps({role:'dialog'});
  if(scenario.date) Renderer.act(()=>dialog.findByProps({type:'date'}).props.onChange({target:{value:scenario.date}}));
  if(scenario.hour) Renderer.act(()=>dialog.findByProps({id:'food-time-hour'}).props.onChange({target:{value:scenario.hour}}));

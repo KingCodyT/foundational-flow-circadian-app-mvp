@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useCircadian } from "./circadian-provider";
 import { timelineFood, validTimelineDate } from "@/lib/timeline";
 import { formatTimeInZone, localDateKey } from "@/lib/live-clock";
@@ -52,7 +52,11 @@ function getFocusableElements(container: HTMLElement | null) {
   ).filter((element) => !element.hasAttribute("hidden"));
 }
 
-export default function FoodTimingHistory({ selectedDate, displayTimeZone }: { selectedDate?: string; displayTimeZone?: string } = {}) {
+export default function FoodTimingHistory({ selectedDate, displayTimeZone, renderHistory }: {
+  selectedDate?: string;
+  displayTimeZone?: string;
+  renderHistory?: (editMeal: (id: string, trigger: HTMLElement) => void, saved?: { at: string; message: string }) => ReactNode;
+} = {}) {
   const { dailyProfile, environment, foodTimingEvidenceByDate, now, recordFoodTimingAction, updateFoodTimingAction, deleteFoodTimingAction } = useCircadian();
   const lastMealTapAtMsRef = useRef(0);
   const [timeDialogMode, setTimeDialogMode] = useState<"add" | "edit" | null>(null);
@@ -88,7 +92,7 @@ export default function FoodTimingHistory({ selectedDate, displayTimeZone }: { s
     const hasValidSavedAt = Boolean(savedAt && Number.isFinite(savedAt.getTime()));
     setMealSavedMessage(
       hasValidSavedAt
-        ? `Meal time saved: ${formatTime(savedAt, profileTimeZone)}`
+        ? `Meal time saved: ${formatTime(savedAt, profileTimeZone)}${localDateKey(savedAt!, profileTimeZone) !== dateKey ? ` on ${localDateKey(savedAt!, profileTimeZone)}. Select that date in Timeline to review or change it.` : ""}`
         : "Meal time saved.",
     );
     setLastSavedMealAtIso(hasValidSavedAt ? savedAt!.toISOString() : null);
@@ -267,8 +271,8 @@ export default function FoodTimingHistory({ selectedDate, displayTimeZone }: { s
   const foodTimingEditor = (
     <div className={`mt-4 rounded-xl border p-4 ${foodTimingOwnsCurrentMoment ? "border-[var(--color-gold)] bg-white" : "border-[var(--color-line)] bg-[var(--color-cream)]/70"}`}>
       <h2 className="text-lg font-semibold tracking-[-0.02em] text-[var(--color-charcoal)]">FOOD TIMING</h2>
-      <details><summary>Record or edit a meal time</summary>
-      <p>Save what happened when it’s useful. There is no meal checklist.</p>
+      <div><p className="mt-2 font-semibold">Record or edit a meal time</p>
+      <p>Record when you ate, add an earlier meal, or correct a saved time.</p>
 
       <div className="mt-3 flex flex-wrap gap-3">
         <button
@@ -328,7 +332,23 @@ export default function FoodTimingHistory({ selectedDate, displayTimeZone }: { s
         </div>
       ) : null}
 
-      <div className="mt-2 border-t border-[var(--color-line)] pt-3">
+      {mealEntries.length > 0 ? (
+        <section aria-label="Food timing next step" className="mt-3 rounded-xl border border-[var(--color-line)] bg-white p-4">
+          <h3 className="font-semibold text-[var(--color-charcoal)]">What’s next</h3>
+          <p className="mt-1 text-sm text-[var(--color-charcoal)]">
+            {dateKey === todayKey
+              ? "Your meal time is recorded. Carry on with your day, and use “I’m eating now” when you start your next meal."
+              : "Your meal time is recorded for this date. Add any other meals you remember, or return to today to record your next meal."}
+          </p>
+          <p className="mt-2 text-sm text-[var(--color-muted)]">
+            {mealEntries.length === 1
+              ? "One meal time is a starting point. Another entry will help you see how your meals are spaced."
+              : `You can review the spacing between your meals ${renderHistory ? "above" : "below"}. Use “Change time” if an entry needs correcting.`}
+          </p>
+        </section>
+      ) : null}
+
+      {!renderHistory && <div className="mt-2 border-t border-[var(--color-line)] pt-3">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-muted)]">Meal times · {dateKey} · {profileTimeZone}</p>
         {mealEntries.length === 0 ? (
           <p className="mt-2 text-sm text-[var(--color-muted)]">No meal times saved for this date.</p>
@@ -358,12 +378,20 @@ export default function FoodTimingHistory({ selectedDate, displayTimeZone }: { s
             })}
           </div>
         )}
+      </div>}
       </div>
-      </details>
     </div>
   );
 
-  return <>{foodTimingEditor}        {timeDialogMode ? (
+  return <>{renderHistory?.((id, trigger) => {
+    const meal = mealEntries.find(entry => entry.evidenceId === id);
+    if (meal) openTimeDialog({ mode: "edit", at: new Date(meal.at), evidenceId: id, trigger });
+  }, mealSavedMessage && lastSavedMealAtIso ? { at: lastSavedMealAtIso, message: mealSavedMessage } : undefined)}{renderHistory ? (
+    <div className="my-3">
+      <button type="button" className="min-h-11 rounded-full border border-[var(--color-line)] bg-white px-5 py-2 font-semibold" onClick={event => openTimeDialog({ mode: "add", at: dateKey === todayKey ? now : scheduleTime(dateKey, "12:00", profileTimeZone)!, trigger: event.currentTarget })}>Add a meal</button>
+      <p role="status" className="text-sm text-[var(--color-muted)]">{(!lastSavedMealAtIso || !mealEntries.some(meal => meal.at === lastSavedMealAtIso)) ? mealSavedMessage : ""}</p>
+    </div>
+  ) : foodTimingEditor}        {timeDialogMode ? (
           <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-2 sm:items-center sm:p-4">
             <div
               role="dialog"

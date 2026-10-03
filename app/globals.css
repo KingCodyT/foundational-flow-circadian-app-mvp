@@ -278,3 +278,25 @@ a {
   .timeline-date-navigation input {width:100%;}
   .timeline-date-navigation button {padding:10px 12px;}
 }
+
+/* Keep meal history compact while retaining generous edit targets. */
+.timeline-meal .timeline-time {padding:12px 0;}
+.timeline-meal .timeline-story {display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding-top:8px;padding-bottom:8px;}
+.timeline-meal .timeline-story:before {top:24px;}
+.journey .timeline-meal h2 {font-family:var(--font-body);font-size:18px;margin:0;}
+.timeline-meal .timeline-story button {margin-left:auto;}
+.timeline-meal .timeline-save-message {flex-basis:100%;font-size:13px;}
+
+.food-idea-controls {display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:20px 0 12px;}
+.food-idea-controls label {display:flex;align-items:center;gap:8px;min-height:44px;font-size:15px;}
+.food-idea-controls select {padding:10px;border:1px solid var(--color-line);border-radius:12px;background:white;max-width:100%;}
+.food-idea-controls input {width:18px;height:18px;accent-color:var(--color-charcoal);}
+.food-idea-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:16px 0;}
+.food-idea {border:1px solid var(--color-line);border-radius:14px;padding:16px;min-width:0;background:rgba(255,255,255,.55);}
+.journey .food-idea h4 {font-size:18px;font-weight:600;line-height:1.3;margin:0 0 10px;}
+.journey .food-idea p,.journey .food-idea-note {font-size:14px;line-height:1.5;}
+.food-idea summary {font-size:14px;cursor:pointer;padding:12px 0;}
+.food-idea dl {font-size:14px;line-height:1.5;}
+.food-idea dt {font-weight:600;margin-top:8px;}
+.food-idea dd {margin:0;}
+@media(max-width:700px) {.food-idea-grid {grid-template-columns:1fr;}.food-idea-controls {gap:8px 16px;}}

@@ -51,6 +51,7 @@ export type DailyProfile = {
   realityNotes?: string;
   showPerspective?: boolean;
   remindersEnabled?: boolean;
+  mealRemindersEnabled?: boolean;
   foodTimingGoal?: "observe" | "earlier_last_meal";
   coachingTargetSignalId?: string | null;
   wakeTime: string | null; // HH:MM local

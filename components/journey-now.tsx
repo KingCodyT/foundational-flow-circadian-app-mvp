@@ -5,7 +5,7 @@ import type { DailyProfile } from "@/types/circadian";
 import type { ContextualReminder } from "@/lib/personalization/contextual-reminders";
 import type { VoiceRelationshipOutput } from "@/lib/voice/voice-relationship";
 import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
-import { FoodGuidance } from "./food-guidance";
+import { FoodPreview } from "./food-guidance";
 
 export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, children }: {
   profile: DailyProfile | null; now: Date; voice: VoiceRelationshipOutput; reminder: ContextualReminder | null;
@@ -42,7 +42,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
         </div>}
       </JourneyCard>
       {firstRun && <p className="today-context">{firstRun.summary}</p>}
-      <FoodGuidance profile={profile} now={now} />
+      <FoodPreview profile={profile} now={now} suppressNudge={reminder?.id === "last_meal"} />
       {children}
     </main>
   </JourneyFrame>;

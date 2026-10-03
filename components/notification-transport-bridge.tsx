@@ -23,6 +23,7 @@ export function NotificationTransportBridge() {
       }
     };
     const apply = (reminder: RemoteReminder | null) => {
+      if (reminder?.eventId === "meal_suggestion") return;
       if (stopped || !reminder || !reminder.id || !reminder.scheduledFor) return;
       const ctx = latest.current;
       if (["scheduled", "sent", "deferred"].includes(reminder.state || "") && Date.parse(reminder.validUntil || "") < Date.now()) return;

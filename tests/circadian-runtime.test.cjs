@@ -238,12 +238,12 @@ test('canonical pages and back/forward-style navigation preserve the complete ac
   assert.equal(signal(h).coachingState, 'ESTABLISHED');
   assert.ok(signal(h).reconsideration);
   const runtime = h.value.runtime, focus = h.value.acceptedFocus, saved = h.storage.get(key), writes = h.writes.length;
-  for (const route of ['/timeline', '/profile', '/timeline', '/today', '/profile', '/today?view=overview']) {
+  for (const route of ['/food', '/timeline', '/profile', '/food', '/today', '/profile', '/today?view=overview']) {
     h.navigate(route);
     const nav = h.rendered.findByProps({ 'aria-label': 'Primary navigation' });
     const links = nav.findAllByType('a');
-    assert.deepEqual(links.map(a => a.props.href), ['/today', '/timeline', '/profile']);
-    assert.deepEqual(links.map(a => a.findByType('span').children.join('')), ['Today', 'Timeline', 'Profile']);
+    assert.deepEqual(links.map(a => a.props.href), ['/today', '/food', '/timeline', '/profile']);
+    assert.deepEqual(links.map(a => a.findByType('span').children.join('')), ['Today', 'Food', 'Timeline', 'Profile']);
     assert.deepEqual(links.filter(a => a.props['aria-current'] === 'page').map(a => a.props.href), [route.split('?')[0]]);
     assert.equal(h.value.runtime, runtime);
     assert.equal(h.value.acceptedFocus, focus);
@@ -294,7 +294,7 @@ test('real onboarding recovers a draft, preserves five stages and hands off to T
   assert.equal(h.writes.length, writes);
 });
 
-for (const route of ['/today', '/timeline', '/profile']) test(`direct ${route} hydration and reload preserve accepted state`, t => {
+for (const route of ['/today', '/food', '/timeline', '/profile']) test(`direct ${route} hydration and reload preserve accepted state`, t => {
   const h = host(t, base(), undefined, true, route);
   h.action(v => v.setDailyProfile({ ...v.dailyProfile, timeZone: 'Europe/London' }));
   const runtime = clone(h.value.runtime), focus = clone(h.value.acceptedFocus);

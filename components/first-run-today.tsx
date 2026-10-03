@@ -75,7 +75,7 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
         {permissionError && <p>Reminder setup couldn’t finish. Please try again.</p>}
         {permission !== "UNAVAILABLE" && permission !== "DENIED" && (!profile.remindersEnabled || permission === "PROMPT" || permissionError) &&
           <button className="journey-primary" onClick={enable}>Enable reminders</button>}
-        <Link href="/profile#your-schedule">Reminder settings</Link>
+        <Link href="/profile#preferences-heading">Reminder settings</Link>
       </>}
   </div>;
   return <JourneyNow profile={profile} now={now} voice={voice} reminder={reminder} preview={null}

@@ -50,7 +50,7 @@ function validProfile(v: unknown): boolean {
   if (!object(v) || !context(v)) return false;
   const textFields = ["displayName", "dateOfBirth", "gender", "activityLevel", "locationLabel", "temperatureUnit", "timeFormat", "firstCaffeineTime", "napPattern", "typicalEnvironment", "elevation", "caffeineUse", "realityNotes", "foodTimingGoal", "coachingTargetSignalId", "lastMealTime", "workStructure", "travelFrequency", "exercisePattern", "sleepEnvironment"];
   return textFields.every(k => nullableString(v[k])) &&
-    ["locationPermissionGranted", "upcomingTravel", "showPerspective", "remindersEnabled"].every(k => v[k] == null || typeof v[k] === "boolean");
+    ["locationPermissionGranted", "upcomingTravel", "showPerspective", "remindersEnabled", "mealRemindersEnabled"].every(k => v[k] == null || typeof v[k] === "boolean");
 }
 function dateBuckets(v: ObjectValue) {
   return Object.keys(v).every(key => /^\d{4}-\d{2}-\d{2}$/.test(key) &&

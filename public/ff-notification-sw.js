@@ -48,11 +48,12 @@ async function show(notification) {
   const prior = await read(current.id);
   if (['completed', 'suppressed', 'failed'].includes(current.state) || prior?.pendingAction || prior?.displayedFor === current.scheduledFor) return;
   if (Date.parse(current.scheduledFor) > Date.now() || !current.validUntil || Date.parse(current.validUntil) < Date.now()) return;
-  const allActions = [ { action: 'done', title: 'Done' }, { action: 'later', title: '15 minutes later' }, { action: 'skip', title: 'Not tonight' } ];
+  const meal = current.eventId === 'meal_suggestion';
+  const allActions = meal ? [{action:'ideas',title:'See meal ideas'},{action:'later',title:'15 minutes later'},{action:'skip',title:'Dismiss'}] : [ { action: 'done', title: 'Done' }, { action: 'later', title: '15 minutes later' }, { action: 'skip', title: 'Not tonight' } ];
   const maxActions = typeof Notification !== 'undefined' && Number.isFinite(Notification.maxActions) ? Notification.maxActions : 3;
   if (self.registration.getNotifications) {
     for (const previous of await self.registration.getNotifications()) {
-      if (previous.data?.reminder && previous.tag !== current.id) previous.close();
+      if (previous.data?.reminder && previous.tag !== current.id && (previous.data.reminder.eventId === 'meal_suggestion') === meal) previous.close();
     }
   }
   await self.registration.showNotification(current.title, {
@@ -65,7 +66,7 @@ async function show(notification) {
   await act(displayed, 'delivered');
 }
 async function openToday(notification) {
-  const url = '/today?reminder=' + encodeURIComponent(notification?.id || '');
+  const url = notification?.eventId === 'meal_suggestion' ? '/food' : '/today?reminder=' + encodeURIComponent(notification?.id || '');
   for (const client of await self.clients.matchAll({ type: 'window', includeUncontrolled: true })) {
     if ('navigate' in client) { await client.navigate(url); return client.focus(); }
   }
@@ -91,7 +92,7 @@ self.addEventListener('notificationclick', event => {
     if (notification && ['done', 'later', 'skip'].includes(event.action)) {
       const result = await act(notification, event.action, event.action === 'later' ? new Date(Date.now() + 15 * 60000).toISOString() : undefined);
       if (result.state === 'failed') await openToday(notification);
-    } else await openToday(notification);
+    } else { if(notification?.eventId === 'meal_suggestion') await act(notification,'skip'); await openToday(notification); }
   }));
 });
 self.addEventListener('sync', event => { if (event.tag === 'ff-reminder-actions') event.waitUntil(serial(replay)); });

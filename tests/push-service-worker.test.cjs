@@ -71,3 +71,12 @@ test('offline action is not fake success and retries after restart; expired/supp
     assert.equal(worker.displayed.length, 0);
   }
 });
+
+test('meal push opens Food and snoozes without recording a completed meal',async()=>{
+ const record={...reminder('meal-test'),eventId:'meal_suggestion'};
+ const remote=new Map([[record.id,record]]),worker=harness({remote});
+ await worker.emit('push',{data:{json:()=>({notification:record})}});
+ assert.deepEqual(Array.from(worker.displayed[0].actions,a=>a.action),['ideas','later']);
+ await worker.emit('notificationclick',{action:'ideas',notification:{close(){},data:worker.displayed[0].data}});
+ assert.equal(worker.opened[0],'/food');assert.equal(record.state,'suppressed');
+});

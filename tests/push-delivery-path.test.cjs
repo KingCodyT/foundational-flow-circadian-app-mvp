@@ -20,6 +20,7 @@ test('missing Redis configuration is a real 503 with exact missing names, never 
     const result = await call(deliveries, { clientId: 'test-client-0001' }, 'GET');
     assert.equal(result.code, 503);
     assert.deepEqual(result.value.missing, ['KV_REST_API_URL or UPSTASH_REDIS_REST_URL','KV_REST_API_TOKEN or UPSTASH_REDIS_REST_TOKEN']);
+    assert.equal((await call(load('pages/api/push/meals.ts').default,{clientId:'test-client-0001',profile:{}})).code,503);
     const status = await call(config, {}, 'GET');
     assert.equal(status.code, 503);
     assert.ok(status.value.missing.includes('APP_ORIGIN'));
@@ -88,5 +89,25 @@ test('durable delivery path: local timezone, one action, dispatch dedup, acknowl
     await lifecycle.scheduleReminder(clientId, { ...notification, id: 'replacement', scheduledFor: '2026-09-21T04:26:00Z', validUntil: '2026-09-21T04:30:00Z' });
     const old = await call(action, { clientId, notificationId: late.notificationId, actionToken: late.actionToken, action: 'inspect' });
     assert.equal(old.value.reminder.state, 'suppressed');
+    const meals = load('pages/api/push/meals.ts').default;
+    const mealProfile={wakeTime:'07:00',targetBedtime:'23:00',lastMealTime:'19:00',timeZone:'America/Los_Angeles'};
+    const mealPlan=load('lib/personalization/meal-notifications.ts').planMealNotifications(mealProfile,new Date());
+    const coachingId=await store.redisCommand(['GET',lifecycle.activeKey(clientId)]);
+    assert.equal((await call(meals,{clientId,profile:mealProfile})).value.scheduled,7);
+    assert.equal(await store.redisCommand(['GET',lifecycle.activeKey(clientId)]),coachingId);
+    const queuedJobs=jobs.length;
+    await call(meals,{clientId,profile:mealProfile});assert.equal(jobs.length,queuedJobs);
+    const mealRecord=await store.getServerPushSchedule(clientId,mealPlan[0].id);
+    const mealJob=jobs.find(j=>j.notificationId===mealRecord.notificationId);
+    now=Date.parse(mealRecord.scheduledFor);
+    const sentBefore=sent;assert.equal((await call(dispatch,mealJob,'POST',headers)).code,204);assert.equal(sent,sentBefore+1);
+    assert.equal((await call(action,{clientId,notificationId:mealRecord.notificationId,actionToken:mealRecord.actionToken,action:'inspect'})).value.reminder.state,'sent');
+    await call(action,{clientId,notificationId:mealRecord.notificationId,actionToken:mealRecord.actionToken,action:'later'});
+    await call(meals,{clientId,profile:mealProfile});
+    assert.equal((await store.getServerPushSchedule(clientId,mealRecord.notificationId)).state,'deferred');
+    assert.equal((await call(meals,{clientId},'DELETE')).code,200);
+    for(const meal of mealPlan)assert.equal((await store.getServerPushSchedule(clientId,meal.id)).state,'suppressed');
+    assert.equal(await store.redisCommand(['GET',lifecycle.activeKey(clientId)]),coachingId);
+
   } finally { global.fetch = nativeFetch; global.Date = nativeDate; push.sendWebPush = nativeSend; for (const [k,v] of Object.entries(saved)) v === undefined ? delete process.env[k] : process.env[k] = v; }
 });

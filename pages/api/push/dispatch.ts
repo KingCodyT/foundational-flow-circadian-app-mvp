@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const result = await withPushLock(clientId, async () => {
       const record = await getServerPushSchedule(clientId, notificationId);
       if (!record || record.scheduleRevision !== scheduleRevision || !["scheduled", "deferred"].includes(record.state || "scheduled") ||
-        await redisCommand(["GET", activeKey(clientId)]) !== notificationId) return 204;
+        await redisCommand(["GET", activeKey(clientId, record.notification.eventId, record.dateKey)]) !== notificationId) return 204;
       if (Date.parse(record.scheduledFor) > Date.now()) return 425;
       if (!record.validUntil || Date.parse(record.validUntil) < Date.now()) {
         record.state = "failed"; record.reason = "Reminder window expired before delivery"; await saveLifecycle(record); return 204;

@@ -1,4 +1,6 @@
 import { useState } from "react";
+import Link from "next/link";
+import { MealNudge } from "./meal-nudge";
 import type { DailyProfile } from "@/types/circadian";
 import { foodGuidancePhase } from "@/lib/personalization/food-guidance";
 import { selectMealIdeas } from "@/lib/personalization/meal-ideas";
@@ -63,5 +65,17 @@ export function FoodGuidance({ profile, now }: { profile: DailyProfile | null; n
         <p>These are general meal ideas, not a prescribed diet. Choose foods that fit your allergies and any dietary plan from your clinician.</p>
       </details>
     </section>
+  </JourneyCard>;
+}
+
+export function FoodPreview({ profile, now, suppressNudge = false }: { profile: DailyProfile | null; now: Date; suppressNudge?: boolean }) {
+  const content = guidance[foodGuidancePhase(profile, now)];
+  return <JourneyCard className="food-guidance">
+    <MealNudge profile={suppressNudge ? null : profile} now={now}>
+    <h2>Food for your day</h2>
+    <h3>{content.title}</h3>
+    <p>{content.suggestion}</p>
+    <Link href="/food" className="journey-outline inline-flex mt-4">Explore meal ideas</Link>
+    </MealNudge>
   </JourneyCard>;
 }

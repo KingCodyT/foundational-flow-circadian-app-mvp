@@ -5,7 +5,8 @@ import { pushOrigin } from "./push-configuration";
 import type { ScheduledNotificationRecord } from "./notification-runtime";
 import { scheduleDateKey } from "../schedule-time";
 
-export const activeKey = (clientId: string) => `ff:push:active:${clientId}`;
+export const activeKey = (clientId: string, eventId?: string | null, dateKey?: string) =>
+  eventId === "meal_suggestion" ? `ff:push:meal-active:${clientId}:${dateKey}` : `ff:push:active:${clientId}`;
 const evidenceKey = (record: ServerPushScheduleRecord) => `ff:push:handled:${record.clientId}:${record.dateKey}:${["sunset", "dim_house", "digital_sunset"].includes(record.notification.eventId || "") ? "evening" : record.notification.eventId}`;
 export async function withPushLock<T>(clientId: string, work: () => Promise<T>): Promise<T> {
   const key = `ff:push:lock:${clientId}`, owner = randomUUID();
@@ -31,7 +32,7 @@ export async function saveLifecycle(record: ServerPushScheduleRecord) {
 export async function enqueue(record: ServerPushScheduleRecord) {
   record.actionToken = record.actionToken || token(record);
   await saveLifecycle(record);
-  await redisCommand(["SET", activeKey(record.clientId), record.notificationId]);
+  await redisCommand(["SET", activeKey(record.clientId, record.notification.eventId, record.dateKey), record.notificationId]);
   try {
     await scheduleQStashDispatch({ destination: `${pushOrigin()}/api/push/dispatch`, clientId: record.clientId, notificationId: record.notificationId, scheduleRevision: record.scheduleRevision, scheduledFor: record.scheduledFor });
   } catch (error) {
@@ -43,6 +44,7 @@ export async function enqueue(record: ServerPushScheduleRecord) {
 export async function scheduleReminder(clientId: string, notification: ScheduledNotificationRecord) {
   return withPushLock(clientId, async () => {
     const existing = await getServerPushSchedule(clientId, notification.id);
+    if (existing?.notification.eventId === "meal_suggestion" && existing.state === "deferred") return existing;
     if (existing && existing.scheduledFor === notification.scheduledFor && existing.state !== "failed" && existing.state !== "suppressed") return existing;
     const zone = notification.timeZone || "UTC";
     const record: ServerPushScheduleRecord = { clientId, notificationId: notification.id, notification,
@@ -52,7 +54,7 @@ export async function scheduleReminder(clientId: string, notification: Scheduled
     if (await redisCommand(["GET", evidenceKey(record)])) {
       record.state = "suppressed"; record.reason = "Already handled for this local day"; await saveLifecycle(record); return record;
     }
-    const previousId = await redisCommand<string | null>(["GET", activeKey(clientId)]);
+    const previousId = await redisCommand<string | null>(["GET", activeKey(clientId, notification.eventId, record.dateKey)]);
     if (previousId) {
       const pending = await getServerPushSchedule(clientId, previousId);
       if (pending?.state === "deferred" && pending.notification.eventId === notification.eventId && pending.dateKey === record.dateKey && Date.parse(pending.scheduledFor) === Date.parse(notification.scheduledFor)) return pending;
@@ -69,7 +71,7 @@ export async function reminderAction(clientId: string, notificationId: string, s
     const record = await getServerPushSchedule(clientId, notificationId);
     if (!record || !validActionToken(record, suppliedToken)) throw new Error("invalid_action_token");
     if (action === "inspect") {
-      if (await redisCommand(["GET", activeKey(clientId)]) !== notificationId) return { ...record, state: "suppressed" as const, reason: "Replaced by the current reminder" };
+      if (await redisCommand(["GET", activeKey(clientId, record.notification.eventId, record.dateKey)]) !== notificationId) return { ...record, state: "suppressed" as const, reason: "Replaced by the current reminder" };
       return record;
     }
     if (["completed", "suppressed"].includes(record.state || "")) return record;

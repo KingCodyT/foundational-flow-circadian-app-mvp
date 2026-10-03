@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import type { ZipLocation } from "@/lib/location/zip-location";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useCircadian } from "@/components/circadian-provider";
 import { getRuntimeTimeZone } from "@/lib/live-clock";
@@ -8,7 +10,7 @@ import { requestBrowserNotificationPermission, registerNotificationServiceWorker
 import { hasValidCoordinates } from "@/lib/solar";
 
 export default function DailyProfileForm({ section = "all" }: { section?: "all" | "schedule" | "preferences" } = {}) {
-  const { dailyProfile, setDailyProfile } = useCircadian();
+  const { dailyProfile, setDailyProfile, storageIssue } = useCircadian();
   const savedWakeTime = dailyProfile?.wakeTime ?? "07:00";
   const savedBedtime = dailyProfile?.targetBedtime ?? "22:00";
   const savedTimeZone = dailyProfile?.timeZone ?? getRuntimeTimeZone() ?? "UTC";
@@ -19,6 +21,10 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
   const [error, setError] = useState("");
   const [wakeTime, setWakeTime] = useState(savedWakeTime);
   const [targetBedtime, setTargetBedtime] = useState(savedBedtime);
+  const [zip, setZip] = useState("");
+  const [zipResults, setZipResults] = useState<ZipLocation[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [locationSaved, setLocationSaved] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locationMessage, setLocationMessage] = useState("");
   const requestId = useRef(0);
@@ -53,12 +59,35 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
     });
   };
 
+  const searchZip = async () => {
+    const id = ++requestId.current;
+    setLocating(false); setZipResults([]); setLocationSaved(false);
+    if (!/^\d{5}$/.test(zip.trim())) { setLocationMessage("Enter a five-digit U.S. ZIP code."); return; }
+    setSearching(true); setLocationMessage("Looking up your area…");
+    try {
+      const response = await fetch(`/api/location?zip=${encodeURIComponent(zip.trim())}`);
+      const data = await response.json();
+      if (id !== requestId.current) return;
+      if (!response.ok) throw new Error(data.error || "Please try again.");
+      setZipResults(data.locations); setLocationMessage("Choose your area below to save it.");
+    } catch (error) { if (id === requestId.current) setLocationMessage(error instanceof Error ? error.message : "Please try again."); }
+    finally { if (id === requestId.current) setSearching(false); }
+  };
+  const saveZipLocation = (place: ZipLocation) => {
+    requestId.current += 1;
+    setLocationSaved(false); setLocating(false); setSearching(false); setZipResults([]);
+    setDailyProfile({...dailyProfile, wakeTime: dailyProfile?.wakeTime ?? null, targetBedtime: dailyProfile?.targetBedtime ?? null,
+      timeZone: dailyProfile?.timeZone ?? savedTimeZone, latitude:place.latitude, longitude:place.longitude,
+      locationLabel: `${place.label} (ZIP area)`, locationPermissionGranted:true});
+    setZipResults([]); setLocationSaved(true); setLocationMessage("Your location is saved. ZIP codes use an approximate area center. Check your timezone above, then see your personalized day.");
+  };
   const requestLocation = () => {
     if (!navigator.geolocation) {
-      setLocationMessage("Location is unavailable in this browser. You can still save your times.");
+      setLocationMessage("Browser location is unavailable. Enter your ZIP code below instead.");
       return;
     }
     const id = ++requestId.current;
+    setLocationSaved(false); setZipResults([]); setSearching(false);
     setLocating(true);
     setLocationMessage("Finding your location…");
     navigator.geolocation.getCurrentPosition((position) => {
@@ -76,24 +105,28 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
         locationPermissionGranted: true,
+        locationLabel: "Browser location",
       });
-      setLocationMessage("Location saved for your solar timing.");
+      setLocationSaved(true);
+      setLocationMessage("Your location is saved. You’re ready to see your personalized day.");
     }, (error) => {
       if (id !== requestId.current) return;
       setLocating(false);
       const reason = error.code === 1 ? "Location access was denied."
         : error.code === 3 ? "The location request timed out." : "Your location could not be found.";
-      setLocationMessage(`${reason} ${hasLocation ? "Your saved location is unchanged." : "You can still save your times and use the app."}`);
+      setLocationMessage(`${reason} ${hasLocation ? "Your saved location is unchanged." : "Enter your ZIP code below instead—no browser location permission needed."}`);
     }, { timeout: 10000, maximumAge: 300000, enableHighAccuracy: false });
   };
 
   const removeLocation = () => {
     requestId.current += 1;
+    setLocationSaved(false); setLocating(false); setSearching(false); setZipResults([]);
     setDailyProfile({
       ...dailyProfile,
       wakeTime: dailyProfile?.wakeTime ?? null,
       targetBedtime: dailyProfile?.targetBedtime ?? null,
       timeZone: dailyProfile?.timeZone ?? savedTimeZone,
+      locationLabel: undefined,
       latitude: null,
       longitude: null,
       locationPermissionGranted: false,
@@ -136,15 +169,25 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
         {section !== "preferences" && <div className="space-y-3">
           <p className="text-sm font-semibold">Profile timezone</p>
           <p className="text-sm leading-6 text-[var(--color-muted)]">{savedTimeZone}</p>
-          <p className="text-sm font-semibold">Location (optional)</p>
-          <p className="text-sm leading-6 text-[var(--color-muted)]">{hasLocation ? "A location is saved for sunrise and sunset timing." : "Use your location to personalize sunrise and sunset timing. It stays in this browser."}</p>
+          <p id="profile-location" className="text-sm font-semibold">Location — essential for personalized guidance</p>
+          <p className="text-sm leading-6 text-[var(--color-muted)]">{hasLocation ? "A location is saved for sunrise and sunset timing." : "Save your location so Circadian Flow can calculate your local sunrise, sunset, and day length and identify your growing region. Without it, daylight guidance cannot be personalized. It stays in this browser."}</p>
+          <p className="text-sm">Tap “Use my location,” then choose Allow if your browser asks. Prefer not to share device location? Use a ZIP code below.</p>
           <div className="flex flex-wrap gap-3">
-            <button type="button" onClick={requestLocation} className="rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-sm">{locating ? "Finding location…" : hasLocation ? "Update location" : "Use my location"}</button>
+            <button type="button" disabled={locating || searching} onClick={requestLocation} className="rounded-full border border-[var(--color-line)] bg-white px-4 py-2 text-sm">{locating ? "Finding location…" : hasLocation ? "Update location" : "Use my location"}</button>
             {hasLocation ? <button type="button" onClick={removeLocation} className="rounded-full border border-[var(--color-line)] px-4 py-2 text-sm">Remove location</button> : null}
           </div>
+          <div className="space-y-3">
+            <label htmlFor="location-zip" className="block">Or enter your U.S. ZIP code</label>
+            <p className="text-sm">We send only the ZIP code to Zippopotam.us to find the area. Your saved location stays in this browser.</p>
+            <input id="location-zip" className="rounded-xl border p-3" inputMode="numeric" autoComplete="postal-code" maxLength={5} value={zip} onChange={event => { requestId.current += 1; setSearching(false); setLocating(false); setZip(event.target.value); setZipResults([]); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); void searchZip(); } }} />
+            <button type="button" disabled={searching || locating} onClick={() => void searchZip()} className="journey-outline">{searching ? "Finding your area…" : "Find my area"}</button>
+            {zipResults.map(place => <button className="journey-outline" type="button" key={`${place.label}:${place.latitude}:${place.longitude}`} onClick={() => saveZipLocation(place)}>Save {place.label} as my location</button>)}
+          </div>
+          {hasLocation && <p className="text-sm">Saved location: {dailyProfile?.locationLabel || "Your saved coordinates"}. Check that your timezone above matches this location.</p>}
+          {hasLocation && !storageIssue && <Link href="/today" className="journey-primary inline-flex">See my personalized day</Link>}
         </div>}
       </fieldset>
-      <p role="status" className="text-sm leading-6 text-[var(--color-muted)]">{locationMessage}</p>
+      <p role="status" className="text-sm leading-6 text-[var(--color-muted)]">{storageIssue && locationSaved ? "Your location could not be saved in this browser. Please use the storage recovery message before continuing." : locationMessage}</p>
     </form>
   );
 }

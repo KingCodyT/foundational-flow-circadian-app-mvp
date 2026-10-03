@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MealNudge } from "./meal-nudge";
 import type { DailyProfile } from "@/types/circadian";
@@ -13,11 +13,12 @@ const guidance = {
   evening: { title: "Keep your next meal comfortable", suggestion: "If you’re hungry near bedtime, choose a meal or snack that satisfies you without feeling overly heavy. Protein, carbohydrates, and fats can all still fit.", reason: "Your usual bedtime is within about three hours. Small studies suggest very late large meals can affect overnight metabolism; this is not a rule to skip food or cut out carbohydrates." },
   general: { title: "A balanced option for your next meal", suggestion: "Choose a protein source, vegetables or fruit, a fiber-rich carbohydrate, and some unsaturated fat. Let hunger, activity, and your own needs guide the amount.", reason: "We’re keeping this guidance flexible because your schedule is missing, involves shift work, or you’re outside your usual waking hours. Clock time alone cannot tell us your biological phase." },
 };
-export function FoodGuidance({ profile, now }: { profile: DailyProfile | null; now: Date }) {
-  const [choice, setChoice] = useState("omnivore");
-  const [dairyFree, setDairyFree] = useState(false);
-  const [quick, setQuick] = useState(false);
+export function FoodGuidance({ profile, now, onPreferencesChange }: { profile: DailyProfile | null; now: Date; onPreferencesChange?: (changes: Partial<DailyProfile>) => void }) {
+  const [choice, setChoice] = useState(profile?.foodPreference ?? "omnivore");
+  const [dairyFree, setDairyFree] = useState(profile?.foodDairyFree ?? false);
+  const [quick, setQuick] = useState(profile?.foodQuick ?? false);
   const [offset, setOffset] = useState(0);
+  useEffect(() => { setChoice(profile?.foodPreference ?? "omnivore"); setDairyFree(profile?.foodDairyFree ?? false); setQuick(profile?.foodQuick ?? false); setOffset(0); }, [profile?.foodPreference, profile?.foodDairyFree, profile?.foodQuick]);
   const phase = foodGuidancePhase(profile, now);
   const content = guidance[phase];
   const season = seasonalFood(profile, now);
@@ -45,12 +46,12 @@ export function FoodGuidance({ profile, now }: { profile: DailyProfile | null; n
       {season && <p className="food-idea-note" role="status">{seasonalApplied ? `${season.regionName} · ${season.periodLabel}: meal ingredients are selected from the regional seasonal calendar.` : `${season.regionName} · ${season.periodLabel}: no compatible produce from our current ingredient collection is listed for this period. Showing general ideas; they are not labeled local harvest.`} {seasonalApplied && "Protein and pantry staples may come from elsewhere."} <a href={season.source} target="_blank" rel="noreferrer" className="underline">View regional calendar</a></p>}
       <div className="food-idea-controls">
         <label htmlFor="food-idea-preference">Food preference
-          <select id="food-idea-preference" value={choice} onChange={event => { setChoice(event.target.value); setOffset(0); }}>
+          <select id="food-idea-preference" value={choice} onChange={event => { setChoice(event.target.value as "omnivore" | "plant"); onPreferencesChange?.({foodPreference: event.target.value as "omnivore" | "plant"}); setOffset(0); }}>
             <option value="omnivore">Omnivore</option><option value="plant">Plant-based</option>
           </select>
         </label>
-        <label><input type="checkbox" checked={dairyFree} onChange={event => { setDairyFree(event.target.checked); setOffset(0); }}/> Dairy-free</label>
-        <label><input type="checkbox" checked={quick} onChange={event => { setQuick(event.target.checked); setOffset(0); }}/> Quick options</label>
+        <label><input type="checkbox" checked={dairyFree} onChange={event => { setDairyFree(event.target.checked); onPreferencesChange?.({foodDairyFree: event.target.checked}); setOffset(0); }}/> Dairy-free</label>
+        <label><input type="checkbox" checked={quick} onChange={event => { setQuick(event.target.checked); onPreferencesChange?.({foodQuick: event.target.checked}); setOffset(0); }}/> Quick options</label>
       </div>
       <p className="food-idea-note">{quick ? "Simple meals using cooked or ready-to-eat staples." : "Choose what sounds good; adjust portions to your hunger."} No meal logging needed.</p>
       <p className="sr-only" role="status">Showing {meals.length} {choice === "plant" ? "plant-based" : "omnivore"}{dairyFree ? ", dairy-free" : ""}{quick ? ", quick" : ""} meal ideas.</p>
@@ -85,12 +86,20 @@ export function FoodGuidance({ profile, now }: { profile: DailyProfile | null; n
 }
 
 export function FoodPreview({ profile, now, suppressNudge = false }: { profile: DailyProfile | null; now: Date; suppressNudge?: boolean }) {
-  const content = guidance[foodGuidancePhase(profile, now)];
+  const phase = foodGuidancePhase(profile, now);
+  const season = seasonalFood(profile, now);
+  const { meals, seasonalApplied } = selectMealIdeas({phase, seasonal: season, plantBased: profile?.foodPreference === "plant", dairyFree: profile?.foodDairyFree ?? false, quick: profile?.foodQuick ?? false, offset: 0});
+  const meal = meals[0];
+  const timing = {early: 'A first-meal idea for the early part of your waking day.', daytime: 'A full-meal idea for the active part of your waking day.', evening: 'A smaller serving option near your usual bedtime; adjust it to your hunger.', general: 'A general meal idea until your daily schedule is available.'}[phase];
   return <JourneyCard className="food-guidance">
     <MealNudge profile={suppressNudge ? null : profile} now={now}>
     <h2>Food for your day</h2>
-    <h3>{content.title}</h3>
-    <p>{content.suggestion}</p>
+    <p className="food-idea-note">{season && seasonalApplied ? `${season.regionName} · ${season.periodLabel}` : 'General meal idea'}</p>
+    <h3>{meal.title}</h3>
+    <p>{meal.ingredients}</p>
+    <p className="food-idea-note"><strong>Why this meal:</strong> {seasonalApplied ? 'The produce is listed in your regional seasonal calendar. ' : ''}{timing}</p>
+    {seasonalApplied ? <p className="food-idea-note">Protein and pantry staples aren’t verified as local.</p> : <p className="food-idea-note">{season ? 'No matching seasonal produce is listed in our current collection for this period.' : 'Choose your growing region in Food to get seasonal suggestions.'}</p>}
+    <p className="food-idea-note">{profile?.foodPreference === "plant" ? "Plant-based" : "Omnivore"} idea · your food preferences apply here and in Food.</p>
     <Link href="/food" className="journey-outline inline-flex mt-4">Explore meal ideas</Link>
     </MealNudge>
   </JourneyCard>;

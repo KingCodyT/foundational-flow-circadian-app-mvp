@@ -1,3 +1,5 @@
+import { hasValidCoordinates } from "@/lib/solar";
+import { LocationRequiredNotice } from "./location-required-notice";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { JourneyFrame, JourneyCard } from "./journey-design";
@@ -14,6 +16,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
   respond: (response: "completed" | "skipped" | "adjust", remindAt?: string) => void;
   primarySignalId: string | null; primaryState?: string | null; progress: string[]; children: ReactNode;
 }) {
+  const hasLocation = Boolean(profile?.locationPermissionGranted && hasValidCoordinates(profile.latitude, profile.longitude));
   const [adjusting, setAdjusting] = useState(false);
   const action = (firstRun || voice.mode === "COACHING") && reminder;
   const later = new Date(now.getTime() + 15 * 60000);
@@ -27,8 +30,8 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
       <JourneyCard className="today-coaching-focus"><h2>Your current coaching focus</h2><h3>{firstRun?.focus || (primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : profile?.wakeTime && profile?.targetBedtime ? "Your saved sleep and wake schedule" : "Your daily schedule")}</h3>{!firstRun && primaryState && <p>{primaryState.replaceAll("_", " ")}</p>}</JourneyCard>
       <JourneyCard className="journey-focus today-moment">
         <h2>{firstRun?.heading || "What matters now"}</h2>
-        <h3>{firstRun?.action || (action ? reminder.action : "You’re set for now.")}</h3>
-        <p>{firstRun?.reason || (action ? reminder.reason : "Your schedule is working in the background. We’ll bring you one useful step when the timing matters.")}</p>
+        <h3>{firstRun?.action || (action ? reminder.action : hasLocation ? "You’re set for now." : "Save your location to personalize your day.")}</h3>
+        <p>{firstRun?.reason || (action ? reminder.reason : hasLocation ? "Your schedule is working in the background. We’ll bring you one useful step when the timing matters." : "Local daylight is foundational to your guidance. Add your location using the button below.")}</p>
         {firstRun?.setup}
         {!firstRun && !action && preview && <p>{preview}</p>}
         {action && <div role="group" aria-label="Reminder responses">
@@ -42,6 +45,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
         </div>}
       </JourneyCard>
       {firstRun && <p className="today-context">{firstRun.summary}</p>}
+      <LocationRequiredNotice profile={profile} />
       <FoodPreview profile={profile} now={now} suppressNudge={reminder?.id === "last_meal"} />
       {children}
     </main>

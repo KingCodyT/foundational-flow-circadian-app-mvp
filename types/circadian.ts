@@ -40,6 +40,9 @@ export type DailyProfile = {
   gender?: string;
   activityLevel?: string;
   locationLabel?: string;
+  foodPreference?: "omnivore" | "plant";
+  foodDairyFree?: boolean;
+  foodQuick?: boolean;
   foodRegion?: string; // Explicit regional harvest calendar override; empty uses saved coordinates.
   temperatureUnit?: string;
   timeFormat?: string;

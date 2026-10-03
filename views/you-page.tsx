@@ -1,5 +1,6 @@
 "use client";
 
+import { LocationRequiredNotice } from "@/components/location-required-notice";
 import Link from "next/link";
 import { WearableSettings } from "@/components/wearable-settings";
 import FoodTimingHistory from "@/components/food-timing-history";
@@ -57,6 +58,7 @@ export default function YouPage() {
         <p className="journey-eyebrow">PROFILE</p><h1>Your Profile</h1>
         <p>Your saved details and the guidance you choose.</p>
       </header>
+      <LocationRequiredNotice profile={dailyProfile} onProfile />
       <section id="your-schedule" className="profile-section" aria-labelledby="schedule-heading">
         <h2 id="schedule-heading">Your Schedule</h2>
         <div className="profile-facts">
@@ -65,7 +67,7 @@ export default function YouPage() {
           <ProfileFact label="Usual last meal" value={formatProfileTime(dailyProfile?.lastMealTime)} />
           <ProfileFact label="Timezone" value={dailyProfile?.timeZone ?? "Not set"} />
         </div>
-        <details className="profile-disclosure"><summary>Edit your schedule</summary><DailyProfileForm section="schedule" />
+        <details className="profile-disclosure" open><summary>Edit your schedule</summary><DailyProfileForm section="schedule" />
           <div className="profile-facts">
             <ProfileFact label="Sunrise today" value={formatSolarTime(environment.sunrise, profileTimeZone)} />
             <ProfileFact label="Sunset today" value={formatSolarTime(environment.sunset, profileTimeZone)} />

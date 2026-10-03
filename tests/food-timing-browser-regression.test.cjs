@@ -56,7 +56,7 @@ test('Food Timing uses a simplified meal logger with modal time selection', asyn
   });
 
   try {
-    const desktop = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+    const desktop = await browser.newContext({ viewport: { width: 1366, height: 900 }, timezoneId: 'UTC' });
     await desktop.addInitScript(({ key }) => {
       const fixedNowMs = new Date('2026-09-14T19:00:00.000Z').getTime();
       const NativeDate = Date;
@@ -121,12 +121,12 @@ test('Food Timing uses a simplified meal logger with modal time selection', asyn
           materialChangeKeys: {},
         },
       };
-      window.localStorage.setItem(key, JSON.stringify(state));
+      if (!window.localStorage.getItem(key)) window.localStorage.setItem(key, JSON.stringify(state));
     }, seedStateScript());
 
     const page = await desktop.newPage();
     await page.goto(`${BASE_URL}/profile`, { waitUntil: 'domcontentloaded' });
-    await page.getByText('Meal history', { exact: true }).click();
+    await page.getByText('More history options', { exact: true }).click();
     await page.getByText('Record or edit a meal time', { exact: true }).click();
     await page.getByRole('button', { name: /I'm eating now/i }).waitFor({ timeout: 30_000 });
 
@@ -134,9 +134,9 @@ test('Food Timing uses a simplified meal logger with modal time selection', asyn
     await logMeal.first().waitFor({ timeout: 30_000 });
     await logMeal.first().click({ force: true });
     await page.getByRole('status').getByText(/Meal time saved:/i).waitFor({ timeout: 5_000 });
-    await page.getByText('Meal times today', { exact: false }).waitFor({ timeout: 5_000 });
+    await page.getByText('Meal times ·', { exact: false }).waitFor({ timeout: 5_000 });
     const mealTimesSection = page
-      .getByText('Meal times today', { exact: false })
+      .getByText('Meal times ·', { exact: false })
       .locator('..');
     await mealTimesSection.getByRole('button', { name: /^Change time$/ }).first().waitFor({ timeout: 5_000 });
     assert.equal(await page.getByRole('button', { name: /Eating later/i }).count(), 0);
@@ -189,10 +189,23 @@ test('Food Timing uses a simplified meal logger with modal time selection', asyn
     assert.equal(evidenceAfterEarlierMeal, 2);
 
     await page.goto(`${BASE_URL}/timeline`, { waitUntil: 'domcontentloaded' });
-    await page.getByRole('heading', { name: 'Your current coaching focus' }).waitFor();
-    assert.equal(new URL(page.url()).pathname, '/today');
-    assert.equal(await page.locator('nav a[href="/timeline"]').count(), 0);
-    assert.equal(await page.getByTestId('calculation-details').count(), 0);
+    await page.getByRole('heading', { name: 'Timeline', exact: true }).waitFor();
+    assert.equal(new URL(page.url()).pathname, '/timeline');
+    const entries = page.getByRole('list', { name: 'Timeline entries', exact: true });
+    await entries.getByRole('button', { name: 'Edit', exact: true }).first().waitFor();
+    assert.equal(await entries.getByRole('button', { name: 'Edit', exact: true }).count(), 2);
+    const details = page.locator('details').filter({ has: page.locator('summary', { hasText: 'Day details' }) });
+    assert.equal(await details.getAttribute('open'), null);
+    await details.locator('summary').click();
+    await page.getByRole('list', { name: 'Saved record details' }).getByText(/Original timestamp:/).first().waitFor();
+    await entries.getByRole('button', { name: 'Edit', exact: true }).first().click();
+    await page.getByLabel('Minute', { exact: true }).selectOption('10');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await page.getByRole('status').getByText('Meal time saved.', { exact: true }).waitFor();
+    await page.reload();
+    await entries.getByRole('button', { name: 'Edit', exact: true }).first().waitFor();
+    assert.equal(await entries.getByRole('button', { name: 'Edit', exact: true }).count(), 2);
+    assert.match(await entries.innerText(), /6:10 PM/);
   } finally {
     await browser.close();
   }

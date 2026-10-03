@@ -4,6 +4,7 @@ import { MealNudge } from "./meal-nudge";
 import type { DailyProfile } from "@/types/circadian";
 import { foodGuidancePhase } from "@/lib/personalization/food-guidance";
 import { selectMealIdeas } from "@/lib/personalization/meal-ideas";
+import { seasonalFood } from "@/lib/seasonal/seasonal-food";
 import { JourneyCard } from "./journey-design";
 
 const guidance = {
@@ -19,7 +20,8 @@ export function FoodGuidance({ profile, now }: { profile: DailyProfile | null; n
   const [offset, setOffset] = useState(0);
   const phase = foodGuidancePhase(profile, now);
   const content = guidance[phase];
-  const { meals, total } = selectMealIdeas({phase, plantBased:choice === "plant", dairyFree, quick, offset});
+  const season = seasonalFood(profile, now);
+  const { meals, total, seasonalApplied } = selectMealIdeas({seasonal: season, phase, plantBased:choice === "plant", dairyFree, quick, offset});
   return <JourneyCard className="food-guidance">
     <section aria-label="Food for this part of your day">
       <h2>Food for this part of your day</h2>
@@ -27,6 +29,20 @@ export function FoodGuidance({ profile, now }: { profile: DailyProfile | null; n
       <h3>{content.title}</h3>
       <p>{content.suggestion}</p>
       <p className="food-idea-note">Meal style and serving suggestions can change through your day. Protein, carbohydrate, and fat percentages are not calculated.</p>
+      <details className="timeline-disclosure">
+        <summary>Go deeper: local light, local season, local food</summary>
+        <p>Our starting point is simple: notice the daylight where you live, learn what grows and is harvested around you, and bring that seasonal variety into your meals.</p>
+        <h4>Sunlight starts the story</h4>
+        <p>Plants capture light through photosynthesis and use that energy to build sugars and other compounds. Food connects us to that process, directly through plants and through the animals that eat them. The energy stored in food is chemical energy.</p>
+        <h4>Your place has its own seasons</h4>
+        <p>Latitude shapes how daylight changes through the year. Temperature, rainfall, elevation, soil, and local growing practices also shape what can grow and when it is ready to harvest. Two places at the same latitude can have very different harvest calendars.</p>
+        <h4>Bring it to your plate</h4>
+        <p>Start with one ingredient: ask a nearby grower what they are harvesting now, or check a regional harvest calendar. Use that vegetable or fruit in a meal you already enjoy. Seasonal here means the time that food naturally grows and is harvested in your region; a supermarket shelf alone does not tell that story.</p>
+        <p className="food-idea-note">Choose your growing region to build meal ideas around produce listed for this part of the year. Your daily schedule shapes the serving format; your food preferences still apply. Calendar availability is a regional guide, and local growers can confirm the current harvest.</p>
+        <h4>Explore the underlying science</h4>
+        <p>For a closer look at light capture, a 2023 experiment measured single-photon absorption and energy transfer in a bacterial photosynthetic complex. It explores the first steps of photosynthesis, rather than testing dietary benefits. <a href="https://www.nature.com/articles/s41586-023-06121-5" target="_blank" rel="noreferrer" className="underline">Read the photosynthesis experiment (opens in a new tab)</a>.</p>
+      </details>
+      {season && <p className="food-idea-note" role="status">{seasonalApplied ? `${season.regionName} · ${season.periodLabel}: meal ingredients are selected from the regional seasonal calendar.` : `${season.regionName} · ${season.periodLabel}: no compatible produce from our current ingredient collection is listed for this period. Showing general ideas; they are not labeled local harvest.`} {seasonalApplied && "Protein and pantry staples may come from elsewhere."} <a href={season.source} target="_blank" rel="noreferrer" className="underline">View regional calendar</a></p>}
       <div className="food-idea-controls">
         <label htmlFor="food-idea-preference">Food preference
           <select id="food-idea-preference" value={choice} onChange={event => { setChoice(event.target.value); setOffset(0); }}>

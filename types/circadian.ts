@@ -40,6 +40,7 @@ export type DailyProfile = {
   gender?: string;
   activityLevel?: string;
   locationLabel?: string;
+  foodRegion?: string; // Explicit regional harvest calendar override; empty uses saved coordinates.
   temperatureUnit?: string;
   timeFormat?: string;
   firstCaffeineTime?: string;

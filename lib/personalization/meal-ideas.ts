@@ -1,4 +1,5 @@
 import type { FoodGuidancePhase } from './food-guidance';
+import type { SeasonalFood } from '../seasonal/seasonal-food';
 export type MealIdea = {
   id: string; title: string; ingredients: string; plantBased: boolean; dairyFree: boolean;
   early: boolean; quick: boolean; protein: string; carbs: string; fats: string; swap: string;
@@ -53,9 +54,40 @@ function describeMeal(meal: MealIdea, phase: FoodGuidancePhase): SuggestedMeal {
     why: `${sources} This is a general balanced combination. We are not claiming a particular timing advantage without a usable waking schedule.` };
 }
 
-export function selectMealIdeas(input: {phase: FoodGuidancePhase; plantBased: boolean; dairyFree: boolean; quick: boolean; offset: number}) {
-  const matches = MEAL_IDEAS.filter(m => m.early === (input.phase === 'early') && (m.plantBased === input.plantBased) && (!input.dairyFree || m.dairyFree) && (!input.quick || m.quick));
+function seasonalIdeas(season: SeasonalFood, early: boolean, plant: boolean): MealIdea[] {
+  const proteins = plant ? ['Tofu', 'Chickpeas', 'White beans', 'Black beans'] : early ? ['Eggs', 'Salmon', 'Turkey', 'Chicken'] : ['Chicken', 'Salmon', 'Turkey', 'Tuna'];
+  const ideas: MealIdea[] = season.vegetables.length ? proteins.map((protein, index) => {
+    const vegetable = season.vegetables[(season.period + index) % season.vegetables.length];
+    const other = season.vegetables[(season.period + index + 1) % season.vegetables.length];
+    const grain = index % 2 ? 'dairy-free whole-grain toast' : 'brown rice';
+    return {id: `seasonal-${index}-${vegetable}`, title: `${protein} & ${vegetable.toLowerCase()} ${index % 2 ? 'toast' : 'bowl'}`,
+      ingredients: `${protein}, cooked ${vegetable.toLowerCase()}, ${grain}, and olive oil.`,
+      plantBased: plant, dairyFree: true, early, quick: true, protein,
+      carbs: `${grain} and ${vegetable.toLowerCase()}`, fats: 'Olive oil',
+      swap: other !== vegetable ? `For another listed seasonal option, use cooked ${other.toLowerCase()} instead of ${vegetable.toLowerCase()}.` : `Keep the ${vegetable.toLowerCase()} and swap ${grain} for another pantry grain you enjoy.`};
+  }) : [];
+  if (early && season.fruits.length) {
+    const fruit = season.fruits[season.period % season.fruits.length];
+    ideas.push({id:'seasonal-fruit', title:`${plant ? 'Soy oats' : 'Yogurt'} & ${fruit.toLowerCase()}`, ingredients:`${plant ? 'Oats soaked in unsweetened soy milk' : 'Plain Greek yogurt and oats'}, ${fruit.toLowerCase()}, and walnuts.`,
+      plantBased:plant, dairyFree:plant, early:true, quick:true, protein:plant ? 'Soy milk and walnuts' : 'Greek yogurt and walnuts', carbs:`Oats and ${fruit.toLowerCase()}`, fats:'Walnuts',swap:'Swap walnuts for sunflower seeds.'});
+  }
+  return ideas;
+}
+
+export function selectMealIdeas(input: {phase: FoodGuidancePhase; plantBased: boolean; dairyFree: boolean; quick: boolean; offset: number; seasonal?: SeasonalFood | null}) {
+  const seasonal = input.seasonal ? seasonalIdeas(input.seasonal, input.phase === 'early', input.plantBased) : [];
+  const compatible = (m: MealIdea) => m.early === (input.phase === 'early') && (m.plantBased === input.plantBased) && (!input.dairyFree || m.dairyFree) && (!input.quick || m.quick);
+  const seasonalMatches = seasonal.filter(compatible);
+  const matches = seasonalMatches.length ? seasonalMatches : MEAL_IDEAS.filter(compatible);
   if (!matches.length) return { total: 0, meals: [] as SuggestedMeal[] };
   const start = ((input.offset % matches.length) + matches.length) % matches.length;
-  return { total: matches.length, meals: Array.from({length:Math.min(3,matches.length)},(_,i)=>describeMeal(matches[(start+i)%matches.length], input.phase)) };
+  return { total: matches.length, seasonalApplied: seasonalMatches.length > 0, meals: Array.from({length:Math.min(3,matches.length)},(_,i)=>{
+    const meal = describeMeal(matches[(start+i)%matches.length], input.phase);
+    if (seasonalMatches.length && input.seasonal) {
+      meal.why = `${input.seasonal.regionName} · ${input.seasonal.periodLabel}: the produce in this meal is listed in the regional seasonal calendar. Protein and pantry staples are not verified as locally grown. ${meal.why}`;
+      if (input.phase === 'evening') meal.title = `Small ${meal.title.charAt(0).toLowerCase()}${meal.title.slice(1)}`;
+      meal.preparation = meal.id === 'seasonal-fruit' ? 'Prepare the oats according to the package; wash and prepare the fruit, then combine with the remaining ingredients.' : 'Use cooked protein, cooked vegetables, and ready-cooked grains or toast. Warm and assemble with olive oil. Quick options assume these components are already cooked.';
+    }
+    return meal;
+  }) };
 }

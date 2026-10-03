@@ -48,7 +48,7 @@ function context(v: unknown): boolean {
 function validProfile(v: unknown): boolean {
   if (v == null) return true;
   if (!object(v) || !context(v)) return false;
-  const textFields = ["displayName", "dateOfBirth", "gender", "activityLevel", "locationLabel", "temperatureUnit", "timeFormat", "firstCaffeineTime", "napPattern", "typicalEnvironment", "elevation", "caffeineUse", "realityNotes", "foodTimingGoal", "coachingTargetSignalId", "lastMealTime", "workStructure", "travelFrequency", "exercisePattern", "sleepEnvironment"];
+  const textFields = ["displayName", "dateOfBirth", "gender", "activityLevel", "locationLabel", "foodRegion", "temperatureUnit", "timeFormat", "firstCaffeineTime", "napPattern", "typicalEnvironment", "elevation", "caffeineUse", "realityNotes", "foodTimingGoal", "coachingTargetSignalId", "lastMealTime", "workStructure", "travelFrequency", "exercisePattern", "sleepEnvironment"];
   return textFields.every(k => nullableString(v[k])) &&
     ["locationPermissionGranted", "upcomingTravel", "showPerspective", "remindersEnabled", "mealRemindersEnabled"].every(k => v[k] == null || typeof v[k] === "boolean");
 }

@@ -2,6 +2,7 @@
 
 import { LocationRequiredNotice } from "@/components/location-required-notice";
 import Link from "next/link";
+import { CodyDiscovery } from "@/components/cody-discovery";
 import { WearableSettings } from "@/components/wearable-settings";
 import FoodTimingHistory from "@/components/food-timing-history";
 import { AssessmentDisclosure } from "@/components/assessment-disclosure";
@@ -103,6 +104,11 @@ export default function YouPage() {
         </details>
       </section>
       <WearableSettings />
+      <section className="profile-section" aria-labelledby="about-flow-heading">
+        <h2 id="about-flow-heading">About Circadian Flow</h2>
+        <p>Created by Cody Oakland to help you ask why, understand your daily patterns, and make more informed choices for your life.</p>
+        <CodyDiscovery />
+      </section>
     </section>
   </FlowShell>;
 }

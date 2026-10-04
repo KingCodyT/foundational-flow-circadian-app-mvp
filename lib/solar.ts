@@ -176,3 +176,13 @@ export function formatTimeLocal(d: Date | null) {
   if (!d || !Number.isFinite(d.getTime())) return "--:--";
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
+
+/** Geometric solar elevation at an instant (NOAA); independent of display timezone. */
+export function getSolarElevation(date: Date, latitude: number, longitude: number): number | null {
+  if (!Number.isFinite(date.getTime()) || !hasValidCoordinates(latitude, longitude)) return null;
+  const position = solarPosition(toJulian(date));
+  const minutes = date.getUTCHours() * 60 + date.getUTCMinutes() + date.getUTCSeconds() / 60;
+  const hourAngle = normalizeAngle((minutes + position.equationOfTime + 4 * longitude) / 4) - 180;
+  const cosine = sinDeg(latitude) * sinDeg(position.declination) + cosDeg(latitude) * cosDeg(position.declination) * cosDeg(hourAngle);
+  return 90 - radToDeg(Math.acos(Math.max(-1, Math.min(1, cosine))));
+}

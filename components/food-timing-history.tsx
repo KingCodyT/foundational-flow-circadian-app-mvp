@@ -388,7 +388,10 @@ export default function FoodTimingHistory({ selectedDate, displayTimeZone, rende
     if (meal) openTimeDialog({ mode: "edit", at: new Date(meal.at), evidenceId: id, trigger });
   }, mealSavedMessage && lastSavedMealAtIso ? { at: lastSavedMealAtIso, message: mealSavedMessage } : undefined)}{renderHistory ? (
     <div className="my-3">
+      <details className="timeline-disclosure"><summary>Optional: record a meal time</summary>
+      <p>Use this if you want to look back at when you ate. Repeated entries can help the app notice meal timing near your planned bedtime. Your reminders and meal ideas work without logging.</p>
       <button type="button" className="min-h-11 rounded-full border border-[var(--color-line)] bg-white px-5 py-2 font-semibold" onClick={event => openTimeDialog({ mode: "add", at: dateKey === todayKey ? now : scheduleTime(dateKey, "12:00", profileTimeZone)!, trigger: event.currentTarget })}>Add a meal</button>
+      </details>
       <p role="status" className="text-sm text-[var(--color-muted)]">{(!lastSavedMealAtIso || !mealEntries.some(meal => meal.at === lastSavedMealAtIso)) ? mealSavedMessage : ""}</p>
     </div>
   ) : foodTimingEditor}        {timeDialogMode ? (

@@ -25,7 +25,7 @@ export default function TimelinePage() {
         <p>{[recorded ? `${recorded} recorded ${recorded === 1 ? "activity" : "activities"}` : null, planned ? `${planned} planned ${planned === 1 ? "reminder" : "reminders"}` : null, guidance ? `${guidance} ${guidance === 1 ? "piece" : "pieces"} of guidance sent` : null].filter(Boolean).join(" · ")}</p>
       </> : <>
         <p>{date > today ? "No reminders saved for this date." : date === today ? "Your recorded activities will appear here as you use the app." : "No activities saved for this date. You can add a meal you remember below."}</p>
-        <Link href="/today" className="inline-block py-3 font-semibold underline underline-offset-2">Go to Today for your next step</Link>
+        <Link href="/today" className="inline-block py-3 font-semibold underline underline-offset-2">See your current daylight guidance on Today</Link>
       </>}
     </section>
     {activities.length > 0 && <ol className="timeline-entries" aria-label="Timeline entries">{activities.map(entry => <TimelineEntry key={entry.id} entry={entry} timeZone={timeZone} onEditMeal={editMeal} savedMessage={entry.kind === "RECORDED" && entry.id.startsWith("food:") && entry.at === saved?.at ? "Meal time saved." : undefined}/>)}</ol>}
@@ -37,7 +37,7 @@ export default function TimelinePage() {
   </>;
   return <FlowShell>
     <div className="timeline-page">
-    <header className="journey-intro timeline-intro"><h1>Timeline</h1><p>Look back at your day. See the activities you recorded alongside your planned reminders, and add or correct a meal time if something is missing.</p></header>
+    <header className="journey-intro timeline-intro"><h1>Timeline</h1><p>Look back at saved moments and planned reminders. Recording meal times is optional—your daily guidance works without a meal diary.</p></header>
     {!isHydrated ? <p role="status">Loading your Timeline…</p> : <>
       <TimelineDateNavigation date={date} today={today} onChange={next => { void router.push({ pathname: "/timeline", query: { ...router.query, date: next } }, undefined, { shallow: true, scroll: false }); }}/>
       <p className="timeline-zone">Times shown in {timeZone}</p>

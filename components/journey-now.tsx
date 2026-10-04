@@ -8,6 +8,7 @@ import type { ContextualReminder } from "@/lib/personalization/contextual-remind
 import type { VoiceRelationshipOutput } from "@/lib/voice/voice-relationship";
 import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
 import { FoodPreview } from "./food-guidance";
+import { LightCheckIn } from "./light-check-in";
 
 export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, children }: {
   profile: DailyProfile | null; now: Date; voice: VoiceRelationshipOutput; reminder: ContextualReminder | null;
@@ -28,7 +29,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
     </header>
     <main className="journey-content today-content">
       <JourneyCard className="today-coaching-focus"><h2>Your current coaching focus</h2><h3>{firstRun?.focus || (primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : profile?.wakeTime && profile?.targetBedtime ? "Your saved sleep and wake schedule" : "Your daily schedule")}</h3>{!firstRun && primaryState && <p>{primaryState.replaceAll("_", " ")}</p>}</JourneyCard>
-      <JourneyCard className="journey-focus today-moment">
+      {(firstRun || action || !hasLocation) && <JourneyCard className="journey-focus today-moment">
         <h2>{firstRun?.heading || "What matters now"}</h2>
         <h3>{firstRun?.action || (action ? reminder.action : hasLocation ? "You’re set for now." : "Save your location to personalize your day.")}</h3>
         <p>{firstRun?.reason || (action ? reminder.reason : hasLocation ? "Your schedule is working in the background. We’ll bring you one useful step when the timing matters." : "Local daylight is foundational to your guidance. Add your location using the button below.")}</p>
@@ -43,9 +44,10 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
             <Link href="/profile#your-schedule">Change my schedule or preferences</Link>
           </div>}
         </div>}
-      </JourneyCard>
+      </JourneyCard>}
       {firstRun && <p className="today-context">{firstRun.summary}</p>}
       <LocationRequiredNotice profile={profile} />
+      <LightCheckIn profile={profile} now={now} />
       <FoodPreview profile={profile} now={now} suppressNudge={reminder?.id === "last_meal"} />
       {children}
     </main>

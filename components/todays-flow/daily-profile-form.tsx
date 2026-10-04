@@ -22,6 +22,9 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
   const [wakeTime, setWakeTime] = useState(savedWakeTime);
   const [targetBedtime, setTargetBedtime] = useState(savedBedtime);
   const [zip, setZip] = useState("");
+  const [latitudeInput, setLatitudeInput] = useState(dailyProfile?.latitude?.toString() ?? "");
+  const [longitudeInput, setLongitudeInput] = useState(dailyProfile?.longitude?.toString() ?? "");
+  const [coordinateError, setCoordinateError] = useState("");
   const [zipResults, setZipResults] = useState<ZipLocation[]>([]);
   const [searching, setSearching] = useState(false);
   const [locationSaved, setLocationSaved] = useState(false);
@@ -36,6 +39,10 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
   }, [savedWakeTime, savedBedtime]);
   useEffect(() => { setLastMealTime(savedLastMeal); setTimeZone(savedTimeZone); }, [savedLastMeal, savedTimeZone]);
   useEffect(() => () => { requestId.current += 1; }, []);
+  useEffect(() => {
+    setLatitudeInput(dailyProfile?.latitude?.toString() ?? "");
+    setLongitudeInput(dailyProfile?.longitude?.toString() ?? "");
+  }, [dailyProfile?.latitude, dailyProfile?.longitude]);
 
   const hasLocation = Boolean(dailyProfile?.locationPermissionGranted &&
     hasValidCoordinates(dailyProfile.latitude, dailyProfile.longitude));
@@ -69,7 +76,8 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
       const data = await response.json();
       if (id !== requestId.current) return;
       if (!response.ok) throw new Error(data.error || "Please try again.");
-      setZipResults(data.locations); setLocationMessage("Choose your area below to save it.");
+      if (data.locations.length === 1) { saveZipLocation(data.locations[0]); return; }
+      setZipResults(data.locations); setLocationMessage("This ZIP code covers more than one area. Choose yours below to save it and show your daylight times.");
     } catch (error) { if (id === requestId.current) setLocationMessage(error instanceof Error ? error.message : "Please try again."); }
     finally { if (id === requestId.current) setSearching(false); }
   };
@@ -79,7 +87,7 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
     setDailyProfile({...dailyProfile, wakeTime: dailyProfile?.wakeTime ?? null, targetBedtime: dailyProfile?.targetBedtime ?? null,
       timeZone: dailyProfile?.timeZone ?? savedTimeZone, latitude:place.latitude, longitude:place.longitude,
       locationLabel: `${place.label} (ZIP area)`, locationPermissionGranted:true});
-    setZipResults([]); setLocationSaved(true); setLocationMessage("Your location is saved. ZIP codes use an approximate area center. Check your timezone above, then see your personalized day.");
+    setZipResults([]); setLocationSaved(true); setLocationMessage(`${place.label} is saved. Your sunrise, sunset, and day length are shown below. ZIP codes use an approximate area center; check that your timezone above matches this area.`);
   };
   const requestLocation = () => {
     if (!navigator.geolocation) {
@@ -116,6 +124,21 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
         : error.code === 3 ? "The location request timed out." : "Your location could not be found.";
       setLocationMessage(`${reason} ${hasLocation ? "Your saved location is unchanged." : "Enter your ZIP code below instead—no browser location permission needed."}`);
     }, { timeout: 10000, maximumAge: 300000, enableHighAccuracy: false });
+  };
+
+  const saveCoordinates = () => {
+    const latitude = Number(latitudeInput.trim()), longitude = Number(longitudeInput.trim());
+    if (!latitudeInput.trim() || !longitudeInput.trim() || !hasValidCoordinates(latitude, longitude)) {
+      setCoordinateError("Enter a latitude from −90 to 90 and a longitude from −180 to 180. Use decimal numbers, such as 33.54 and −117.78.");
+      return;
+    }
+    requestId.current += 1;
+    setSearching(false); setLocating(false); setZipResults([]); setCoordinateError("");
+    setDailyProfile({ ...dailyProfile, wakeTime: dailyProfile?.wakeTime ?? null,
+      targetBedtime: dailyProfile?.targetBedtime ?? null, timeZone: dailyProfile?.timeZone ?? savedTimeZone,
+      latitude, longitude, locationLabel: "Entered coordinates", locationPermissionGranted: true });
+    setLocationSaved(true);
+    setLocationMessage("Your coordinates are saved. Sunrise, sunset, and day length are updated below. Check that your timezone above matches this location.");
   };
 
   const removeLocation = () => {
@@ -178,11 +201,23 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
           </div>
           <div className="space-y-3">
             <label htmlFor="location-zip" className="block">Or enter your U.S. ZIP code</label>
+            <p className="text-sm">Enter your ZIP code, then tap “Save my ZIP location.” If it matches one area, we’ll save it and show your sunrise, sunset, and day length below. If there’s more than one match, choose your area.</p>
             <p className="text-sm">We send only the ZIP code to Zippopotam.us to find the area. Your saved location stays in this browser.</p>
             <input id="location-zip" className="rounded-xl border p-3" inputMode="numeric" autoComplete="postal-code" maxLength={5} value={zip} onChange={event => { requestId.current += 1; setSearching(false); setLocating(false); setZip(event.target.value); setZipResults([]); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); void searchZip(); } }} />
-            <button type="button" disabled={searching || locating} onClick={() => void searchZip()} className="journey-outline">{searching ? "Finding your area…" : "Find my area"}</button>
+            <button type="button" disabled={searching || locating} onClick={() => void searchZip()} className="journey-outline">{searching ? "Finding your area…" : "Save my ZIP location"}</button>
             {zipResults.map(place => <button className="journey-outline" type="button" key={`${place.label}:${place.latitude}:${place.longitude}`} onClick={() => saveZipLocation(place)}>Save {place.label} as my location</button>)}
           </div>
+          <details className="space-y-3">
+            <summary className="cursor-pointer py-3">Know your latitude? Enter coordinates instead</summary>
+            <p className="text-sm">Enter your latitude and longitude in decimal degrees. Both are needed for local sunrise and sunset. These stay in this browser; no location permission or ZIP lookup is needed.</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label>Latitude<input className="mt-2 block w-full rounded-xl border p-3" type="text" inputMode="text" placeholder="Example: 33.54" value={latitudeInput} aria-describedby="coordinate-help" onChange={event => { setLatitudeInput(event.target.value); setCoordinateError(""); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCoordinates(); } }} /></label>
+              <label>Longitude<input className="mt-2 block w-full rounded-xl border p-3" type="text" inputMode="text" placeholder="Example: -117.78" value={longitudeInput} aria-describedby="coordinate-help" onChange={event => { setLongitudeInput(event.target.value); setCoordinateError(""); }} onKeyDown={event => { if (event.key === "Enter") { event.preventDefault(); saveCoordinates(); } }} /></label>
+            </div>
+            <p id="coordinate-help" className="text-sm">North and east are positive. South and west use a minus sign. For example, 33.54° N, 117.78° W becomes 33.54 and -117.78.</p>
+            {coordinateError && <p role="alert">{coordinateError}</p>}
+            <button type="button" className="journey-outline" onClick={saveCoordinates}>Save my coordinates</button>
+          </details>
           {hasLocation && <p className="text-sm">Saved location: {dailyProfile?.locationLabel || "Your saved coordinates"}. Check that your timezone above matches this location.</p>}
           {hasLocation && !storageIssue && <Link href="/today" className="journey-primary inline-flex">See my personalized day</Link>}
         </div>}

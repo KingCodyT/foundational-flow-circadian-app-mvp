@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CodyFooter } from "./cody-discovery";
 import { useRouter } from "next/router";
 import type { CSSProperties, ReactNode } from "react";
 
@@ -11,7 +12,7 @@ export function JourneyBrand() {
   return <div className="journey-brand"><Link href="/today" aria-label="Foundational Flow home" className="journey-wordmark"><svg viewBox="0 0 100 80" aria-hidden="true"><circle cx="50" cy="39" r="35" fill="none" stroke="currentColor" strokeWidth="1.5"/><path d="M1 44h98M27 50h46M33 56h34M41 62h18" stroke="currentColor" strokeWidth="2"/><path d="M38 43a12 12 0 0 1 24 0" fill="currentColor"/></svg><span>FOUNDATIONAL FLOW<small>CIRCADIAN APP</small></span></Link><p>NATURAL RHYTHMS<br/>BRIGHTER DAYS<br/>A HEALTHIER YOU</p></div>;
 }
 export function JourneyFrame({ children, image = 1, night = false, onboarding = false }: { children: ReactNode; image?: number; night?: boolean; onboarding?: boolean }) {
-  return <div className={`journey ${night ? "journey-night" : ""} ${onboarding ? "journey-onboarding" : ""}`} style={{"--journey-image": `url('/approved-journey/landscape-${image}.png')`} as CSSProperties}><div className="journey-landscape"/><div className="journey-inner"><JourneyBrand/>{children}</div>{!onboarding && <JourneyNav/>}</div>;
+  return <div className={`journey ${night ? "journey-night" : ""} ${onboarding ? "journey-onboarding" : ""}`} style={{"--journey-image": `url('/approved-journey/landscape-${image}.png')`} as CSSProperties}><div className="journey-landscape"/><div className="journey-inner"><JourneyBrand/>{children}<CodyFooter/></div>{!onboarding && <JourneyNav/>}</div>;
 }
 const destinations = [
   { href: "/today", label: "Today", icon: "sun" },

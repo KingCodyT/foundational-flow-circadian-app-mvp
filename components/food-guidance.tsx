@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CodyDiscovery } from "./cody-discovery";
 import { MealNudge } from "./meal-nudge";
 import type { DailyProfile } from "@/types/circadian";
 import { foodGuidancePhase } from "@/lib/personalization/food-guidance";
@@ -30,7 +31,7 @@ export function FoodGuidance({ profile, now, onPreferencesChange }: { profile: D
       <h3>{content.title}</h3>
       <p>{content.suggestion}</p>
       <p className="food-idea-note">Meal style and serving suggestions can change through your day. Protein, carbohydrate, and fat percentages are not calculated.</p>
-      <details className="timeline-disclosure">
+      <details className="timeline-disclosure go-deeper">
         <summary>Go deeper: local light, local season, local food</summary>
         <p>Our starting point is simple: notice the daylight where you live, learn what grows and is harvested around you, and bring that seasonal variety into your meals.</p>
         <h4>Sunlight starts the story</h4>
@@ -42,6 +43,7 @@ export function FoodGuidance({ profile, now, onPreferencesChange }: { profile: D
         <p className="food-idea-note">Choose your growing region to build meal ideas around produce listed for this part of the year. Your daily schedule shapes the serving format; your food preferences still apply. Calendar availability is a regional guide, and local growers can confirm the current harvest.</p>
         <h4>Explore the underlying science</h4>
         <p>For a closer look at light capture, a 2023 experiment measured single-photon absorption and energy transfer in a bacterial photosynthetic complex. It explores the first steps of photosynthesis, rather than testing dietary benefits. <a href="https://www.nature.com/articles/s41586-023-06121-5" target="_blank" rel="noreferrer" className="underline">Read the photosynthesis experiment (opens in a new tab)</a>.</p>
+        <CodyDiscovery />
       </details>
       {season && <p className="food-idea-note" role="status">{seasonalApplied ? `${season.regionName} · ${season.periodLabel}: meal ingredients are selected from the regional seasonal calendar.` : `${season.regionName} · ${season.periodLabel}: no compatible produce from our current ingredient collection is listed for this period. Showing general ideas; they are not labeled local harvest.`} {seasonalApplied && "Protein and pantry staples may come from elsewhere."} <a href={season.source} target="_blank" rel="noreferrer" className="underline">View regional calendar</a></p>}
       <div className="food-idea-controls">

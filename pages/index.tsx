@@ -1,2 +1,2 @@
-// The public front door is the assessment. Profile views remain available at /profile.
-export { default } from "@/views/audit-page";
+// The public front door explains the experience before inviting the assessment.
+export { default } from "@/views/welcome-page";

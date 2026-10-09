@@ -1,9 +1,11 @@
 export function ProgressBar({
   current,
   total,
+  label = "Section",
 }: {
   current: number;
   total: number;
+  label?: string;
 }) {
   const percentage = Math.round((current / total) * 100);
 
@@ -11,7 +13,7 @@ export function ProgressBar({
     <div className="space-y-3">
       <div className="flex items-center justify-between text-sm text-[var(--color-muted)]">
         <span>
-          Section {current} of {total}
+          {label} {current} of {total}
         </span>
         <span>{percentage}% complete</span>
       </div>

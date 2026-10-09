@@ -136,7 +136,7 @@ The system follows the person’s biological day using:
 - bedtime target
 - meaningful context changes
 
-No wearable integrations. Ever.
+Wearables are optional supporting context, never required. The complete experience uses onboarding answers, phone context, and minimal input. See [optional wearable connections](../wearable-connections.md); provider integrations remain outside the current MVP.
 
 The system must never infer that a human behavior occurred merely because a biological or clock-time window occurred. Environmental occurrence ≠ human behavior.
 
@@ -221,7 +221,7 @@ Rules:
 - Today’s Flow events do NOT automatically generate notifications.
 - Guidance is delivered only when biologically relevant and useful.
 - Environmental occurrence must never auto-complete human behavior.
-- No wearables.
+- Optional wearables must not overwrite user-entered anchors, punish missing data, or automatically replace the primary target. Constraint is not noncompliance.
 
 Behavioral learning comes from assessment, minimal intentional human feedback, and system-derived context. Do not turn the experience into a daily checklist.
 

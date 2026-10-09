@@ -1,0 +1,209 @@
+{
+  "clientId": "synthetic-food-only",
+  "answers": {
+    "morning_light_timing": "within_15",
+    "bedroom_darkness": "very_dark",
+    "future_answer": "retained"
+  },
+  "hasCompletedAudit": true,
+  "lastSavedAt": "2026-08-20T10:00:00-07:00",
+  "participationLevel": "BASELINE",
+  "dailyProfile": {
+    "displayName": "Synthetic Fixture",
+    "wakeTime": "07:00",
+    "targetBedtime": "21:45",
+    "lastMealTime": "18:30",
+    "timeZone": "America/Los_Angeles",
+    "locationPermissionGranted": false,
+    "coachingTargetSignalId": "meal_timing",
+    "futureProfile": {
+      "keep": true
+    }
+  },
+  "firstRunHandoff": {
+    "guidance": null,
+    "futureHandoff": 7
+  },
+  "eventStateByDate": {
+    "2026-08-19": {
+      "morning_light": {
+        "status": "completed",
+        "at": "2026-08-19T07:08:00-07:00",
+        "futureEvent": "retain"
+      }
+    }
+  },
+  "foodTimingEvidenceByDate": {
+    "2026-08-19": [
+      {
+        "id": "synthetic-meal-1",
+        "action": "MEAL_STARTED",
+        "at": "2026-08-19T18:30:00-07:00",
+        "recordedAt": "2026-08-20T01:32:00Z",
+        "updatedAt": "2026-08-20T01:35:00Z",
+        "source": "USER",
+        "futureMeal": {
+          "keep": true
+        },
+        "historicalContext": {
+          "capturedAt": "2026-08-19T18:30:00-07:00",
+          "timeZone": "America/Los_Angeles",
+          "latitude": null,
+          "longitude": null,
+          "wakeAt": "2026-08-19T07:00:00-07:00",
+          "morningLightAt": null,
+          "sunriseAt": null,
+          "sunsetAt": null,
+          "targetSleepAt": "2026-08-19T21:45:00-07:00",
+          "futureAnchor": "retain"
+        }
+      },
+      {
+        "id": "synthetic-intent-1",
+        "action": "EATING_LATER",
+        "at": "2026-08-19T12:00:00-07:00",
+        "source": "USER"
+      }
+    ],
+    "2026-08-18": []
+  },
+  "notificationState": {
+    "scheduledNotification": null,
+    "deliveredNotifications": [
+      {
+        "id": "synthetic-delivered-old",
+        "deliveredAt": "2020-01-01T00:00:00Z",
+        "futureDelivery": "retain"
+      }
+    ],
+    "materialChangeKeys": {
+      "old": "retain"
+    },
+    "futureNotification": {
+      "keep": true
+    }
+  },
+  "wearableConnection": {
+    "enabled": false,
+    "observations": [],
+    "futureWearable": "retain"
+  },
+  "recommendationArchive": [
+    {
+      "id": "synthetic-genuine-record",
+      "generatedAt": "2026-08-19T07:00:00-07:00",
+      "text": "Existing recorded suggestion",
+      "futureRecommendation": "retain"
+    }
+  ],
+  "futureRoot": {
+    "nested": [
+      "keep",
+      null,
+      3
+    ]
+  },
+  "schemaVersion": 2,
+  "personalizationRuntime": {
+    "version": 1,
+    "state": {
+      "generatedAt": "2026-08-19T07:08:00-07:00",
+      "perSignal": {
+        "morning_light_timing": {
+          "id": "morning_light_timing",
+          "classification": "BEHAVIOR",
+          "coachingState": "ESTABLISHED",
+          "evidence": [
+            {
+              "source": [
+                "QUESTIONNAIRE"
+              ],
+              "questionId": "morning_light_timing",
+              "answer": "within_15",
+              "answerScore": 100,
+              "futureEvidence": "retain"
+            }
+          ],
+          "confidence": {
+            "score": 0.9,
+            "lastEvidenceAt": "2026-08-19T07:08:00-07:00",
+            "futureConfidence": "retain"
+          },
+          "reconsideration": {
+            "status": "pending",
+            "reasons": [
+              "TIMEZONE_CHANGED"
+            ],
+            "evidence": [],
+            "observedAt": "2026-08-20T10:00:00Z",
+            "futureReview": "retain"
+          },
+          "futureSignal": "retain"
+        }
+      }
+    },
+    "baselines": {
+      "morning_light_timing": {
+        "timeZone": "America/Los_Angeles",
+        "futureBaseline": "retain"
+      }
+    },
+    "observedAnswers": {
+      "morning_light_timing": "within_15"
+    },
+    "acceptedAnswers": {
+      "morning_light_timing": "within_15"
+    },
+    "history": {
+      "morning_light_timing": [
+        {
+          "questionId": "morning_light_timing",
+          "answer": "within_15",
+          "source": [
+            "QUESTIONNAIRE"
+          ],
+          "futureHistory": "retain"
+        }
+      ]
+    },
+    "acknowledgedHistory": {
+      "morning_light_timing": "old-history-key"
+    },
+    "evidenceKeys": {
+      "morning_light_timing": "[\"within_15\",null]"
+    },
+    "resolutions": [
+      {
+        "status": "resolved",
+        "signalId": "meal_timing",
+        "resolvedAt": "2026-08-18T10:00:00Z",
+        "review": {
+          "reasons": [
+            "TIMEZONE_CHANGED"
+          ],
+          "evidence": []
+        },
+        "priorSignal": {
+          "coachingState": "ESTABLISHED",
+          "evidence": []
+        },
+        "futureResolution": "retain"
+      }
+    ],
+    "inputKey": "legacy-key-without-food",
+    "futureRuntime": "retain"
+  },
+  "acceptedFocus": {
+    "version": 1,
+    "status": "accepted",
+    "signalId": null,
+    "acceptedAt": "2026-08-20T10:00:00Z",
+    "source": "explicit",
+    "futureFocus": "retain"
+  },
+  "runtimeMigration": {
+    "version": 1,
+    "rebuildRequired": true,
+    "unassessedPendingSignalIds": []
+  }
+}

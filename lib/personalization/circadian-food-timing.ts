@@ -6,8 +6,13 @@ export type FoodTimingEvidence = {
   id: string;
   action: FoodTimingAction;
   at: string;
+  recordedAt?: string | null;
+  updatedAt?: string | null;
   source: "USER";
   historicalContext?: HistoricalBiologicalContext | null;
+  // Original occurrence described by the retained snapshot, before an edit.
+  // A differing occurrence has unknown context, not current-profile context.
+  historicalContextOccurrenceAt?: string;
 };
 
 export type FoodTimingAnchors = {
@@ -21,6 +26,8 @@ export type FoodTimingAnchors = {
 export type MealTimingRelationship = {
   evidenceId: string;
   at: string;
+  recordedAt?: string | null;
+  updatedAt?: string | null;
   minutesFromWake: number | null;
   minutesFromMorningLight: number | null;
   minutesFromSunset: number | null;
@@ -52,7 +59,15 @@ function minutesBetween(later: Date | null, earlier: Date | null) {
   return Math.round((later.getTime() - earlier.getTime()) / 60000);
 }
 
+export function historicalFoodContextIsApplicable(evidence: FoodTimingEvidence): boolean {
+  return Boolean(evidence.historicalContext && (!evidence.historicalContextOccurrenceAt ||
+    Date.parse(evidence.historicalContextOccurrenceAt) === Date.parse(evidence.at)));
+}
+
 function anchorsForEvidence(evidence: FoodTimingEvidence, fallback: FoodTimingAnchors): FoodTimingAnchors {
+  if (evidence.historicalContextOccurrenceAt && !historicalFoodContextIsApplicable(evidence)) {
+    return { wakeAt: null, morningLightAt: null, sunsetAt: null, darknessAt: null, targetSleepAt: null };
+  }
   const context = evidence.historicalContext;
   if (!context) return fallback;
   return {
@@ -81,6 +96,8 @@ function buildRelationship(
   return {
     evidenceId: evidence.id,
     at: mealAt.toISOString(),
+    recordedAt: evidence.recordedAt ?? null,
+    updatedAt: evidence.updatedAt ?? null,
     minutesFromWake: minutesBetween(mealAt, wakeAt),
     minutesFromMorningLight: minutesBetween(mealAt, morningLightAt),
     minutesFromSunset: minutesBetween(mealAt, sunsetAt),
@@ -102,7 +119,13 @@ export function buildCircadianFoodTimingSnapshot(input: {
   const evidence = [...input.evidence].sort((a, b) => {
     const aTime = parsed(a.at)?.getTime() ?? Number.MAX_SAFE_INTEGER;
     const bTime = parsed(b.at)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-    return aTime - bTime;
+    if (aTime !== bTime) return aTime - bTime;
+
+    const aRecorded = parsed(a.recordedAt ?? a.updatedAt ?? a.at)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    const bRecorded = parsed(b.recordedAt ?? b.updatedAt ?? b.at)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+    if (aRecorded !== bRecorded) return aRecorded - bRecorded;
+
+    return a.id.localeCompare(b.id);
   });
 
   const meals = evidence

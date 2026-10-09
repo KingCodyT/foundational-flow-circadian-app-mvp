@@ -101,3 +101,10 @@ test('material change keys can be stored and cleared independently', () => {
   const cleared = setMaterialChangeKey(withKey, identity, null);
   assert.equal(cleared[identity], undefined);
 });
+
+
+test('future schedules survive reload until the real opportunity closes', () => {
+  const future = scheduled({ scheduledFor: '2026-09-13T20:30:00Z', validUntil: '2026-09-13T21:30:00Z', timeZone: 'America/Los_Angeles' });
+  assert.equal(pruneNotificationPersistenceState({ scheduledNotification: future }, now).scheduledNotification.id, future.id);
+  assert.equal(pruneNotificationPersistenceState({ scheduledNotification: future }, new Date('2026-09-13T21:31:00Z')).scheduledNotification, null);
+});

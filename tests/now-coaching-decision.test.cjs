@@ -66,7 +66,7 @@ test('NOW surfaces guidance when current opportunity matches active target', () 
   assert.equal(decision.shouldSurfacePassiveContext, false);
 });
 
-test('unrelated current circadian event becomes passive context without becoming coaching', () => {
+test('unrelated current event stays silent without becoming coaching', () => {
   const decision = assembleNowCoachingDecision({
     day1: makeDay1(),
     activeEvent: makeEvent({ id: 'digital_sunset', name: 'Digital Sunset' }),
@@ -76,7 +76,7 @@ test('unrelated current circadian event becomes passive context without becoming
   assert.equal(decision.activeEventSupportsTarget, false);
   assert.equal(decision.candidate.biologicallyRelevantNow, false);
   assert.equal(decision.shouldSurfacePersonalizedGuidance, false);
-  assert.equal(decision.shouldSurfacePassiveContext, true);
+  assert.equal(decision.shouldSurfacePassiveContext, false);
 });
 
 test('NOW remains silent when there is no current biological opportunity', () => {

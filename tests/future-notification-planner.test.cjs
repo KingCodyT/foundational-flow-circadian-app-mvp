@@ -120,3 +120,15 @@ test('delivery cooldown can suppress a projected repeat', () => {
   assert.equal(result.notification, null);
   assert.equal(result.reason, 'cooldown_active');
 });
+
+const { buildUpcomingReminderPreview } = load('lib/personalization/upcoming-reminder-preview.ts');
+test('quiet preview uses the saved timezone and suppresses ineligible or distant opportunities', () => {
+  const input = { day1: makeDay1(), futureEvent: { ...makeFutureEvent(), action: 'Step outside for some morning light.' }, now: new Date('2026-09-13T12:00:00Z'), notificationsEnabled: true, timeZone: 'America/Los_Angeles' };
+  assert.equal(buildUpcomingReminderPreview(input), 'Coming up: Step outside for some morning light around 7:00 AM.');
+  for (const overrides of [
+    { notificationsEnabled: false }, { futureEvent: null },
+    { now: new Date('2026-09-13T01:59:00Z') },
+    { day1: makeDay1({ coachingState: CoachingState.DEVELOPING }) },
+    { futureEvent: { ...input.futureEvent, status: 'completed' } },
+  ]) assert.equal(buildUpcomingReminderPreview({ ...input, ...overrides }), null);
+});

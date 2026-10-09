@@ -71,24 +71,10 @@ test('prompt asks for minimal evidence without prescribing a meal time', () => {
   assert.doesNotMatch(laterPrompt.guidance, /must|should|bad|good/i);
 });
 
-test('stronger biological moments hide Food from the foreground', () => {
-  for (const activeEventId of ['morning_light', 'sunset', 'dim_house', 'digital_sunset', 'sleep_window']) {
-    assert.equal(
-      getFoodJourneySurfaceMode({ activeEventId, primarySignalId: 'last_meal_timing' }),
-      'HIDDEN',
-      activeEventId,
-    );
+test('Food belongs only to the selected Food target, regardless of clock event', () => {
+  for (const activeEventId of [null, 'morning_light', 'first_meal', 'last_meal', 'movement', 'sunset', 'sleep_window']) {
+    assert.equal(getFoodJourneySurfaceMode({ activeEventId, primarySignalId: 'last_meal_timing' }), 'FULL');
+    assert.equal(getFoodJourneySurfaceMode({ activeEventId, primarySignalId: 'morning_light_timing' }), 'HIDDEN');
+    assert.equal(getFoodJourneySurfaceMode({ activeEventId, primarySignalId: null }), 'HIDDEN');
   }
-});
-
-test('Food gets the full surface in meal moments or when Food owns the primary target', () => {
-  assert.equal(getFoodJourneySurfaceMode({ activeEventId: 'first_meal', primarySignalId: null }), 'FULL');
-  assert.equal(getFoodJourneySurfaceMode({ activeEventId: 'last_meal', primarySignalId: null }), 'FULL');
-  assert.equal(getFoodJourneySurfaceMode({ activeEventId: 'movement', primarySignalId: 'last_meal_timing' }), 'FULL');
-  assert.equal(getFoodJourneySurfaceMode({ activeEventId: null, primarySignalId: 'meal_timing_regularity' }), 'FULL');
-});
-
-test('neutral moments keep only compact capture instead of a permanent second coaching card', () => {
-  assert.equal(getFoodJourneySurfaceMode({ activeEventId: 'movement', primarySignalId: 'morning_light_timing' }), 'CAPTURE_ONLY');
-  assert.equal(getFoodJourneySurfaceMode({ activeEventId: null, primarySignalId: null }), 'CAPTURE_ONLY');
 });

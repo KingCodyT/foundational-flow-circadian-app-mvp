@@ -71,7 +71,7 @@ export function assembleNowCoachingDecision(opts: {
   });
 
   const shouldSurfacePersonalizedGuidance = Boolean(
-    activeEvent &&
+    activeEvent?.status === "current" &&
       activeEventSupportsTarget &&
       candidate.biologicallyRelevantNow &&
       candidate.actionableNow &&
@@ -79,14 +79,8 @@ export function assembleNowCoachingDecision(opts: {
       candidate.disposition !== "SILENT",
   );
 
-  // Passive context is biological orientation, not coaching. An unrelated
-  // active circadian event may be shown quietly without changing the selected
-  // coaching target or borrowing the event's guidance as a recommendation.
-  const shouldSurfacePassiveContext = Boolean(
-    activeEvent &&
-      !shouldSurfacePersonalizedGuidance &&
-      (candidate.finalLevel === 1 || !activeEventSupportsTarget),
-  );
+  // Environmental orientation belongs in the header, not a second action card.
+  const shouldSurfacePassiveContext = false;
 
   return {
     candidate,

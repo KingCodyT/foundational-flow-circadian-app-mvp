@@ -1,3 +1,5 @@
+import { localDateKey } from "./live-clock";
+
 // Basic solar timing utilities adapted from NOAA algorithms.
 // UTC instants for the requested local calendar date; format in the runtime timezone.
 // https://gml.noaa.gov/grad/solcalc/solareqns.PDF
@@ -118,7 +120,7 @@ export type SolarTimes = {
   dayLengthMinutes: number | null;
 };
 
-export function getSolarTimes(date: Date, latitude?: number | null, longitude?: number | null): SolarTimes {
+export function getSolarTimes(date: Date, latitude?: number | null, longitude?: number | null, timeZone?: string | null): SolarTimes {
   if (!Number.isFinite(date.getTime()) || !hasValidCoordinates(latitude, longitude)) {
     return { sunrise: null, sunset: null, solarNoon: null, dayLengthMinutes: null };
   }
@@ -126,7 +128,8 @@ export function getSolarTimes(date: Date, latitude?: number | null, longitude?: 
   // NOAA produces minutes relative to UTC midnight, not local midnight.
   // Do not wrap at 24 hours: eastern sunrise can be on the previous UTC day,
   // and western sunset can be on the following UTC day.
-  const utcMidnight = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const [year, month, day] = localDateKey(date, timeZone).split("-").map(Number);
+  const utcMidnight = Date.UTC(year, month - 1, day);
   const jd = toJulian(new Date(utcMidnight));
   const lat = latitude!;
   const lon = longitude!;
@@ -172,4 +175,14 @@ export function getSolarTimes(date: Date, latitude?: number | null, longitude?: 
 export function formatTimeLocal(d: Date | null) {
   if (!d || !Number.isFinite(d.getTime())) return "--:--";
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Geometric solar elevation at an instant (NOAA); independent of display timezone. */
+export function getSolarElevation(date: Date, latitude: number, longitude: number): number | null {
+  if (!Number.isFinite(date.getTime()) || !hasValidCoordinates(latitude, longitude)) return null;
+  const position = solarPosition(toJulian(date));
+  const minutes = date.getUTCHours() * 60 + date.getUTCMinutes() + date.getUTCSeconds() / 60;
+  const hourAngle = normalizeAngle((minutes + position.equationOfTime + 4 * longitude) / 4) - 180;
+  const cosine = sinDeg(latitude) * sinDeg(position.declination) + cosDeg(latitude) * cosDeg(position.declination) * cosDeg(hourAngle);
+  return 90 - radToDeg(Math.acos(Math.max(-1, Math.min(1, cosine))));
 }

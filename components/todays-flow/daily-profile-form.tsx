@@ -8,6 +8,8 @@ import { getRuntimeTimeZone } from "@/lib/live-clock";
 import { ReminderDeliveryStatus } from "@/components/reminder-delivery-status";
 import { requestBrowserNotificationPermission, registerNotificationServiceWorker } from "@/lib/personalization/background-notification-transport";
 import { hasValidCoordinates } from "@/lib/solar";
+import { ClockTimeField } from "@/components/clock-time-field";
+import { assessSleepInterval } from "@/lib/sleep-timing";
 
 export default function DailyProfileForm({ section = "all" }: { section?: "all" | "schedule" | "preferences" } = {}) {
   const { dailyProfile, setDailyProfile, storageIssue } = useCircadian();
@@ -48,11 +50,13 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
     hasValidCoordinates(dailyProfile.latitude, dailyProfile.longitude));
   const saved = dailyProfile?.wakeTime === wakeTime &&
     dailyProfile?.targetBedtime === targetBedtime && savedLastMeal === lastMealTime && savedTimeZone === timeZone;
+  const sleepInterval = assessSleepInterval(targetBedtime, wakeTime);
 
   const save = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(wakeTime) ||
         !/^([01]\d|2[0-3]):[0-5]\d$/.test(targetBedtime)) return;
+    if (sleepInterval.error) { setError(sleepInterval.error); return; }
     if (lastMealTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(lastMealTime)) return;
     try { new Intl.DateTimeFormat(undefined, { timeZone }).format(); } catch { setError("Enter a valid timezone, such as America/Los_Angeles."); return; }
     setError("");
@@ -162,17 +166,13 @@ export default function DailyProfileForm({ section = "all" }: { section?: "all" 
       <h3 className="text-lg font-semibold">{section === "preferences" ? "Reminder and food preferences" : "Schedule details"}</h3>
       <fieldset disabled={locating} className="space-y-5 disabled:opacity-70">
         {section !== "preferences" && <><div className="grid gap-4 sm:grid-cols-2">
-          <label className="block">
-            <span className="text-sm text-[var(--color-muted)]">Typical wake time</span>
-            <input required className="mt-2 block w-full rounded-xl border border-[var(--color-line)] bg-white px-3 py-2" type="time" value={wakeTime} onChange={(e) => setWakeTime(e.target.value)} />
-          </label>
-          <label className="block">
-            <span className="text-sm text-[var(--color-muted)]">Target bedtime</span>
-            <input required className="mt-2 block w-full rounded-xl border border-[var(--color-line)] bg-white px-3 py-2" type="time" value={targetBedtime} onChange={(e) => setTargetBedtime(e.target.value)} />
-          </label>
+          <ClockTimeField required label="Typical wake time" value={wakeTime} onChange={setWakeTime} />
+          <ClockTimeField required label="Target bedtime" value={targetBedtime} onChange={setTargetBedtime} />
           <label className="block"><span>Usual last meal</span><input className="mt-2 block w-full rounded-xl border p-3" type="time" value={lastMealTime} onChange={event => setLastMealTime(event.target.value)} /></label>
           <label className="block"><span>Your timezone</span><input required className="mt-2 block w-full rounded-xl border p-3" value={timeZone} onChange={event => setTimeZone(event.target.value)} /></label>
         </div>
+        {sleepInterval.interpretation && <p role="status" className="text-sm sm:col-span-2">We’ll read this as <strong>{sleepInterval.interpretation}</strong>.</p>}
+        {sleepInterval.warning && <p className="text-sm sm:col-span-2">{sleepInterval.warning}</p>}
         {error && <p role="alert">{error}</p>}
         <button type="submit" disabled={saved} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-2.5 text-sm font-semibold disabled:opacity-60">{saved ? "Schedule saved ✓" : "Save schedule"}</button></>}
         {section !== "schedule" && dailyProfile && <div className="space-y-3">

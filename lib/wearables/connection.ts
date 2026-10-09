@@ -5,6 +5,8 @@ export const WEARABLE_CATEGORIES = {
   hrv: "Heart-rate variability",
   temperature: "Temperature trends, when supported",
 } as const;
+// Ambient-light readings are deliberately excluded: consumer placement and field
+// of view do not establish the light dose reaching the eyes.
 export type WearableCategory = keyof typeof WEARABLE_CATEGORIES;
 export type WearableStatus = "not_connected" | "connecting" | "connected" | "syncing" | "needs_attention";
 export type WearableObservation = {

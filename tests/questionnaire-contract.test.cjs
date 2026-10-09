@@ -44,6 +44,7 @@ test('assessment renders the questionnaire before profile setup', () => {
   assert.match(source, /questionnaire\[currentIndex\]/);
   assert.match(source, /<QuestionCard/);
   assert.match(source, /Question \{currentIndex \+ 1\} of \{questionnaire\.length\}/);
+  assert.match(source, /<ProgressBar[^>]+label="Question"/);
   assert.doesNotMatch(source, /currentQuestions\.map/);
   assert.doesNotMatch(source, /Next section|Previous section/);
   assert.match(source, /router\.push\("\/setup"\)/);

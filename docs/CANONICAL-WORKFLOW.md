@@ -24,4 +24,4 @@ Never begin an upgrade from an integration branch, old review branch, downloaded
 | Timeline | `/timeline` | `views/timeline-page.tsx` |
 | Profile | `/profile` | `views/you-page.tsx` |
 
-The 16-question assessment collects evidence first and routes to `/setup`. Profile setup persists the profile, marks onboarding complete, and routes to Today. Do not combine, shorten, or replace these flows without an explicit product decision and matching contract tests.
+The 16-question assessment presents one question per screen in the canonical order, then routes to `/setup`. Evidence categories are internal labels, not navigation steps. Profile setup persists the profile, marks onboarding complete, and routes to Today. Do not combine, shorten, regroup, or replace these flows without an explicit product decision and matching contract tests.

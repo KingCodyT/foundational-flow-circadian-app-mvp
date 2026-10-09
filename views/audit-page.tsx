@@ -35,7 +35,7 @@ export default function AuditPage() {
       <div className="space-y-8 lg:sticky lg:top-6 lg:self-start">
         <SectionHeading eyebrow={currentCategory.title} title="A clearer picture, one answer at a time." description={currentCategory.intention}/>
         <div className="rounded-[2rem] border border-[var(--color-line)] bg-white/70 p-6">
-          <ProgressBar current={currentIndex + 1} total={questionnaire.length}/>
+          <ProgressBar current={currentIndex + 1} total={questionnaire.length} label="Question"/>
           <div className="mt-5 rounded-[1.5rem] bg-[var(--color-cream)]/75 px-4 py-3">
             <p className="text-xs uppercase tracking-[0.2em] text-[var(--color-muted)]">Question {currentIndex + 1} of {questionnaire.length}</p>
             <p className="mt-2 text-sm leading-6 text-[var(--color-charcoal)]">Choose the answer that best reflects real life. You can go back and revise any earlier answer.</p>

@@ -194,6 +194,67 @@ a {
 @media(max-width:650px) {.journey .journey-brand>p {font-size:6px;letter-spacing:1.4px;}.journey-actions .journey-primary>span:last-child {right:14px;}.journey-actions .journey-primary {padding-right:35px;}.journey-onboarding .journey-landscape {height:380px;}}
 .journey-reminder {margin-top:14px;}.journey-reminder .journey-outline {width:100%;}.journey-reminder p {font-size:14px;margin-top:12px;}
 
+/* Public welcome: orient first, assess second. */
+.welcome-page {padding:10px 10px 50px;}
+.welcome-hero {min-height:560px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);align-items:center;gap:54px;padding:30px 28px 70px;}
+.welcome-hero h1 {max-width:720px;font-size:clamp(48px,6.2vw,76px);line-height:.98;margin-top:18px;}
+.journey .welcome-lead {max-width:690px;font-size:22px;line-height:1.55;color:#3f4142;}
+.welcome-actions {display:flex;align-items:center;gap:26px;margin-top:34px;}
+.welcome-actions .journey-primary,.welcome-close .journey-primary {width:max-content;text-decoration:none;}
+.welcome-return {font-size:16px;text-decoration:underline;text-underline-offset:5px;color:#504a42;}
+.journey .welcome-reassurance {margin-top:18px;font-size:13px;letter-spacing:.08em;color:#66645e;}
+.welcome-promise {align-self:center;background:linear-gradient(145deg,rgba(26,28,27,.95),rgba(43,43,38,.92));border:1px solid rgba(255,255,255,.2);border-radius:24px;padding:30px;color:white;box-shadow:0 25px 70px rgba(31,28,24,.18);}
+.journey .welcome-promise p {color:#f5f0e7;font-size:17px;line-height:1.55;}
+.journey .welcome-promise .welcome-promise-label {color:#ddb978;font-size:11px;letter-spacing:.2em;font-weight:700;margin-bottom:9px;}
+.welcome-promise span {display:block;width:44px;height:2px;background:#c79b51;margin:24px 0;}
+.welcome-definition,.welcome-experience {background:rgba(255,253,249,.9);border:1px solid rgba(255,255,255,.95);border-radius:28px;padding:54px 48px;margin-top:22px;box-shadow:0 16px 55px rgba(83,67,45,.07);}
+.welcome-section-copy {max-width:760px;}
+.welcome-page h2 {font-family:Georgia,"Times New Roman",serif;text-transform:none;letter-spacing:-.5px;font-size:clamp(34px,4.2vw,50px);line-height:1.08;font-weight:400;margin:12px 0 20px;}
+.welcome-section-copy>p:last-child {max-width:720px;font-size:19px;line-height:1.65;}
+.welcome-signal-grid {display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:38px;}
+.welcome-signal-grid article {border-top:1px solid #c9b48b;padding:22px 12px 4px;}
+.welcome-signal-icon {display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:#f1e7d5;color:#ad7d34;margin-bottom:22px;}
+.welcome-signal-icon svg {width:29px;height:29px;}
+.welcome-signal-grid h3 {font-size:24px;margin-bottom:6px;}
+.journey .welcome-signal-grid p {font-size:14px;line-height:1.45;}
+.welcome-why {display:grid;grid-template-columns:.85fr 1.15fr;gap:60px;align-items:start;margin:72px 28px;padding:0 20px;}
+.welcome-why h2 {font-size:clamp(34px,4vw,48px);}
+.journey .welcome-why>p {font-size:21px;line-height:1.7;color:#3f4142;padding-top:36px;}
+.welcome-experience ol {list-style:none;margin:40px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:0 36px;}
+.welcome-experience li {display:flex;gap:20px;padding:28px 0;border-top:1px solid #d9d0c1;}
+.welcome-experience li>span {font-family:Georgia,serif;color:#b5863c;font-size:24px;}
+.welcome-experience h3 {font-size:24px;margin-bottom:8px;}
+.journey .welcome-experience li p {font-size:15px;line-height:1.55;}
+.welcome-close {text-align:center;padding:90px 30px 64px;max-width:820px;margin:auto;}
+.welcome-close h2 {font-size:clamp(38px,5vw,58px);}
+.journey .welcome-close>p:not(.journey-eyebrow) {max-width:650px;margin:0 auto;font-size:20px;}
+.welcome-close .journey-primary {margin:30px auto 0;}
+
+@media(max-width:800px) {
+ .welcome-hero {grid-template-columns:1fr;min-height:0;gap:28px;padding:20px 10px 48px;}
+ .welcome-promise {max-width:560px;}
+ .welcome-signal-grid {grid-template-columns:1fr 1fr;}
+ .welcome-why {grid-template-columns:1fr;gap:10px;margin:55px 10px;padding:0;}
+ .journey .welcome-why>p {padding-top:0;}
+}
+@media(max-width:650px) {
+ .welcome-page {padding:0 0 25px;}
+ .welcome-hero h1 {font-size:42px;line-height:1.02;}
+ .journey .welcome-lead {font-size:17px;}
+ .welcome-actions {align-items:stretch;flex-direction:column;gap:16px;margin-top:26px;}
+ .welcome-actions .journey-primary {width:100%;}
+ .welcome-return {text-align:center;min-height:44px;display:grid;place-items:center;}
+ .welcome-promise {padding:24px 21px;}
+ .welcome-definition,.welcome-experience {padding:34px 20px;border-radius:20px;}
+ .welcome-page h2 {font-size:34px;}
+ .welcome-signal-grid {grid-template-columns:1fr 1fr;gap:10px;margin-top:28px;}
+ .welcome-signal-grid article {padding:18px 5px 4px;}
+ .welcome-signal-grid h3 {font-size:20px;}
+ .welcome-experience ol {grid-template-columns:1fr;margin-top:26px;}
+ .welcome-experience li {padding:22px 0;}
+ .welcome-close {padding:64px 12px 38px;}
+}
+
 .journey-nav a:focus-visible {outline:2px solid #e9b34d;outline-offset:6px;border-radius:4px;}
 
 /* Stage 5B: presentation hierarchy; chronology and runtime stay in their owners. */

@@ -41,7 +41,10 @@ test('root route opens the assessment front door', () => {
 test('assessment renders the questionnaire before profile setup', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../views/audit-page.tsx'), 'utf8');
   assert.match(source, /categoryDefinitions/);
-  assert.match(source, /getQuestionsForCategory/);
+  assert.match(source, /questionnaire\[currentIndex\]/);
   assert.match(source, /<QuestionCard/);
+  assert.match(source, /Question \{currentIndex \+ 1\} of \{questionnaire\.length\}/);
+  assert.doesNotMatch(source, /currentQuestions\.map/);
+  assert.doesNotMatch(source, /Next section|Previous section/);
   assert.match(source, /router\.push\("\/setup"\)/);
 });

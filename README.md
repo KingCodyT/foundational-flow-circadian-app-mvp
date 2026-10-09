@@ -1,13 +1,14 @@
 # Foundational Flow Circadian App MVP
 
-Foundational Flow is a local-first Next.js app organized around Today, Timeline, and Profile. The current branch is the implementation source of truth.
+Foundational Flow is a local-first Next.js app organized around Today, Timeline, and Profile. `main` is the single source of truth for development and production.
 
 ## Current experience
 
 - `/today`: current coaching focus, one relevant reminder or silence, and a small pattern summary. Meal recording and editing remain available.
 - `/timeline`: a read-only historical view with calendar-date navigation, separately labeled recorded events, saved biological context, persisted plans and genuine delivered-guidance records. Missing historical context or guidance is not reconstructed.
 - `/profile`: profile/preferences and existing meal history.
-- `/audit` (also `/`): five-stage onboarding (Basics, Schedule, Environment, Your Reality, Finish), retaining draft recovery, optional location, saved profile/timezone and approved artwork. Finish hands into `/today?view=overview`.
+- `/audit` (also `/`): the 16-question circadian evidence assessment. Questions cover morning light, daytime environment, evening light, sleep timing, and real-life constraints.
+- `/setup`: five-stage profile setup (Basics, Schedule, Environment, Your Reality, Finish), retaining draft recovery, optional location, saved profile/timezone and approved artwork. The questionnaire hands into setup; setup completion hands into `/today?view=overview`.
 - `/dev/evidence`: development-only evidence controls; production requests return 404.
 
 Compatibility redirects preserve query parameters: `/rhythm`, `/my-day`, `/season` → `/timeline`; `/now`, `/todays-flow`, `/protocol` → `/today`; `/you`, `/my-profile`, `/dashboard`, `/results`, `/tracker` → `/profile`.
@@ -23,6 +24,8 @@ Question option `score` values remain necessary for initial coaching-state mappi
 Profile exposes profile and participation controls under “Edit profile & preferences.” Saved wake/bed times immediately update the rhythm; browser location can be requested, updated, or removed without changing assessment answers. Location errors are shown inline and preserve any previously saved location. Participation is stored and passed to the flow engine; it does not currently change the generated schedule, and the control states that limitation.
 
 ## Local development
+
+Start every change from an up-to-date `main`. Use a temporary feature or review branch for work, then merge it back after tests and preview review. Do not treat an integration branch, older review branch, deployment, or downloaded app copy as the basis for the next upgrade. See [`docs/CANONICAL-WORKFLOW.md`](docs/CANONICAL-WORKFLOW.md).
 
 Install dependencies with `npm install`, then run:
 
@@ -55,7 +58,7 @@ Sources: [NOAA equations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF) and [
 
 The single root provider owns the live clock, saved-timezone runtime date and shared personalization state. Routes consume that state; navigation does not rebuild or reset accepted focus, evidence, confidence, reconsideration or Established progress. Initial first-run guidance caching remains intact and is separate from personalization.
 
-The shared journey navigation exposes exactly Today / Timeline / Profile. The active canonical link has `aria-current="page"`, a visible indicator and keyboard focus styling. The onboarding Finish screen uses the same navigation; its button goes to Today. No Stage 4 historical functionality is included yet.
+The shared journey navigation exposes exactly Today / Timeline / Profile. The active canonical link has `aria-current="page"`, a visible indicator and keyboard focus styling. The questionnaire leads to profile setup, and the setup Finish screen uses the same navigation and continues to Today. No Stage 4 historical functionality is included yet.
 
 Stage 3 non-browser validation uses `npm run test:non-browser` and `node node_modules/typescript/bin/tsc --noEmit --incremental false`. It mounts real page components under one provider, tests route changes and onboarding handoff, and exercises all legacy redirect functions. Browser history, responsive visual and keyboard testing in a real browser remain deferred to authorized browser validation.
 

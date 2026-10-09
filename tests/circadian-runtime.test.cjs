@@ -252,11 +252,11 @@ test('canonical pages and back/forward-style navigation preserve the complete ac
   }
 });
 
-test('real onboarding recovers a draft, preserves five stages and hands off to Today without a second runtime transition', t => {
+test('real profile setup recovers a draft, preserves five stages and hands off to Today without a second runtime transition', t => {
   const h = host(t, base({ hasCompletedAudit: false }), undefined, true);
   const draft = { ...h.value.dailyProfile, displayName: 'Synthetic', lastMealTime: '18:00', locationPermissionGranted: false, latitude: undefined, longitude: undefined };
   h.storage.set('foundational-flow-onboarding-draft', JSON.stringify({ profile: draft, index: 0 }));
-  h.navigate('/audit');
+  h.navigate('/setup');
   const text = node => node.children.map(c => typeof c === 'string' ? c : text(c)).join('');
   const button = label => h.rendered.findAllByType('button').find(b => text(b).startsWith(label));
   const stages = ['Basics', 'Schedule', 'Environment', 'Your Reality', 'Finish'];
@@ -268,7 +268,7 @@ test('real onboarding recovers a draft, preserves five stages and hands off to T
     if (i === 1) {
       Renderer.act(() => button('Save and Finish Later').props.onClick());
       assert.equal(JSON.parse(h.storage.get('foundational-flow-onboarding-draft')).index, 1);
-      h.navigate('/profile'); h.navigate('/audit');
+      h.navigate('/profile'); h.navigate('/setup');
       assert.equal(h.rendered.findByProps({ 'aria-label': 'Setup progress' }).findAllByType('li')[1].props['aria-current'], 'step');
     }
     if (i < 4) Renderer.act(() => button('Next:').props.onClick());

@@ -4,12 +4,20 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const source = fs.readFileSync(path.join(root, 'views/audit-page.tsx'), 'utf8');
+const source = fs.readFileSync(path.join(root, 'views/profile-setup-page.tsx'), 'utf8');
 const types = fs.readFileSync(path.join(root, 'types/circadian.ts'), 'utf8');
 
 test('onboarding uses the approved five-stage structure', () => {
   assert.match(source, /\["Basics", "Schedule", "Environment", "Your Reality", "Finish"\]/);
   assert.doesNotMatch(source, /Morning Light.*Daytime Environment.*Evening Light/s);
+});
+
+test('profile setup has one dedicated route after the assessment', () => {
+  const route = fs.readFileSync(path.join(root, 'pages/setup.tsx'), 'utf8');
+  const audit = fs.readFileSync(path.join(root, 'views/audit-page.tsx'), 'utf8');
+  assert.match(route, /views\/profile-setup-page/);
+  assert.match(audit, /router\.push\("\/setup"\)/);
+  assert.doesNotMatch(audit, /completeAudit/);
 });
 
 test('finish persists the profile before completing onboarding', () => {

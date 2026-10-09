@@ -8,6 +8,7 @@ const { categoryDefinitions, questionnaire } = load('lib/questionnaire.ts');
 const { SIGNAL_REGISTRY } = load('lib/personalization/signal-registry.ts');
 
 test('assessment uses five evidence sections and does not ask for derived environmental facts', () => {
+  assert.equal(questionnaire.length, 16);
   assert.equal(categoryDefinitions.length, 5);
   assert.deepEqual(
     categoryDefinitions.map((category) => category.title),
@@ -35,4 +36,12 @@ test('root route opens the assessment front door', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../pages/index.tsx'), 'utf8');
   assert.match(source, /views\/audit-page/);
   assert.doesNotMatch(source, /views\/you-page/);
+});
+
+test('assessment renders the questionnaire before profile setup', () => {
+  const source = fs.readFileSync(path.resolve(__dirname, '../views/audit-page.tsx'), 'utf8');
+  assert.match(source, /categoryDefinitions/);
+  assert.match(source, /getQuestionsForCategory/);
+  assert.match(source, /<QuestionCard/);
+  assert.match(source, /router\.push\("\/setup"\)/);
 });

@@ -55,6 +55,7 @@ export function WearableSettingsPanel({ connection, update, timeZone, providers 
       <details className="profile-disclosure"><summary>Manage wearables</summary>
       <p className="mt-3">Connect a supported wearable to share optional sleep, activity, and timing information.</p>
       <p className="mt-3">Foundational Flow works fully without a wearable.</p>
+      <p className="mt-3 text-sm">Wearable information is supporting context. Consumer phone or wearable light readings are not treated as a precise circadian dose or used alone to change your guidance.</p>
       <p role="status" className="mt-5 font-semibold">{view.status === "not_connected" || view.status === "disconnected_with_data" ? "NO WEARABLE CONNECTED" : wearableStatusLabel(view.status)}</p>
       {!view.connected && <>
         {view.status === "disconnected_with_data" && <p className="mt-3">Previously imported wearable data is retained in this app. No wearable is connected and no new data is being imported.</p>}

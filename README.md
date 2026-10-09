@@ -7,7 +7,8 @@ Foundational Flow is a local-first Next.js app organized around Today, Timeline,
 - `/today`: current coaching focus, one relevant reminder or silence, and a small pattern summary. Meal recording and editing remain available.
 - `/timeline`: a read-only historical view with calendar-date navigation, separately labeled recorded events, saved biological context, persisted plans and genuine delivered-guidance records. Missing historical context or guidance is not reconstructed.
 - `/profile`: profile/preferences and existing meal history.
-- `/audit` (also `/`): the 16-question circadian evidence assessment, presented one question at a time in a fixed order. Questions cover morning light, daytime environment, evening light, sleep timing, and real-life constraints.
+- `/`: the public welcome experience, explaining what Foundational Flow is, why its signal-first approach works, and what a user can expect before they begin.
+- `/audit`: the 16-question circadian evidence assessment, presented one question at a time in a fixed order. Questions cover morning light, daytime environment, evening light, sleep timing, and real-life constraints.
 - `/setup`: five-stage profile setup (Basics, Schedule, Environment, Your Reality, Finish), retaining draft recovery, optional location, saved profile/timezone and approved artwork. The questionnaire hands into setup; setup completion hands into `/today?view=overview`.
 - `/dev/evidence`: development-only evidence controls; production requests return 404.
 

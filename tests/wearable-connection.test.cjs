@@ -73,3 +73,11 @@ test('duplicates do not multiply observations and normalization rejects malforme
   assert.equal(normalized.observations.length, 1);
   assert.equal(normalized.lastSyncedAt, null);
 });
+test('consumer light readings cannot enter the evidence model or create a score', () => {
+  const light = observation({ id: 'light', category: 'light_exposure', metric: 'ambient_lux', unit: 'lux' });
+  const normalized = normalize({ ...connected(), observations: [light] });
+  assert.deepEqual(normalized.observations, []);
+  assert.deepEqual(evidence(normalized), []);
+  assert.equal('circadianDose' in normalized, false);
+  assert.equal('score' in normalized, false);
+});

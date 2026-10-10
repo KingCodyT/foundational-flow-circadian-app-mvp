@@ -36,11 +36,6 @@ export default function WelcomePage() {
             <p className="journey-eyebrow">PERSONALIZED CIRCADIAN GUIDANCE</p>
             <h1 id="welcome-title">You may not need more health advice.<br/>You may need your signals to make sense.</h1>
             <p className="welcome-lead">If your sleep, energy, appetite, mood, or recovery feel inconsistent—even when you are trying to do the right things—the missing piece may not be effort. It may be timing and context.</p>
-            <div className="welcome-actions">
-              <Link href="/audit" className="journey-primary">Find my starting point <span aria-hidden="true">→</span></Link>
-              <Link href="/today" className="welcome-return">I already have a profile</Link>
-            </div>
-            <p className="welcome-reassurance">16 questions · About 3 minutes · No wearable required</p>
           </div>
         </section>
 

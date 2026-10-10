@@ -32,9 +32,13 @@ test('assessment keeps meal timing questions biologically distinct', () => {
   assert.doesNotMatch(lastMeal.prompt, /alcohol|stimulants/i);
 });
 
-test('root route opens the assessment front door', () => {
+test('root route welcomes visitors and hands off to the assessment', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../pages/index.tsx'), 'utf8');
-  assert.match(source, /views\/audit-page/);
+  assert.match(source, /views\/welcome-page/);
+  const welcome = fs.readFileSync(path.resolve(__dirname, "../views/welcome-page.tsx"), "utf8");
+  assert.match(welcome, /href="\/audit"/);
+  const audit = fs.readFileSync(path.resolve(__dirname, "../pages/audit.tsx"), "utf8");
+  assert.match(audit, /views\/audit-page/);
   assert.doesNotMatch(source, /views\/you-page/);
 });
 

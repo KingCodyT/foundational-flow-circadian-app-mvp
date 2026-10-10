@@ -1,2 +1,2 @@
-// The public front door is the assessment. Profile views remain available at /profile.
-export { default } from "@/views/audit-page";
+// Welcome visitors before the existing sequential assessment at /audit.
+export { default } from "@/views/welcome-page";

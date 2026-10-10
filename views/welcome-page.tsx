@@ -2,88 +2,104 @@ import Head from "next/head";
 import Link from "next/link";
 import { JourneyFrame, RhythmIcon } from "@/components/journey-design";
 
-const signals = [
-  ["sun", "Light", "When your day begins"],
-  ["moon", "Darkness", "How your evening winds down"],
-  ["clock", "Timing", "When you sleep, eat, and move"],
-  ["person", "Real life", "The constraints your plan must respect"],
+const biologicalDay = [
+  ["sun", "Morning light", "sets the opening signal"],
+  ["person", "Daytime activity", "reinforces the day"],
+  ["food", "Meals and movement", "add timing information"],
+  ["moon", "Darkness and sleep", "complete the rhythm"],
 ] as const;
 
-const steps = [
-  ["01", "Tell us what is real", "Sixteen focused questions establish your starting point. No judgment and no perfect schedule required."],
-  ["02", "Add your rhythm", "Your wake time, bedtime, location, and daily structure give the app the context a generic plan cannot."],
-  ["03", "See what matters now", "Foundational Flow chooses one relevant action at a time and explains why it matters."],
-  ["04", "Let the guidance adapt", "As your patterns become established, the coaching becomes quieter. The goal is rhythm—not dependence on an app."],
+const method = [
+  ["01", "Listen", "Learn how your days actually work—not how an ideal schedule says they should."],
+  ["02", "Prioritize", "Identify the signal creating the most useful place to begin."],
+  ["03", "Guide", "Offer one realistic action at the time it can matter most."],
+  ["04", "Adapt", "Use repeated evidence to adjust the coaching and become quieter as the pattern strengthens."],
+] as const;
+
+const experience = [
+  ["Today", "Find your starting point", "Answer 16 focused questions about light, darkness, sleep timing, meals, movement, and the realities of your schedule."],
+  ["Next", "Add the context that changes the answer", "Your wake time, bedtime, location, and daily structure help separate useful guidance from generic advice."],
+  ["Each day", "See what matters now", "Receive one relevant action with a clear reason—or silence when nothing useful needs your attention."],
+  ["Over time", "Build rhythm, not dependence", "As consistent evidence moves a signal from developing to established, the app earns the right to coach less."],
 ] as const;
 
 export default function WelcomePage() {
   return <>
     <Head>
       <title>Foundational Flow — Circadian guidance for real life</title>
-      <meta name="description" content="Personalized circadian guidance built from your light, darkness, sleep, food, movement, environment, and real-life constraints." />
+      <meta name="description" content="Personalized circadian guidance that helps your light, darkness, sleep, meals, movement, environment, and real life work together." />
     </Head>
     <JourneyFrame image={3} onboarding brandHomeHref="/">
       <main className="welcome-page">
         <section className="welcome-hero" aria-labelledby="welcome-title">
-          <div>
-            <p className="journey-eyebrow">WHERE BIOLOGY MEETS REAL LIFE</p>
-            <h1 id="welcome-title">Your body is always responding.<br/>Let’s make the signals clearer.</h1>
-            <p className="welcome-lead">Foundational Flow helps you understand how light, darkness, sleep, meals, movement, and your environment shape the way you feel—then turns that understanding into one useful next step.</p>
+          <div className="welcome-hero-copy">
+            <p className="journey-eyebrow">PERSONALIZED CIRCADIAN GUIDANCE</p>
+            <h1 id="welcome-title">You may not need more health advice.<br/>You may need your signals to make sense.</h1>
+            <p className="welcome-lead">If your sleep, energy, appetite, mood, or recovery feel inconsistent—even when you are trying to do the right things—the missing piece may not be effort. It may be timing and context.</p>
             <div className="welcome-actions">
-              <Link href="/audit" className="journey-primary">Find what matters now <span aria-hidden="true">→</span></Link>
+              <Link href="/audit" className="journey-primary">Find my starting point <span aria-hidden="true">→</span></Link>
               <Link href="/today" className="welcome-return">I already have a profile</Link>
             </div>
             <p className="welcome-reassurance">16 questions · About 3 minutes · No wearable required</p>
           </div>
-          <aside className="welcome-promise" aria-label="What to expect">
-            <p className="welcome-promise-label">WHAT YOU WILL NOT GET</p>
-            <p>No generic protocol. No score designed to make you feel broken. No daily pile of boxes to check.</p>
-            <span/>
-            <p className="welcome-promise-label">WHAT YOU WILL GET</p>
-            <p>A clearer picture of your rhythm and guidance that works with the life you actually live.</p>
-          </aside>
         </section>
 
-        <section className="welcome-definition" aria-labelledby="welcome-what">
+        <section className="welcome-reframe" aria-labelledby="welcome-reframe-title">
           <div className="welcome-section-copy">
-            <p className="journey-eyebrow">WHAT FOUNDATIONAL FLOW IS</p>
-            <h2 id="welcome-what">A personal guide to the signals beneath your day.</h2>
-            <p>Energy, sleep, appetite, mood, and recovery do not happen in isolation. Your biology is reading the timing and pattern of your environment all day long. Foundational Flow helps you see those patterns without turning your life into a laboratory.</p>
+            <p className="journey-eyebrow">THE BIOLOGICAL REFRAME</p>
+            <h2 id="welcome-reframe-title">Your biology listens to timing—not just intention.</h2>
+            <p>Your body is reading light, darkness, food, movement, temperature, and sleep as a continuous stream of information. Each signal tells your system what time it is and what it should prepare to do next.</p>
+            <p>When those signals support one another, the day has a clearer rhythm. When they repeatedly disagree, your biology still adapts—but the result may not feel like the energy, sleep, or recovery you expected.</p>
           </div>
-          <div className="welcome-signal-grid">
-            {signals.map(([icon, title, text]) => <article key={title}>
+          <div className="welcome-dayline" aria-label="Signals across a biological day">
+            {biologicalDay.map(([icon, title, text], index) => <article key={title}>
+              <span className="welcome-day-number">0{index + 1}</span>
               <span className="welcome-signal-icon"><RhythmIcon kind={icon}/></span>
-              <h3>{title}</h3>
-              <p>{text}</p>
+              <div><h3>{title}</h3><p>{text}</p></div>
             </article>)}
           </div>
         </section>
 
-        <section className="welcome-why" aria-labelledby="welcome-why">
-          <div>
-            <p className="journey-eyebrow">WHY IT WORKS</p>
-            <h2 id="welcome-why">Better guidance begins with better context.</h2>
-          </div>
-          <p>The same advice cannot fit a parent, a shift worker, a frequent traveler, and someone with complete control of their schedule. The app first learns what your days actually look like. It then prioritizes the signal most likely to help, adapts around constraints, and watches for real evidence before changing direction.</p>
-        </section>
-
-        <section className="welcome-experience" aria-labelledby="welcome-expect">
-          <div className="welcome-section-copy">
-            <p className="journey-eyebrow">WHAT TO EXPECT</p>
-            <h2 id="welcome-expect">A short beginning. An experience that gets smarter—and quieter.</h2>
-          </div>
-          <ol>
-            {steps.map(([number, title, text]) => <li key={number}>
+        <section className="welcome-promise" aria-labelledby="welcome-promise-title">
+          <p className="journey-eyebrow">WHAT FOUNDATIONAL FLOW DOES</p>
+          <h2 id="welcome-promise-title">Find the signal creating the most friction—and start there.</h2>
+          <p className="welcome-promise-lead">Foundational Flow does not hand everyone the same morning routine or demand a complete life overhaul. It learns your rhythm, respects your constraints, and turns the clearest evidence into one useful next step.</p>
+          <ol className="welcome-method">
+            {method.map(([number, title, text]) => <li key={number}>
               <span>{number}</span>
               <div><h3>{title}</h3><p>{text}</p></div>
             </li>)}
           </ol>
         </section>
 
+        <section className="welcome-experience" aria-labelledby="welcome-expect-title">
+          <div className="welcome-section-copy">
+            <p className="journey-eyebrow">WHAT THE EXPERIENCE FEELS LIKE</p>
+            <h2 id="welcome-expect-title">A short beginning. Clear daily guidance. Less coaching as your rhythm becomes established.</h2>
+          </div>
+          <ol className="welcome-experience-path">
+            {experience.map(([time, title, text]) => <li key={time}>
+              <span>{time}</span>
+              <div><h3>{title}</h3><p>{text}</p></div>
+            </li>)}
+          </ol>
+        </section>
+
+        <section className="welcome-trust" aria-labelledby="welcome-trust-title">
+          <div>
+            <p className="journey-eyebrow">BUILT FOR REAL PEOPLE</p>
+            <h2 id="welcome-trust-title">You are not a score to fix.</h2>
+          </div>
+          <div className="welcome-trust-copy">
+            <p>No generic protocol. No perfect schedule. No daily pile of boxes designed to keep you busy.</p>
+            <p>Your constraints are context—not noncompliance. If the biologically ideal option does not fit your life, the guidance adapts to the highest-value action you can realistically control.</p>
+          </div>
+        </section>
+
         <section className="welcome-close">
           <p className="journey-eyebrow">START WITH WHAT IS TRUE TODAY</p>
-          <h2>You do not need more random advice.<br/>You need to know what matters for you.</h2>
-          <p>The first step is a 16-question assessment that gives Foundational Flow enough context to stop guessing.</p>
+          <h2>Let’s find what matters most right now.</h2>
+          <p>Sixteen questions give Foundational Flow enough evidence to stop guessing and begin with the signal most likely to help.</p>
           <Link href="/audit" className="journey-primary">Begin my assessment <span aria-hidden="true">→</span></Link>
         </section>
       </main>

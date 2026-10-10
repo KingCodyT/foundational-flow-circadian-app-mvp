@@ -36,9 +36,10 @@ test('root route explains the experience before the assessment', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../pages/index.tsx'), 'utf8');
   assert.match(source, /views\/welcome-page/);
   const welcome = fs.readFileSync(path.resolve(__dirname, '../views/welcome-page.tsx'), 'utf8');
-  assert.match(welcome, /WHAT FOUNDATIONAL FLOW IS/);
-  assert.match(welcome, /WHY IT WORKS/);
-  assert.match(welcome, /WHAT TO EXPECT/);
+  assert.match(welcome, /THE BIOLOGICAL REFRAME/);
+  assert.match(welcome, /WHAT FOUNDATIONAL FLOW DOES/);
+  assert.match(welcome, /WHAT THE EXPERIENCE FEELS LIKE/);
+  assert.match(welcome, /BUILT FOR REAL PEOPLE/);
   assert.match(welcome, /href="\/audit"/);
 });
 

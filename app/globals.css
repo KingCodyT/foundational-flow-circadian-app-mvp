@@ -199,12 +199,9 @@ a {
 .welcome-page h2 {font-family:Georgia,"Times New Roman",serif;text-transform:none;letter-spacing:-.5px;font-size:clamp(34px,4.2vw,50px);line-height:1.08;font-weight:400;margin:12px 0 20px;}
 .welcome-hero {min-height:575px;display:flex;align-items:center;padding:30px 28px 78px;}
 .welcome-hero-copy {max-width:850px;}
-.welcome-hero h1 {max-width:850px;font-size:clamp(48px,6.2vw,76px);line-height:.98;margin-top:18px;}
+.welcome-hero h1 {max-width:850px;font-size:clamp(46px,5.4vw,66px);line-height:1.01;margin-top:18px;}
 .journey .welcome-lead {max-width:720px;font-size:22px;line-height:1.55;color:#3f4142;}
-.welcome-actions {display:flex;align-items:center;gap:26px;margin-top:34px;}
-.welcome-actions .journey-primary,.welcome-close .journey-primary {width:max-content;text-decoration:none;}
-.welcome-return {font-size:16px;text-decoration:underline;text-underline-offset:5px;color:#504a42;}
-.journey .welcome-reassurance {margin-top:18px;font-size:13px;letter-spacing:.08em;color:#66645e;}
+.welcome-close .journey-primary {width:max-content;text-decoration:none;}
 .welcome-section-copy {max-width:780px;}
 .welcome-section-copy>p {max-width:760px;font-size:19px;line-height:1.65;margin-top:16px;}
 .welcome-reframe,.welcome-experience {background:rgba(255,253,249,.9);border:1px solid rgba(255,255,255,.95);border-radius:28px;padding:56px 48px;margin-top:22px;box-shadow:0 16px 55px rgba(83,67,45,.07);}
@@ -251,9 +248,6 @@ a {
  .welcome-page {padding:0 0 25px;}
  .welcome-hero h1 {font-size:42px;line-height:1.02;}
  .journey .welcome-lead {font-size:17px;}
- .welcome-actions {align-items:stretch;flex-direction:column;gap:16px;margin-top:26px;}
- .welcome-actions .journey-primary {width:100%;}
- .welcome-return {text-align:center;min-height:44px;display:grid;place-items:center;}
  .welcome-reframe,.welcome-experience {padding:34px 20px;border-radius:20px;}
  .welcome-page h2 {font-size:34px;}
  .welcome-dayline {grid-template-columns:1fr 1fr;margin-top:30px;}

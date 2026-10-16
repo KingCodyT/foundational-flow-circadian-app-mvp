@@ -78,6 +78,52 @@ function mount(initial) {
   }
   return { render, saved, writes, failRead: v => { failRead = v; }, failWrite: k => { failWrite = k; } };
 }
+test('initial coaching focus waits for setup completion and uses the final candidate', () => {
+  const host = mount();
+  let value = host.render();
+  value.setAnswer('morning_light_timing', 'within_60'); value = host.render();
+  assert.equal(value.acceptedFocus.status, 'unset');
+  assert.equal(value.currentPersonalization.primaryCoachingTarget.signalId, null);
+  // Match setup: commit final evidence/profile and completion in one batch.
+  value.setAnswer('late_meals_stimulants', 'within_1_hour');
+  value.setDailyProfile({ timeZone: 'UTC', wakeTime: '07:00', targetBedtime: '22:00' });
+  value.completeAudit(); value = host.render();
+  assert.equal(value.acceptedFocus.signalId, 'last_meal_timing');
+  assert.equal(value.currentPersonalization.primaryCoachingTarget.signalId, 'last_meal_timing');
+  const stored = JSON.parse(host.saved.get(key));
+  assert.equal(stored.hasCompletedAudit, true);
+  assert.equal(stored.acceptedFocus.signalId, 'last_meal_timing');
+  const resumed = mount(host.saved.get(key)).render();
+  assert.deepEqual(resumed.acceptedFocus, value.acceptedFocus);
+});
+test('unfinished onboarding clears a persisted automatic early lock before accepting final evidence', () => {
+  const original = fixture('combined-v2');
+  original.hasCompletedAudit = false;
+  original.acceptedFocus = { version: 1, status: 'accepted', signalId: 'morning_light_timing', acceptedAt: '2026-08-01T12:00:00Z', source: 'system-initialization' };
+  const host = mount(original);
+  let value = host.render();
+  assert.equal(value.acceptedFocus.status, 'unset');
+  assert.equal(JSON.parse(host.saved.get(key)).acceptedFocus.status, 'unset');
+  value.setAnswer('late_meals_stimulants', 'within_1_hour'); value = host.render();
+  assert.equal(value.acceptedFocus.status, 'unset');
+  value.completeAudit(); value = host.render();
+  assert.equal(value.acceptedFocus.signalId, 'last_meal_timing');
+});
+test('completed onboarding retains its automatic accepted focus when stronger evidence arrives', () => {
+  const original = fixture('combined-v2');
+  original.acceptedFocus = { version: 1, status: 'accepted', signalId: 'morning_light_timing', acceptedAt: '2026-08-01T12:00:00Z', source: 'system-initialization' };
+  const host = mount(original);
+  let value = host.render();
+  value.setAnswer('late_meals_stimulants', 'within_1_hour'); value = host.render();
+  value.setDailyProfile({ ...value.dailyProfile, timeZone: 'Asia/Tokyo' }); value = host.render();
+  assert.deepEqual(value.acceptedFocus, original.acceptedFocus);
+});
+for (const source of ['explicit', 'legacy-profile']) test(`unfinished onboarding preserves ${source} focus`, () => {
+  const original = fixture('combined-v2');
+  original.hasCompletedAudit = false;
+  original.acceptedFocus = { version: 1, status: 'accepted', signalId: 'morning_light_timing', acceptedAt: '2026-08-01T12:00:00Z', source };
+  assert.deepEqual(mount(original).render().acceptedFocus, original.acceptedFocus);
+});
 for (const name of ['food-v1', 'architecture-v1', 'combined-v2', 'pre-fix-pending-v1']) test(`provider hydrates and roundtrips ${name} without losing opaque state`, () => {
   const original = fixture(name), host = mount(original);
   let value = host.render();

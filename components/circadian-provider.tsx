@@ -171,8 +171,17 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
   }), [answers, eventStateByDate, foodTimingEvidenceByDate, dailyProfile, participationLevel, environment, now, previousContextSnapshot]);
   const sharedRuntime = useMemo(() => isHydrated ? advancePersonalization(runtimeCheckpoint, runtimeInput) : null,
     [isHydrated, runtimeCheckpoint, runtimeInput]);
-  const acceptedFocus = useMemo(() => sharedRuntime ? initializeAcceptedFocus(focusCheckpoint, sharedRuntime, now.toISOString()) : focusCheckpoint,
-    [sharedRuntime, focusCheckpoint]);
+  const acceptedFocus = useMemo(() => {
+    if (!sharedRuntime) return focusCheckpoint;
+    // Answers arrive one at a time. Accept the initial target only after setup
+    // commits its final evidence and completes onboarding. Discard an old
+    // automatic early lock when resuming unfinished onboarding, but retain
+    // explicit/legacy focus choices and every completed user's accepted focus.
+    if (!hasCompletedAudit) {
+      return focusCheckpoint.source === "system-initialization" ? UNSET_FOCUS : focusCheckpoint;
+    }
+    return initializeAcceptedFocus(focusCheckpoint, sharedRuntime, now.toISOString());
+  }, [sharedRuntime, focusCheckpoint, hasCompletedAudit]);
   const selectors = useMemo(() => sharedRuntime ? runtimeSelectors(sharedRuntime, acceptedFocus) : null, [sharedRuntime, acceptedFocus]);
   const completedMigration = useMemo(() => migrationCheckpoint && sharedRuntime
     ? { ...migrationCheckpoint, rebuildRequired: false } : migrationCheckpoint, [migrationCheckpoint, sharedRuntime]);

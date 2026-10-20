@@ -24,3 +24,22 @@ Food stores three separate concepts: reported current pattern; internal daylight
 Only the selected target can surface an action. Related movement/daylight guidance requires evidence. Overlapping evening cues form one wind-down action; a completion or constraint response quiets the group. Food responses and relevant meal evidence quiet the Food step. No response is scored as noncompliance. Today’s Perspective remains optional and selective.
 
 The primary surface shows focus, one relevant reminder or silence, and a small pattern summary. No daily lineup or calculation disclosure appears on Today. The complete ordered schedule stays internal. Editable anchors are under Profile → Your schedule; meal history is user-initiated under Profile.
+
+
+## October 20, 2026 Timeline validation reconciliation
+
+The earlier blanket "real-browser validation pending" statement is outdated. [Merged PR #1](https://github.com/KingCodyT/foundational-flow-circadian-app-mvp/pull/1) records a passing isolated Chrome regression against a production preview, covering record-now/earlier meals, dialog dismissal and focus restoration, Timeline details, editing, and persistence after reload. [Commit 1fdbc2f](https://github.com/KingCodyT/foundational-flow-circadian-app-mvp/commit/1fdbc2f698c7c946a8464069378834f750c83d2c) updated that regression after the original warning. These are recorded historical results, not a newly executed acceptance test.
+
+Current Timeline unit coverage includes saved timestamps/provenance, missing historical context, invalid dates, DST, cross-date edits, and deduplication. Test presence does not itself establish a fresh passing run. The October 20 audit verified a READY production deployment at main d78b30f; deployment success is not visual/accessibility approval.
+
+### Smallest remaining acceptance checks
+
+1. Visual acceptance at desktop and narrow mobile widths: date navigation, populated/empty history, category/provenance labels, text wrapping, contrast, zoom/reflow, and edit-dialog layout. Record the reviewer, date, browser, viewport, and exact tested commit.
+2. Keyboard-only traversal of date controls, details, and editing: visible focus, logical order, accessible names, Escape dismissal and restored focus. The latter two have recorded regression coverage; confirm integration on the acceptance target.
+3. One screen-reader pass: headings/landmarks, selected date and category announcements, expanded-state semantics, dialog naming, and save/error announcements.
+
+Use isolated test data for any edit/save check; do not mutate existing production records. Record observed failures specifically, rather than interpreting absent sign-off as a defect. No new features or application changes are implied by this checklist.
+
+The legacy scripts/smoke/biological-timeline.cjs still assumes an older onboarding flow and Timeline redirect. It is not the acceptance procedure for the current dedicated Timeline. Update it only in a separately authorized test-maintenance change before executing it; its obsolete expectations are not evidence of an application regression.
+
+No final visual/accessibility sign-off was located in the audited evidence. Status: unverified acceptance, not a production blocker. No application code or deployments were changed by this documentation reconciliation.

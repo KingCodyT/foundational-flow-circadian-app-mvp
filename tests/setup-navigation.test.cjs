@@ -7,10 +7,11 @@ const { create, act } = require('react-test-renderer');
 const load = require('./load-typescript.cjs');
 
 const draftKey = 'foundational-flow-onboarding-draft';
-function mount(profile = {}, saved = new Map(), hasCompletedAudit = false) {
+function mount(profile = {}, saved = new Map(), hasCompletedAudit = false, answers = {}) {
   let completed = false, persisted;
   const storage = { getItem: k => saved.get(k) ?? null, setItem: (k, v) => saved.set(k, v), removeItem: k => saved.delete(k) };
-  const provider = { isHydrated: true, hasCompletedAudit, dailyProfile: profile, setAnswer() {}, setParticipationLevel() {},
+  const answerWrites = [];
+  const provider = { answers, isHydrated: true, hasCompletedAudit, dailyProfile: profile, setAnswer: (key,value) => answerWrites.push([key,value]), setParticipationLevel() {},
     setDailyProfile: p => { persisted = p; }, completeAudit: () => { completed = true; } };
   const code = ts.transpileModule(fs.readFileSync('views/profile-setup-page.tsx', 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
@@ -31,7 +32,7 @@ function mount(profile = {}, saved = new Map(), hasCompletedAudit = false) {
   act(() => { tree = create(React.createElement(mod.exports.default)); });
   const text = node => typeof node === 'string' ? node : (node.children || []).map(text).join('');
   return {
-    saved, get completed() { return completed; }, get persisted() { return persisted; },
+    answerWrites, saved, get completed() { return completed; }, get persisted() { return persisted; },
     click(label) { act(() => tree.root.findAllByType('button').find(b => text(b).includes(label)).props.onClick()); },
     stage: () => tree.root.findAllByType('li').find(li => li.props['aria-current'] === 'step').children.map(text).join(''),
     buttons: () => tree.root.findAllByType('button').map(text),
@@ -205,4 +206,17 @@ test('active edit without location and invalid step safely resumes and completes
  const app=mount(p,saved,true);assert.match(app.stage(),/Basics/);
  app.click('Next:');app.click('Next:');app.click('Next:');app.click('Next:');
  assert.equal(app.persisted.locationPermissionGranted,false);app.close();
+});
+
+test('setup reuses assessment darkness and never derives predictability from work type',()=>{
+ const app=mount({wakeTime:'07:00',targetBedtime:'23:00',sleepEnvironment:'bright',workStructure:'daytime'},new Map(),false,{bedroom_darkness:'mostly_dark',travel_schedule_variability:'variable'});
+ app.click('Next:');app.click('Next:');app.click('Next:');app.click('Next:');
+ assert.deepEqual(app.answerWrites,[]);
+ assert.equal(app.persisted.sleepEnvironment,'bright');
+ app.close();
+});
+test('unanswered bedroom darkness can still be supplied without inferring work predictability',()=>{
+ const app=mount({wakeTime:'07:00',targetBedtime:'23:00',sleepEnvironment:'mostly_dark',workStructure:'daytime'});
+ app.click('Next:');app.click('Next:');app.click('Next:');app.click('Next:');
+ assert.deepEqual(app.answerWrites,[['bedroom_darkness','mostly_dark']]);app.close();
 });

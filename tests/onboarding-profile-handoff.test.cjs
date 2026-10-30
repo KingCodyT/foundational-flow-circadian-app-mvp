@@ -51,3 +51,8 @@ test('last meal is optional on Schedule and caffeine questions are absent', () =
   assert.match(source, /OptionalMealTimeField/);
   assert.match(source, /general food guidance is still available/);
 });
+
+test('setup omits the nap question while retaining the saved profile field', () => {
+  assert.doesNotMatch(source, /napPattern|mid-day nap|Nap pattern|No, not usually|Yes, regularly/);
+  assert.match(types, /napPattern\?: string/);
+});

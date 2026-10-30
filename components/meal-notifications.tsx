@@ -5,6 +5,8 @@ import { ensureWebPushSubscription } from "@/lib/personalization/web-push-client
 import { mealNudge } from "@/lib/personalization/meal-nudge";
 import { planMealNotifications } from "@/lib/personalization/meal-notifications";
 
+import { mealReminderPreview } from "@/lib/personalization/meal-reminder-preview";
+
 const Context = createContext({status:"", busy:false, enabled:false, enable:async()=>{}, disable:async()=>{}});
 const knownKey="ff-meal-push-connected";
 async function request(body: unknown, method="POST") {
@@ -82,14 +84,16 @@ export function MealNotificationsProvider({children}:{children:ReactNode}) {
   return <Context.Provider value={{status,busy,enabled,enable,disable}}>{children}</Context.Provider>;
 }
 export function MealNotificationSettings(){
+  const {dailyProfile, now, isHydrated}=useCircadian();
   const {status,busy,enabled,enable,disable}=useContext(Context);
-  return <section className="journey-card" aria-label="Meal notifications">
-    <h2>Friendly meal reminders</h2>
+  return <section className="journey-card" aria-label="Last-meal reminder">
+    <h2>Your last-meal reminder</h2>
     <p>Get a notification before your usual last meal, even when the app is closed. Uses your saved schedule; no meal logging needed.</p>
+    <p className="food-idea-note" role="status">{isHydrated ? mealReminderPreview(dailyProfile, now) : "Loading your saved reminder time…"}</p>
     <p className="food-idea-note">We schedule the next seven days and refresh them when you use the app. Delivery needs an internet connection and browser permission.</p>
     <div className="flex flex-wrap gap-3 mt-4">
-      <button type="button" className="journey-outline" disabled={busy} onClick={enable}>{enabled?"Reconnect meal notifications":"Enable meal notifications"}</button>
-      {enabled && <button type="button" className="journey-outline" disabled={busy} onClick={disable}>Turn off meal notifications</button>}
+      <button type="button" className="journey-outline" disabled={busy} onClick={enable}>{enabled?"Reconnect last-meal reminder":"Remind me before my last meal"}</button>
+      {enabled && <button type="button" className="journey-outline" disabled={busy} onClick={disable}>Turn off last-meal reminder</button>}
     </div>
     <p role="status" className="food-idea-note">{busy?"Updating meal notifications…":status || "Meal notifications are off."}</p>
   </section>;

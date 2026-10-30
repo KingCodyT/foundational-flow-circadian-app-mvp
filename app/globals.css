@@ -384,3 +384,54 @@ a {
 .journey-nav{background:#111514;color:#d8d2c7;border-top:2px solid #c89432}
 .journey-nav a[aria-current="page"]{color:#c89432}
 .journey-nav a[aria-current="page"]:after{background:#c89432}
+
+/* Food-only preview: shared components retain their styling on other routes. */
+.food-page {
+  --color-muted: #505a50;
+  display: grid;
+  gap: 24px;
+  color: #202820;
+}
+.food-page p, .food-page dd { color: #505a50; }
+.food-page h1, .food-page h2, .food-page h3, .food-page h4, .food-page label { color: #202820; }
+.food-page .journey-card { border: 1px solid #c5cec0; background: #fffdf8; }
+.food-page .journey-intro { border-left: 4px solid #73866b; padding-left: 20px; }
+.food-page .journey-card h2 { color: #40543e; }
+.food-page .food-idea-controls { background: #edf1e7; border-radius: 14px; padding: 16px; }
+.food-page select { max-width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #778271; border-radius: 10px; background: #fffdf8; color: #202820; }
+.food-page input { accent-color: #40543e; }
+.food-page .food-idea-grid { align-items: start; gap: 16px; }
+.food-page .food-idea { background: #f7f8f2; border-color: #c5cec0; border-top: 4px solid #73866b; padding: 18px; }
+.food-page details { margin-top: 12px; }
+.food-page summary, .food-page .go-deeper summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  list-style: none;
+  min-height: 48px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #e7eddf;
+  color: #202820;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 700;
+  cursor: pointer;
+}
+.food-page summary::-webkit-details-marker { display: none; }
+.food-page summary::after { content: ""; width: 9px; height: 9px; flex: 0 0 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); }
+.food-page details[open] > summary::after { transform: rotate(45deg); }
+.food-page summary:hover, .food-page .go-deeper summary:hover { background: #dbe5d2; }
+.food-page details[open] > p, .food-page details[open] > dl { padding-inline: 4px; }
+.food-page a { color: #5e471b; text-underline-offset: 3px; }
+.food-page .journey-outline { background: #c89432; color: #202820; border: 1px solid #896018; font-weight: 600; }
+.food-page .journey-outline:hover { background: #d6a647; }
+.food-page :is(summary, button, a, select, input):focus-visible { outline: 3px solid #40543e; outline-offset: 4px; }
+.food-page .food-idea-note, .food-page > p[role="status"] { color: #505a50; }
+@media (max-width: 700px) {
+  .food-page { gap: 18px; }
+  .food-page .food-idea-controls { align-items: flex-start; }
+  .food-page .food-idea-controls label:first-child { flex-wrap: wrap; }
+  .food-page summary, .food-page .go-deeper summary { padding: 14px 12px; }
+}

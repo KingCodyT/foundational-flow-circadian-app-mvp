@@ -34,6 +34,7 @@ function mount(profile = {}, saved = new Map(), hasCompletedAudit = false) {
     saved, get completed() { return completed; }, get persisted() { return persisted; },
     click(label) { act(() => tree.root.findAllByType('button').find(b => text(b).includes(label)).props.onClick()); },
     stage: () => tree.root.findAllByType('li').find(li => li.props['aria-current'] === 'step').children.map(text).join(''),
+    buttons: () => tree.root.findAllByType('button').map(text),
     headings: () => tree.root.findAllByType('h2').map(text),
     label(value) { act(() => tree.root.findAllByType('input').find(n => n.props.placeholder === 'City or region').props.onChange({target:{value}})); },
     alerts: () => tree.root.findAll(n => n.props.role === 'alert').length,
@@ -118,7 +119,9 @@ for (const location of [
  app.click('Change location');app.label('Replacement label');app.click('Cancel location changes');
  app.click('Next:');app.click('Next:');
  assert.ok(app.headings().includes('Using your saved location'));
+ app.click('Back');app.click('Back');
  app.click('Change location');app.label('Updated label');app.click('Done editing location');
+ app.click('Next:');app.click('Next:');
  app.click('Save and Finish Later');const saved=app.saved;
  assert.equal(JSON.parse(saved.get(draftKey)).profile.locationLabel,'Updated label');
  app.close();app=mount({},saved);
@@ -163,4 +166,12 @@ for(const index of [-1,4,99,'2',1.5,null])test('invalid saved index safely start
 test('later saved step with invalid sleep data returns Schedule before completion',()=>{
  const app=mount({},new Map([[draftKey,JSON.stringify({profile:{wakeTime:'07:00',targetBedtime:'07:00'},index:3})]]));
  assert.match(app.stage(),/Schedule/);app.click('Next:');assert.equal(app.completed,false);app.close();
+});
+
+for(const location of [{},{latitude:33.54,longitude:-117.78,locationPermissionGranted:true},{latitude:91,longitude:10,locationPermissionGranted:true}])
+test('Environment location is read-only without blocking setup: '+JSON.stringify(location),()=>{
+ const app=mount({wakeTime:'07:00',targetBedtime:'23:00',...location});
+ app.click('Next:');app.click('Next:');
+ assert.equal(app.buttons().some(t=>/Change location|Use my current location|Cancel location|Done editing/.test(t)),false);
+ app.click('Next:');app.click('Next:');assert.equal(app.completed,true);app.close();
 });

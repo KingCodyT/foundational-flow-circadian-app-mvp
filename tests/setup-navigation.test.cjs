@@ -34,6 +34,8 @@ function mount(profile = {}, saved = new Map()) {
     saved, get completed() { return completed; }, get persisted() { return persisted; },
     click(label) { act(() => tree.root.findAllByType('button').find(b => text(b).includes(label)).props.onClick()); },
     stage: () => tree.root.findAllByType('li').find(li => li.props['aria-current'] === 'step').children.map(text).join(''),
+    headings: () => tree.root.findAllByType('h2').map(text),
+    label(value) { act(() => tree.root.findAllByType('input').find(n => n.props.placeholder === 'City or region').props.onChange({target:{value}})); },
     alerts: () => tree.root.findAll(n => n.props.role === 'alert').length,
     meal(value) { act(() => tree.root.findByType(load('components/optional-meal-time-field.tsx').OptionalMealTimeField).props.onChange(value)); },
     close() { act(() => tree.unmount()); },
@@ -106,3 +108,29 @@ for (const napPattern of [undefined, 'no', 'sometimes', 'regularly']) test('setu
   if (napPattern === undefined) assert.equal(Object.hasOwn(app.persisted, 'napPattern'), false);
   app.close();
 });
+
+for (const location of [
+ { latitude: 33.54, longitude: -117.78, locationPermissionGranted: true },
+ { latitude: 33.54, longitude: -117.78, locationPermissionGranted: true, locationLabel: 'Saved area' },
+]) test('saved location summary, cancel, navigation and resume preserve data: '+JSON.stringify(location),()=>{
+ let app=mount({wakeTime:'07:00',targetBedtime:'23:00',...location});
+ assert.ok(app.headings().includes('Using your saved location'));
+ app.click('Change location');app.label('Replacement label');app.click('Cancel location changes');
+ app.click('Next:');app.click('Next:');
+ assert.ok(app.headings().includes('Using your saved location'));
+ app.click('Change location');app.label('Updated label');app.click('Done editing location');
+ app.click('Save and Finish Later');const saved=app.saved;
+ assert.equal(JSON.parse(saved.get(draftKey)).profile.locationLabel,'Updated label');
+ app.close();app=mount({},saved);
+ assert.ok(app.headings().includes('Using your saved location'));
+ app.click('Next:');app.click('Next:');
+ assert.equal(app.persisted.latitude,location.latitude);
+ assert.equal(app.persisted.longitude,location.longitude);
+ assert.equal(app.persisted.locationLabel,'Updated label');app.close();
+});
+for(const location of [{},{latitude:91,longitude:10,locationPermissionGranted:true},{latitude:33,longitude:10,locationPermissionGranted:false}]){
+ test('unusable location retains optional editor: '+JSON.stringify(location),()=>{
+ const app=mount(location);assert.ok(app.headings().includes('Your location'));
+ assert.equal(app.headings().includes('Using your saved location'),false);app.close();
+ });
+}

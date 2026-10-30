@@ -7,10 +7,10 @@ const { create, act } = require('react-test-renderer');
 const load = require('./load-typescript.cjs');
 
 const draftKey = 'foundational-flow-onboarding-draft';
-function mount(profile = {}, saved = new Map()) {
+function mount(profile = {}, saved = new Map(), hasCompletedAudit = false) {
   let completed = false, persisted;
   const storage = { getItem: k => saved.get(k) ?? null, setItem: (k, v) => saved.set(k, v), removeItem: k => saved.delete(k) };
-  const provider = { isHydrated: true, dailyProfile: profile, setAnswer() {}, setParticipationLevel() {},
+  const provider = { isHydrated: true, hasCompletedAudit, dailyProfile: profile, setAnswer() {}, setParticipationLevel() {},
     setDailyProfile: p => { persisted = p; }, completeAudit: () => { completed = true; } };
   const code = ts.transpileModule(fs.readFileSync('views/profile-setup-page.tsx', 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
@@ -134,3 +134,33 @@ for(const location of [{},{latitude:91,longitude:10,locationPermissionGranted:tr
  assert.equal(app.headings().includes('Using your saved location'),false);app.close();
  });
 }
+
+test('normal navigation autosaves every step without the save button',()=>{
+ const profile={wakeTime:'07:00',targetBedtime:'23:00',displayName:'Synthetic'};
+ let app=mount(profile);
+ for(let i=0;i<4;i++){
+  assert.equal(JSON.parse(app.saved.get(draftKey)).index,i);
+  const saved=app.saved; app.close();app=mount({},saved);
+  assert.equal(JSON.parse(saved.get(draftKey)).profile.displayName,'Synthetic');
+  if(i<3)app.click('Next:');
+ }
+ app.click('Back');assert.equal(JSON.parse(app.saved.get(draftKey)).index,2);
+ app.close();
+});
+test('completion clears autosave and completed reentry shows Finish despite stale draft',()=>{
+ const p={wakeTime:'07:00',targetBedtime:'23:00'};
+ const app=mount(p);app.click('Next:');app.click('Next:');app.click('Next:');app.click('Next:');
+ assert.equal(app.saved.has(draftKey),false);app.close();
+ const saved=new Map([[draftKey,JSON.stringify({profile:{wakeTime:'bad'},index:0})]]);
+ const complete=mount(p,saved,true);
+ assert.match(complete.stage(),/Finish/);
+ complete.close();
+});
+for(const index of [-1,4,99,'2',1.5,null])test('invalid saved index safely starts Basics: '+index,()=>{
+ const app=mount({},new Map([[draftKey,JSON.stringify({profile:{wakeTime:'07:00',targetBedtime:'23:00'},index})]]));
+ assert.match(app.stage(),/Basics/);app.close();
+});
+test('later saved step with invalid sleep data returns Schedule before completion',()=>{
+ const app=mount({},new Map([[draftKey,JSON.stringify({profile:{wakeTime:'07:00',targetBedtime:'07:00'},index:3})]]));
+ assert.match(app.stage(),/Schedule/);app.click('Next:');assert.equal(app.completed,false);app.close();
+});

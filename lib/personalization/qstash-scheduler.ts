@@ -1,3 +1,5 @@
+import { qstashErrorCategory } from "./qstash-error";
+
 // Match the endpoint to the region of the existing QStash token.
 function qstashBaseUrl() {
   const configured = process.env.QSTASH_URL?.trim();
@@ -57,6 +59,6 @@ export async function scheduleQStashDispatch(input: {
     },
   );
 
-  if (!response.ok) throw new Error(`qstash_publish_failed:${response.status}`);
+  if (!response.ok) throw new Error(`qstash_publish_failed:${response.status}:${await qstashErrorCategory(response)}`);
   return (await response.json()) as { messageId?: string; deduplicated?: boolean };
 }

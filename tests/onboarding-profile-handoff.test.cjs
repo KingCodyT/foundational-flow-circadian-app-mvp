@@ -43,10 +43,11 @@ test('profile carries the onboarding fields used by the finish screen', () => {
   }
 });
 
-test('last meal is asked once on Schedule, with caffeine use distinct from timing', () => {
+test('last meal is optional on Schedule and caffeine questions are absent', () => {
   assert.equal(source.split('input("lastMealTime"').length - 1, 1);
   const reality = source.slice(source.indexOf('{safeIndex === 3 &&'), source.indexOf('{safeIndex === 4 &&'));
   assert.doesNotMatch(reality, /lastMealTime/);
-  assert.match(reality, /caffeineUse/);
-  assert.match(source, /firstCaffeineTime/);
+  assert.doesNotMatch(source, /caffeineUse|firstCaffeineTime/);
+  assert.match(source, /last meal\? \(optional\)/);
+  assert.match(source, /general food guidance is still available/);
 });

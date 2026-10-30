@@ -150,13 +150,14 @@ test('normal navigation autosaves every step without the save button',()=>{
  app.click('Back');assert.equal(JSON.parse(app.saved.get(draftKey)).index,2);
  app.close();
 });
-test('completion clears autosave and completed reentry shows Finish despite stale draft',()=>{
+test('completion clears autosave and completed reentry offers review of stale draft',()=>{
  const p={wakeTime:'07:00',targetBedtime:'23:00'};
  const app=mount(p);app.click('Next:');app.click('Next:');app.click('Next:');app.click('Next:');
  assert.equal(app.saved.has(draftKey),false);app.close();
  const saved=new Map([[draftKey,JSON.stringify({profile:{wakeTime:'bad'},index:0})]]);
  const complete=mount(p,saved,true);
- assert.match(complete.stage(),/Finish/);
+ assert.ok(complete.buttons().includes('Review saved draft'));
+ assert.equal(JSON.parse(saved.get(draftKey)).profile.wakeTime,'bad');
  complete.close();
 });
 for(const index of [-1,4,99,'2',1.5,null])test('invalid saved index safely starts Basics: '+index,()=>{
@@ -174,4 +175,34 @@ test('Environment location is read-only without blocking setup: '+JSON.stringify
  app.click('Next:');app.click('Next:');
  assert.equal(app.buttons().some(t=>/Change location|Use my current location|Cancel location|Done editing/.test(t)),false);
  app.click('Next:');app.click('Next:');assert.equal(app.completed,true);app.close();
+});
+
+test('completed profile explicit edits resume rather than reverting to committed profile',()=>{
+ const p={wakeTime:'07:00',targetBedtime:'23:00',locationPermissionGranted:false};
+ let app=mount(p,new Map(),true);assert.match(app.stage(),/Finish/);
+ app.click('Edit Details');app.label('Edited label');app.click('Next:');app.click('Next:');
+ const saved=app.saved;assert.equal(JSON.parse(saved.get(draftKey)).intent,'profile-edit');
+ app.close();app=mount(p,saved,true);assert.match(app.stage(),/Environment/);
+ app.click('Next:');app.click('Next:');
+ assert.equal(app.persisted.locationLabel,'Edited label');assert.equal(saved.has(draftKey),false);app.close();
+});
+test('old draft recovery is explicit and cancel restores original without changing profile',()=>{
+ const p={wakeTime:'07:00',targetBedtime:'23:00'};
+ const original={profile:{...p,locationLabel:'Old draft'},index:2};
+ const saved=new Map([[draftKey,JSON.stringify(original)]]);
+ const app=mount(p,saved,true);
+ assert.ok(app.buttons().includes('Review saved draft'));
+ assert.deepEqual(JSON.parse(saved.get(draftKey)),original);
+ app.click('Review saved draft');assert.match(app.stage(),/Environment/);
+ app.click('Back');app.click('Back');app.label('Changed during review');
+ app.click('Cancel draft review');
+ assert.deepEqual(JSON.parse(saved.get(draftKey)),original);
+ assert.equal(app.persisted,undefined);app.close();
+});
+test('active edit without location and invalid step safely resumes and completes',()=>{
+ const p={wakeTime:'07:00',targetBedtime:'23:00',locationPermissionGranted:false};
+ const saved=new Map([[draftKey,JSON.stringify({profile:p,index:99,intent:'profile-edit'})]]);
+ const app=mount(p,saved,true);assert.match(app.stage(),/Basics/);
+ app.click('Next:');app.click('Next:');app.click('Next:');app.click('Next:');
+ assert.equal(app.persisted.locationPermissionGranted,false);app.close();
 });

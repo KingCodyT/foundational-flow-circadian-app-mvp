@@ -5,7 +5,7 @@ const {scheduleQStashDispatch} = load('lib/personalization/qstash-scheduler.ts')
 const lifecycle = load('lib/personalization/push-lifecycle.ts');
 const store = load('lib/personalization/server-push-store.ts');
 async function fixture(run) {
-  const values={QSTASH_TOKEN:'test-token',PUSH_DISPATCH_SECRET:'test-secret',APP_ORIGIN:'https://app.test',KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'test-token'};
+  const values={QSTASH_URL:'',QSTASH_TOKEN:'test-token',PUSH_DISPATCH_SECRET:'test-secret',APP_ORIGIN:'https://app.test',KV_REST_API_URL:'https://redis.test',KV_REST_API_TOKEN:'test-token'};
   const saved=Object.fromEntries(Object.keys(values).map(k=>[k,process.env[k]])),fetch=global.fetch;
   Object.assign(process.env,values);
   try { await run(); } finally { global.fetch=fetch;for(const [k,v] of Object.entries(saved))v===undefined?delete process.env[k]:process.env[k]=v; }
@@ -40,4 +40,24 @@ test('failed publish records failure; explicit retry recovers and successful rep
   const failed=await store.getServerPushSchedule('test-client',n.id);assert.equal(failed.state,'failed');assert.equal(publishes,1);
   const recovered=await lifecycle.scheduleReminder('test-client',n);assert.equal(recovered.state,'scheduled');assert.notEqual(recovered.scheduleRevision,failed.scheduleRevision);assert.equal(publishes,2);
   const repeat=await lifecycle.scheduleReminder('test-client',n);assert.equal(repeat.scheduleRevision,recovered.scheduleRevision);assert.equal(publishes,2);
+}));
+
+test('regional endpoints preserve destination and credentials, including trailing slash',()=>fixture(async()=>{
+  for(const base of ['https://qstash-us-east-1.upstash.io','https://qstash-eu-central-1.upstash.io/',' https://qstash.upstash.io/ ']) {
+    process.env.QSTASH_URL=base;
+    global.fetch=async(url,options)=>{
+      assert.equal(url,`${base.trim().replace(/\/$/,'')}/v2/publish/https://app.test/api/push/dispatch`);
+      assert.equal(options.headers.Authorization,'Bearer test-token');
+      assert.equal(options.headers['Upstash-Forward-Authorization'],'Bearer test-secret');
+      return new Response(JSON.stringify({messageId:'regional-message'}));
+    };
+    await scheduleQStashDispatch({destination:'https://app.test/api/push/dispatch',clientId:'test',notificationId:'meal',scheduleRevision:'1',scheduledFor:'2099-01-01T18:30:00Z'});
+  }
+}));
+test('invalid endpoint fails before sending credentials or falling back to another region',()=>fixture(async()=>{
+  global.fetch=async()=>{assert.fail('invalid endpoint must not send a request');};
+  for(const base of ['invalid','http://qstash-us-east-1.upstash.io','https://other.test','https://qstash-us-east-1.upstash.io/v2','https://user:password@qstash.upstash.io','https://qstash.upstash.io?token=secret','https://qstash.upstash.io#fragment']) {
+    process.env.QSTASH_URL=base;
+    await assert.rejects(scheduleQStashDispatch({destination:'https://app.test/api/push/dispatch',clientId:'test',notificationId:'meal',scheduleRevision:'1',scheduledFor:'2099-01-01T18:30:00Z'}),{message:'invalid_qstash_url'});
+  }
 }));

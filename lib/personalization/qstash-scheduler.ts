@@ -1,3 +1,17 @@
+// Match the endpoint to the region of the existing QStash token.
+function qstashBaseUrl() {
+  const configured = process.env.QSTASH_URL?.trim();
+  if (!configured) return "https://qstash.upstash.io";
+  let url: URL;
+  try { url = new URL(configured); } catch { throw new Error("invalid_qstash_url"); }
+  if (
+    url.protocol !== "https:" || url.username || url.password || url.port ||
+    url.search || url.hash || !/^\/$/.test(url.pathname) ||
+    !["qstash.upstash.io", "qstash-eu-central-1.upstash.io", "qstash-us-east-1.upstash.io"].includes(url.hostname)
+  ) throw new Error("invalid_qstash_url");
+  return url.origin;
+}
+
 export function qstashConfigured() {
   return Boolean(process.env.QSTASH_TOKEN && process.env.PUSH_DISPATCH_SECRET);
 }
@@ -13,6 +27,7 @@ export async function scheduleQStashDispatch(input: {
   const dispatchSecret = process.env.PUSH_DISPATCH_SECRET;
   if (!token || !dispatchSecret) throw new Error("qstash_unavailable");
 
+  const baseUrl = qstashBaseUrl();
   const notBefore = Math.max(
     Math.floor(Date.now() / 1000),
     Math.ceil(new Date(input.scheduledFor).getTime() / 1000),
@@ -21,7 +36,7 @@ export async function scheduleQStashDispatch(input: {
 
   // QStash expects the destination URL directly after /publish/, as in its SDK.
   const response = await fetch(
-    `https://qstash.upstash.io/v2/publish/${input.destination}`,
+    `${baseUrl}/v2/publish/${input.destination}`,
     {
       method: "POST",
       headers: {

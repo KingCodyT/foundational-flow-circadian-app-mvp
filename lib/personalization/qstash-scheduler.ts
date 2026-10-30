@@ -1,4 +1,16 @@
+import { createHash } from "node:crypto";
 import { qstashErrorCategory } from "./qstash-error";
+
+/** Fixed-size transport identifier; JSON preserves tuple boundaries. */
+export function qstashDeduplicationId(input: {
+  clientId: string;
+  notificationId: string;
+  scheduleRevision: string;
+}) {
+  return createHash("sha256")
+    .update(JSON.stringify([input.clientId, input.notificationId, input.scheduleRevision]))
+    .digest("hex");
+}
 
 // Match the endpoint to the region of the existing QStash token.
 function qstashBaseUrl() {
@@ -47,7 +59,7 @@ export async function scheduleQStashDispatch(input: {
         "Upstash-Method": "POST",
         "Upstash-Not-Before": String(notBefore),
         "Upstash-Retries": "3",
-        "Upstash-Deduplication-Id": `${input.clientId}:${input.notificationId}:${input.scheduleRevision}`,
+        "Upstash-Deduplication-Id": qstashDeduplicationId(input),
         "Upstash-Forward-Authorization": `Bearer ${dispatchSecret}`,
       },
       signal: AbortSignal.timeout(10000),

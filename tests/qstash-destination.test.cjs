@@ -15,7 +15,7 @@ test('QStash publish embeds raw destination URL and preserves scheduling contrac
   global.fetch=async(url,options)=>{
     assert.equal(url,'https://qstash.upstash.io/v2/publish/https://circadianflow.app/api/push/dispatch');
     assert.equal(options.method,'POST');assert.equal(options.headers['Upstash-Not-Before'],String(Date.parse(input.scheduledFor)/1000));
-    assert.equal(options.headers['Upstash-Retries'],'3');assert.equal(options.headers['Upstash-Deduplication-Id'],'test-client:test-reminder:revision-1');
+    assert.equal(options.headers['Upstash-Retries'],'3');assert.equal(options.headers['Upstash-Deduplication-Id'],require('node:crypto').createHash('sha256').update(JSON.stringify(['test-client','test-reminder','revision-1'])).digest('hex'));
     assert.equal(options.headers['Upstash-Forward-Authorization'],'Bearer test-secret');
     assert.deepEqual(JSON.parse(options.body),{clientId:input.clientId,notificationId:input.notificationId,scheduleRevision:input.scheduleRevision});
     return new Response(JSON.stringify({messageId:'test-message'}));

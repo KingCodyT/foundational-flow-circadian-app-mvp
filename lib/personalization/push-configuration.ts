@@ -13,7 +13,7 @@ export function pushFailure(error: unknown, storeOnly = false) {
   if (missing.length) return { error: "push_configuration_missing", reason: `Missing configuration: ${missing.join(", ")}`, missing };
   const code = error instanceof Error ? error.message : "push_request_failed";
   // Do not echo upstream response bodies, tokens or endpoints.
-  const safe = /^(push_store_error:\d{3}|qstash_publish_failed:\d{3}|web_push_rejected:\d{3}|push_lock_busy|invalid_app_origin|subscription_missing|reminder_expired|deferral_outside_window|stale_action|invalid_action_token|invalid_vapid_\w+|push_store_unavailable)$/.test(code) ? code : "push_dependency_request_failed";
+  const safe = /^(push_store_error:\d{3}|qstash_publish_failed:\d{3}(?::(?:unclassified|response_too_large|deduplication_rejected|schedule_rejected|destination_rejected|limit_reached|authentication_rejected|header_rejected))?|web_push_rejected:\d{3}|push_lock_busy|invalid_app_origin|subscription_missing|reminder_expired|deferral_outside_window|stale_action|invalid_action_token|invalid_vapid_\w+|push_store_unavailable)$/.test(code) ? code : "push_dependency_request_failed";
   return { error: safe, reason: safe.replaceAll("_", " ") };
 }
 export function pushOrigin(): string {

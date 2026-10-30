@@ -19,8 +19,9 @@ export async function scheduleQStashDispatch(input: {
   );
   if (!Number.isFinite(notBefore)) throw new Error("invalid_schedule_time");
 
+  // QStash expects the destination URL directly after /publish/, as in its SDK.
   const response = await fetch(
-    `https://qstash.upstash.io/v2/publish/${encodeURIComponent(input.destination)}`,
+    `https://qstash.upstash.io/v2/publish/${input.destination}`,
     {
       method: "POST",
       headers: {

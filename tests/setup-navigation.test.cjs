@@ -106,3 +106,14 @@ for (const napPattern of [undefined, 'no', 'sometimes', 'regularly']) test('setu
   if (napPattern === undefined) assert.equal(Object.hasOwn(app.persisted, 'napPattern'), false);
   app.close();
 });
+
+test('resumed legacy bedtime cannot bypass fixed-period validation at Finish', () => {
+ const profile = { wakeTime: '06:00', targetBedtime: '10:00', lastMealTime: null };
+ const saved = new Map([[draftKey, JSON.stringify({profile,index:3})]]);
+ const app = mount(profile,saved);
+ app.click('Next:');
+ assert.match(app.stage(),/Schedule/);assert.equal(app.completed,false);
+ app.click('Save and Finish Later');
+ assert.equal(JSON.parse(saved.get(draftKey)).profile.targetBedtime,'10:00');
+ app.close();
+});

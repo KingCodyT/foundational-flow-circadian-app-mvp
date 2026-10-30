@@ -91,3 +91,18 @@ test('clearing a saved meal remains optional through completion', () => {
   assert.equal(app.persisted.lastMealTime, null);
   app.close();
 });
+
+for (const napPattern of [undefined, 'no', 'sometimes', 'regularly']) test('setup preserves existing nap data: ' + napPattern, () => {
+  const profile = { wakeTime: '07:00', targetBedtime: '23:00', lastMealTime: null };
+  if (napPattern !== undefined) profile.napPattern = napPattern;
+  let app = mount(profile);
+  app.click('Next:'); app.click('Next:'); app.click('Back'); app.click('Save and Finish Later');
+  const saved = app.saved;
+  assert.equal(JSON.parse(saved.get(draftKey)).profile.napPattern, napPattern);
+  app.close(); app = mount(profile, saved);
+  app.click('Next:'); app.click('Next:'); app.click('Next:');
+  assert.equal(app.completed, true);
+  assert.equal(app.persisted.napPattern, napPattern);
+  if (napPattern === undefined) assert.equal(Object.hasOwn(app.persisted, 'napPattern'), false);
+  app.close();
+});

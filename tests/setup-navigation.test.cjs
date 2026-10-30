@@ -35,12 +35,12 @@ function mount(profile = {}, saved = new Map()) {
     click(label) { act(() => tree.root.findAllByType('button').find(b => text(b).includes(label)).props.onClick()); },
     stage: () => tree.root.findAllByType('li').find(li => li.props['aria-current'] === 'step').children.map(text).join(''),
     alerts: () => tree.root.findAll(n => n.props.role === 'alert').length,
-    meal(value) { act(() => tree.root.findAllByType('input').find(n => n.props.type === 'time').props.onChange({ target: { value } })); },
+    meal(value) { act(() => tree.root.findByType(load('components/optional-meal-time-field.tsx').OptionalMealTimeField).props.onChange(value)); },
     close() { act(() => tree.unmount()); },
   };
 }
 
-for (const meal of [null, '18:30']) test('setup navigation and completion preserve optional meal ' + meal, () => {
+for (const meal of [null, '18:30', '19:01']) test('setup navigation and completion preserve optional meal ' + meal, () => {
   const old = { wakeTime: '07:00', targetBedtime: '23:00', lastMealTime: meal,
     timeZone: 'UTC', firstCaffeineTime: '09:00', caffeineUse: 'yes' };
   let app = mount(old);
@@ -79,5 +79,15 @@ test('an entered meal survives navigation and completion', () => {
   app.click('Next:'); app.meal('18:45'); app.click('Next:'); app.click('Back');
   app.click('Next:'); app.click('Next:'); app.click('Next:');
   assert.equal(app.persisted.lastMealTime, '18:45');
+  app.close();
+});
+
+test('clearing a saved meal remains optional through completion', () => {
+  const app = mount({ wakeTime: '07:00', targetBedtime: '23:00', lastMealTime: '19:01' });
+  app.click('Next:'); app.click('Clear meal time'); app.click('Next:');
+  app.click('Back'); app.click('Save and Finish Later');
+  assert.equal(JSON.parse(app.saved.get(draftKey)).profile.lastMealTime, null);
+  app.click('Next:'); app.click('Next:'); app.click('Next:');
+  assert.equal(app.persisted.lastMealTime, null);
   app.close();
 });

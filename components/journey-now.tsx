@@ -10,7 +10,8 @@ import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
 import { FoodPreview } from "./food-guidance";
 import { LightCheckIn } from "./light-check-in";
 
-export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, children }: {
+export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, coaching, headline, children }: {
+  coaching?: ReactNode; headline?: string;
   profile: DailyProfile | null; now: Date; voice: VoiceRelationshipOutput; reminder: ContextualReminder | null;
   preview: string | null;
   firstRun?: { heading: string; action: string; reason: string; focus: string; setup: ReactNode; summary: string };
@@ -25,11 +26,12 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
     <header className="journey-intro today-intro">
       <p className="journey-eyebrow">TODAY</p>
       <p className="today-date">{new Intl.DateTimeFormat("en-US", { timeZone: profile?.timeZone || undefined, weekday: "long", month: "long", day: "numeric" }).format(now)}</p>
-      <h1>{profile?.displayName ? `Hello, ${profile.displayName}.` : "Welcome to today."}</h1>
+      <h1>{headline || (profile?.displayName ? `Hello, ${profile.displayName}.` : "Welcome to today.")}</h1>
     </header>
     <main className="journey-content today-content">
       <JourneyCard className="today-coaching-focus"><h2>Your current coaching focus</h2><h3>{firstRun?.focus || (primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : profile?.wakeTime && profile?.targetBedtime ? "Your saved sleep and wake schedule" : "Your daily schedule")}</h3>{!firstRun && primaryState && <p>{primaryState.replaceAll("_", " ")}</p>}</JourneyCard>
-      {(firstRun || action) && <JourneyCard className="journey-focus today-moment">
+      {coaching}
+      {!coaching && (firstRun || action) && <JourneyCard className="journey-focus today-moment">
         <h2>{firstRun?.heading || "What matters now"}</h2>
         <h3>{firstRun?.action || (action ? reminder.action : hasLocation ? "You’re set for now." : "Save your location to personalize your day.")}</h3>
         <p>{firstRun?.reason || (action ? reminder.reason : hasLocation ? "Your schedule is working in the background. We’ll bring you one useful step when the timing matters." : "Local daylight is foundational to your guidance. Add your location using the button below.")}</p>

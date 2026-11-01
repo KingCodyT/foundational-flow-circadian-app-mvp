@@ -1,0 +1,32 @@
+TODAY COACHING INTEGRATION — LOCAL REVIEW ONLY
+Base: origin/main 13695f9bd7b11d37b54eb97e20989dc86e181a64, fetched from GitHub 2026-11-01. Matches supplied production SHA.
+Branch: review/today-coaching-loop-local
+Checkout: /Users/codyoakland/Documents/Codex/2026-11-01/task-2/coaching-integration
+Existing checkouts and PR14 food work untouched. No remote push, merge, deployment, credentials, real user state or notification sends.
+
+IMPLEMENTED
+Today response loop uses existing contextual reminder, voice/action gating, accepted focus, event records and schedule engine. Done/skip persist via provider. UI duplicate lock plus existing record checks; response revalidates real instant/window/local date. Smaller choices do not complete; explicit I did that required. Light, screen, movement, daylight and sleep alternatives match their underlying behaviors; meal alternatives are not invented. Safety/work branch offers skip/back, never unsafe completion suggestion.
+Later retains the existing 15-minute interval, confirms before writing, only if strictly within remaining event window. Cancel is available BEFORE confirmation. Once confirmed, guidance returns at the deferred time through existing scheduling infrastructure; no promise of confirmed background delivery. No postcommit cancel button: a local-only undo cannot reliably cancel an already accepted server reminder without separate transport work.
+Progress counts distinct valid dates for accepted signal in last seven profile-local days, rejects malformed/future/misdated records and makes no sleep outcome claim. Counts update immediately after a response.
+Return prompt uses a separate versioned browser-local last-Today-visit date keyed by clientId. Shows after at least one full unvisited local calendar day (prior < yesterday); absence does not change evidence/progression. Confirmation is retained, cancel makes no schedule changes. Save changes only wake/bedtime via existing normalization; other anchors/location/zone/preferences remain unchanged. Unknown first visit does not infer absence. Browser storage failure does not block coaching.
+Established focus now explains existing engine behavior: routine prompts stop, accepted focus stays. Approved phrases applied. Review assessment link is read-only navigation, not a pretend focus-switch button.
+Headline only for an active evening-light opportunity at local hour >=17, excluding shift/overnight profiles. Ordinary daytime/shift users get existing greeting. FirstRunToday and onboarding remain unchanged.
+
+PRODUCT DECISION STILL OPEN
+No new established reminder cadence implemented. Existing engine already suppresses these prompts. Async clarification asked whether to retain this behavior or introduce three-day cadence; no answer received during implementation. No fake selectable frequency or silent focus rotation. Actual focus-switching UI requires a separate explicit policy/acceptance path; assessment review does not switch focus.
+
+VERIFICATION
+- tsc --noEmit passed.
+- Full npm run test:non-browser: 450 passed, 0 failed. After final UI refinements, focused runtime/coaching suite: 41 passed, 0 failed.
+- Added pure tests for strict deferral boundary, stale/daychanged/handled response rejection, invalid/future/misdated/deduplicated progress, profile timezone and headline constraints, screen-specific alternative.
+- Added real React/provider test for smaller selection without completion, explicit completion, reload, next-day opportunity, skip scope, timezone change, accepted-focus preservation, notifications-off preservation.
+- Existing runtime regression initially caught redundant auxiliary visit writes. Fixed idempotent same-day visit writes; all 37 existing runtime tests now pass.
+- Chrome actual app on isolated origin 127.0.0.1:4180 with disposable synthetic profiles: shared/low-energy/safety branches and back/cancel; double-click completion once; refresh persists completion, skip, and deferred time; short-window Later; real historical progress; established explanation; returning confirmation persists; blank schedule validation/cancel; valid schedule changes timing; keyboard Enter; 390x844 mobile width equals scrollWidth 390; overnight/morning headline exclusion; assessment link and awaited browser Back/Forward preserve established focus. Final error log empty.
+- Validation defect from controlled time-field interaction fixed by validating actual input values before save; blank rejection and mobile valid save verified.
+- Build passed. Final build rerun after UI refinements; see task result for final status. Build warns of old caniuse-lite and existing mac WASM configuration. No dependency updates made.
+- npm run lint could not execute rules: repository has no ESLint configuration; Next prompted to choose a configuration. Did not silently add tooling/configuration. Type checking and build are separate passed checks.
+- No real push sent: all fixtures remindersEnabled=false and mealRemindersEnabled=false, no production env copied, no push API requests in review server logs. Notification transport itself was not modified/tested with real enabled delivery.
+
+REVIEW
+Run npm run dev -- --hostname 127.0.0.1 --port 4180 . Browser review entry /coaching-review uses a LOCAL UNTRACKED dev-only fixture route (not in commit; production mode returns 404). It seeds real provider storage on this isolated origin and opens /today. Buttons use live current time and saved schedules around it, not production data. UI fixtures can expire as real time moves; reseed from review entry. Main review /today.
+No physical-device, screen-reader or multi-browser audit. Day rollover/timezones verified with real-provider deterministic tests; no waiting overnight in browser. Initial test did not preserve request completion timing on navigation; rerun with waitForURL passed. First-run onboarding unchanged and covered by existing non-browser suite; no new full browser onboarding run. Optional location and Food cards are pre-existing and deliberately not redesigned.

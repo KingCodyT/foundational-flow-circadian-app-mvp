@@ -384,3 +384,19 @@ a {
 .journey-nav{background:#111514;color:#d8d2c7;border-top:2px solid #c89432}
 .journey-nav a[aria-current="page"]{color:#c89432}
 .journey-nav a[aria-current="page"]:after{background:#c89432}
+
+/* Today response loop: scoped to the existing Today surface. */
+.today-coaching-loop [role=region]:focus { outline: 2px solid #8a641e; outline-offset: 6px; border-radius: 8px; }
+.today-coach-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.today-coach-actions .journey-primary,.today-coach-actions .journey-outline { min-height: 48px; padding: 10px 20px; font-size: 17px; }
+.today-coach-actions .journey-primary { color: white; }
+.today-coach-fields { display:flex; flex-wrap:wrap; gap:20px; }
+.today-coach-fields label { display:grid; gap:8px; }
+.today-coach-fields input { padding:12px; border:1px solid #b5aa97; border-radius:8px; background:#fffdf8; }
+.today-coach-progress { border-top:1px solid #d2cabc; padding-top:20px; font-size:15px!important; }
+.today-coach-note { font-size:14px!important; }
+.today-coaching-loop [role=alert]:empty { display:none; }
+.today-coaching-loop [role=alert] { color:#8b241c; }
+@media(max-width:600px){.today-coach-actions>button{flex-grow:1}.today-intro h1{white-space:normal;overflow-wrap:break-word}}
+.today-coaching-loop h3 { font-size:28px; line-height:1.2; margin:8px 0 16px; }
+.today-coaching-loop p { margin:12px 0; }

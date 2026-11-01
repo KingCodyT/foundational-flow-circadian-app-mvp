@@ -463,3 +463,20 @@ test('Profile assessment presentation exposes no mutation handlers and keeps rea
  h.navigate('/timeline');h.navigate('/profile');
  assert.equal(h.value.runtime,runtime);assert.equal(h.value.acceptedFocus,focus);assert.equal(h.storage.get(key),saved);assert.equal(h.writes.length,writes);
 });
+
+test('Today loop real provider: explicit smaller completion, refresh, timezone/day rollover and skip', t => {
+  const oldRAF = global.requestAnimationFrame;
+  global.requestAnimationFrame = fn => { fn(); return 0; };
+  t.after(()=>{global.requestAnimationFrame=oldRAF;});
+  const initial=base({answers:{evening_light_reduction:'bright_home'},dailyProfile:{wakeTime:'07:00',targetBedtime:'22:00',timeZone:'UTC',locationPermissionGranted:false,remindersEnabled:false,coachingTargetSignalId:'evening_light_reduction'}});
+  const h=host(t,initial,'2026-09-10T20:05:00Z',true);
+  const text=node=>node.children.map(x=>typeof x==='string'?x:text(x)).join('');
+  const click=label=>{const b=h.rendered.findAllByType('button').find(x=>text(x)===label);assert.ok(b,label);Renderer.act(()=>b.props.onClick());};
+  click('Smaller step');click('I’m sharing the room');assert.equal(h.value.eventStateByDate?.['2026-09-10']?.dim_house,undefined);
+  click('I did that');assert.equal(h.value.eventStateByDate['2026-09-10'].dim_house.status,'completed');
+  const accepted=clone(h.value.acceptedFocus);h.reload();assert.ok(text(h.rendered).includes('You marked this step done.'));assert.deepEqual(h.value.acceptedFocus,accepted);
+  h.tick('2026-09-11T20:05:00Z');assert.ok(text(h.rendered).includes('Smaller step'));click('Not today');assert.equal(h.value.eventStateByDate['2026-09-11'].dim_house.status,'skipped');
+  assert.equal(h.value.eventStateByDate['2026-09-10'].dim_house.status,'completed');h.reload();assert.ok(text(h.rendered).includes('Today’s prompt is closed.'));
+  h.action(v=>v.setDailyProfile({...v.dailyProfile,timeZone:'America/Los_Angeles'}));assert.deepEqual(h.value.acceptedFocus,accepted);
+  assert.equal(h.value.dailyProfile.remindersEnabled,false);
+});

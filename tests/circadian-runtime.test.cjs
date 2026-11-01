@@ -480,3 +480,21 @@ test('Today loop real provider: explicit smaller completion, refresh, timezone/d
   h.action(v=>v.setDailyProfile({...v.dailyProfile,timeZone:'America/Los_Angeles'}));assert.deepEqual(h.value.acceptedFocus,accepted);
   assert.equal(h.value.dailyProfile.remindersEnabled,false);
 });
+
+test('weekly check-ins persist in real provider without touching evidence, focus, anchors or notifications', t => {
+ const events=Object.fromEntries(Array.from({length:7},(_,i)=>[`2026-10-${20+i}`,{dim_house:{status:'completed',at:`2026-10-${20+i}T20:00:00Z`}}]));
+ const initial=base({answers:{evening_light_reduction:'bright_home'},dailyProfile:{timeZone:'America/Los_Angeles',wakeTime:'07:00',targetBedtime:'22:00',lastMealTime:'18:30',locationPermissionGranted:false,remindersEnabled:false,mealRemindersEnabled:false,coachingTargetSignalId:'evening_light_reduction'},eventStateByDate:events});
+ const h=host(t,initial,'2026-11-01T20:00:00Z'),id='evening_light_reduction';
+ assert.equal(h.value.currentPersonalization.primaryCoachingTarget.coachingState,'ESTABLISHED');
+ const focus=clone(h.value.acceptedFocus),evidence=clone(h.value.eventStateByDate);
+ h.action(v=>v.updateWeeklyCheckin(id,{type:'weekly'}));
+ const anchor=h.value.dailyProfile.weeklyCheckins[id].anchorAt;
+ h.reload();assert.equal(h.value.dailyProfile.weeklyCheckins[id].anchorAt,anchor);
+ h.tick('2026-11-20T20:00:00Z');
+ h.action(v=>{v.updateWeeklyCheckin(id,{type:'answer',expectedAnchor:anchor,response:'on_track'});v.updateWeeklyCheckin(id,{type:'answer',expectedAnchor:anchor,response:'on_track'});});
+ assert.equal(h.value.dailyProfile.weeklyCheckins[id].anchorAt,'2026-11-20T20:00:00.000Z');
+ h.reload();assert.deepEqual(h.value.eventStateByDate,evidence);assert.deepEqual(h.value.acceptedFocus,focus);
+ assert.equal(h.value.dailyProfile.lastMealTime,'18:30');assert.equal(h.value.dailyProfile.targetBedtime,'22:00');assert.equal(h.value.dailyProfile.remindersEnabled,false);
+ h.action(v=>v.updateWeeklyCheckin(id,{type:'off'}));h.reload();assert.equal(h.value.dailyProfile.weeklyCheckins[id].mode,'off');
+ h.action(v=>v.updateWeeklyCheckin('morning_light_timing',{type:'weekly'}));assert.equal(h.value.dailyProfile.weeklyCheckins.morning_light_timing,undefined);
+});

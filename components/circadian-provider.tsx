@@ -1,5 +1,6 @@
 "use client";
 
+import { applyWeeklyAction, type WeeklyAction } from '@/lib/weekly-checkin';
 import {
   createContext,
   useCallback,
@@ -119,6 +120,7 @@ type CircadianState = {
   setAnswer: (questionId: string, value: string) => void;
   completeAudit: () => void;
   setParticipationLevel: (level: ParticipationLevel | null) => void;
+  updateWeeklyCheckin: (signalId: string, action: WeeklyAction) => void;
   setDailyProfile: (profile: DailyProfile | null) => void;
   resetAudit: () => void;
 };
@@ -359,6 +361,13 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
 
   const setParticipationLevel = (level: ParticipationLevel | null) => {
     setParticipationLevelState(level);
+  };
+
+  const updateWeeklyCheckin = (signalId: string, action: WeeklyAction) => {
+    const target = selectors?.day1.primaryCoachingTarget;
+    if (target?.signalId !== signalId) return;
+    const instant = new Date();
+    setDailyProfileState(current => applyWeeklyAction(current, signalId, action, instant, target.coachingState === 'ESTABLISHED'));
   };
 
   const setDailyProfile = (profile: DailyProfile | null) => {
@@ -649,6 +658,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
         completeAudit,
         setParticipationLevel,
         setDailyProfile,
+        updateWeeklyCheckin,
         resetAudit,
       }}
     >

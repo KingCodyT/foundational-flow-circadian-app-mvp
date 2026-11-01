@@ -34,7 +34,10 @@ export type CategoryDefinition = {
 
 export type ParticipationLevel = "BASELINE" | "GUIDED_FLOW" | "FULL_FLOW";
 
+export type WeeklyCheckin = { version: 1; mode: 'weekly' | 'off'; anchorAt?: string; answeredAt?: string; lastResponse?: 'on_track' | 'adjusted' };
+
 export type DailyProfile = {
+  weeklyCheckins?: Record<string, WeeklyCheckin>;
   displayName?: string;
   dateOfBirth?: string;
   gender?: string;

@@ -22,3 +22,11 @@ test('headline uses local context and excludes morning/shift schedules; alternat
  assert.equal(eveningHeadline({timeZone:'UTC',workStructure:'overnight'},event,new Date('2026-11-01T20:05Z')),false);
  assert.match(smallerAction('digital_sunset'),/screen/);assert.equal(smallerAction('last_meal'),null);
 });
+
+test('saved wall-clock display uses AM/PM without timezone conversion',()=>{
+ const {savedClockTime,savedZoneLabel}=load('lib/today-coaching.ts');
+ for(const [input,expected] of [['00:00','12:00 AM'],['12:00','12:00 PM'],['21:56','9:56 PM'],['01:05','1:05 AM'],['23:59','11:59 PM']])assert.equal(savedClockTime(input),expected);
+ for(const invalid of [null,'','24:00','8:00','12:99'])assert.equal(savedClockTime(invalid),'not set');
+ for(const zone of ['UTC','America/Los_Angeles','Asia/Tokyo'])assert.equal(savedZoneLabel({timeZone:zone}),`saved timezone: ${zone}`);
+ assert.equal(savedZoneLabel(null),'device timezone (no timezone saved)');
+});

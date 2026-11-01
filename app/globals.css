@@ -400,3 +400,29 @@ a {
 @media(max-width:600px){.today-coach-actions>button{flex-grow:1}.today-intro h1{white-space:normal;overflow-wrap:break-word}}
 .today-coaching-loop h3 { font-size:28px; line-height:1.2; margin:8px 0 16px; }
 .today-coaching-loop p { margin:12px 0; }
+
+/* Focused Today hierarchy; onboarding and other surfaces keep their layout. */
+.today-reviewed {max-width:760px;margin:0 auto;}
+.today-reviewed .today-intro {min-height:0;padding:10px 8px 20px;background:rgba(250,247,240,.94);border-radius:16px;margin-bottom:8px;}
+.today-reviewed .today-intro h1 {font-size:clamp(30px,4vw,43px);line-height:1.12;white-space:normal;color:#20211e;}
+.today-reviewed .today-date {margin:4px 0;font-size:14px!important;color:#57584f;}
+.today-reviewed .journey-eyebrow {font-size:13px;letter-spacing:3px;margin:0;}
+.today-reviewed .today-content {gap:12px;}
+.today-reviewed .today-focus-line {font-size:13px;color:#393a33;margin:0;padding:10px 12px;background:#f5f1e9;border-radius:8px;line-height:1.5;}
+.today-reviewed .today-focus-line strong {font-weight:600;}
+.today-reviewed .today-coaching-loop {background:#fffdf8;border:1px solid #d8cbb3;padding:30px;box-shadow:0 10px 32px #342c1710;}
+.today-reviewed .today-coaching-loop p {color:#4d5047;font-size:17px;line-height:1.55;}
+.today-reviewed .today-coach-actions .journey-primary {background:#795619;color:#fff;}
+.today-reviewed .today-supporting {padding:12px 16px;background:#f5f1e9;border-radius:12px;}
+.today-reviewed .today-supporting p {font-size:14px;line-height:1.5;}
+.today-reviewed .today-supporting details {border-top:1px solid #dcd5c8;padding:12px 0;}
+.today-reviewed .today-supporting summary {font-size:15px;cursor:pointer;min-height:28px;}
+.today-reviewed .today-supporting a {font-size:14px;color:#705018;text-decoration:underline;text-underline-offset:3px;}
+.today-reviewed .today-supporting .journey-card {background:transparent;box-shadow:none;border:0;padding:14px 0;}
+.today-reviewed .today-supporting .journey-card h3 {font-size:22px;}
+.today-reviewed .today-supporting .journey-outline {display:inline-flex;min-height:42px;font-size:15px;padding:8px 15px;}
+.today-reviewed .today-location-summary>p {display:inline;margin-right:12px;}
+.today-reviewed .today-location-summary>details {border-top:0;padding-bottom:8px;}
+.today-reviewed .today-food-link {display:inline-block;margin-bottom:14px;}
+@media(max-width:600px){.today-reviewed .today-coaching-loop{padding:24px 20px}.today-reviewed .today-intro{padding:12px}.today-reviewed .today-coaching-loop h3{font-size:27px}}
+.today-review-banner {background:#252722;color:#fff6df;border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.5;}

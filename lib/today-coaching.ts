@@ -30,3 +30,13 @@ export function smallerAction(id: string): string | null {
   // Meal timing has its own evidence flow. Do not invent a substitute meal prescription.
   return null;
 }
+
+/** Saved HH:MM is a wall time, never an instant to convert to the device zone. */
+export function savedClockTime(value?: string | null): string {
+  if (!value || !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) return 'not set';
+  const [hour, minute] = value.split(':').map(Number);
+  return `${hour % 12 || 12}:${String(minute).padStart(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}`;
+}
+export function savedZoneLabel(profile: DailyProfile | null): string {
+  return profile?.timeZone ? `saved timezone: ${profile.timeZone}` : 'device timezone (no timezone saved)';
+}

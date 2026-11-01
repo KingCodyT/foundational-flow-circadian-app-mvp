@@ -8,6 +8,7 @@ import type { ContextualReminder } from "@/lib/personalization/contextual-remind
 import type { VoiceRelationshipOutput } from "@/lib/voice/voice-relationship";
 import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
 import { FoodPreview } from "./food-guidance";
+import { LightGuidePreview } from "./light-guide-preview";
 import { LightCheckIn } from "./light-check-in";
 
 export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, coaching, headline, children }: {
@@ -50,7 +51,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
       {firstRun && <p className="today-context">{firstRun.summary}</p>}
       {coaching ? <div className="today-supporting">
         {!hasLocation && <div className="today-location-summary"><p>Daylight timing needs your location.</p><Link href="/profile#profile-location">Add location</Link><details><summary>Why location matters</summary><p>Location is optional. Your schedule still works without it; sunrise, sunset, and day length need coordinates. A location label alone does not provide those coordinates.</p></details></div>}
-        {hasLocation && <details><summary>How today’s light affects your body</summary><LightCheckIn profile={profile} now={now} /></details>}
+        <LightGuidePreview profile={profile} now={now} />
         <details><summary>Food ideas for your day</summary><FoodPreview profile={profile} now={now} suppressNudge={reminder?.id === "last_meal"} /></details>
         <Link href="/food" className="today-food-link">Open Food →</Link>
         {primaryState && <details><summary>About your current focus</summary><p>Current stage: {primaryState.replaceAll("_", " ").toLowerCase()}. Your focus stays selected unless you explicitly change it.</p></details>}

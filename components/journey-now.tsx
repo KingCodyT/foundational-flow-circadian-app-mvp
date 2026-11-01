@@ -49,7 +49,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
       </JourneyCard>}
       {firstRun && <p className="today-context">{firstRun.summary}</p>}
       {coaching ? <div className="today-supporting">
-        {!hasLocation && <div className="today-location-summary"><p>Daylight timing needs your location.</p><Link href="/profile#profile-location">Add location</Link><details><summary>Why location matters</summary><LocationRequiredNotice profile={profile} /></details></div>}
+        {!hasLocation && <div className="today-location-summary"><p>Daylight timing needs your location.</p><Link href="/profile#profile-location">Add location</Link><details><summary>Why location matters</summary><p>Location is optional. Your schedule still works without it; sunrise, sunset, and day length need coordinates. A location label alone does not provide those coordinates.</p></details></div>}
         {hasLocation && <details><summary>Light check-in</summary><LightCheckIn profile={profile} now={now} /></details>}
         <details><summary>Food ideas for your day</summary><FoodPreview profile={profile} now={now} suppressNudge={reminder?.id === "last_meal"} /></details>
         <Link href="/food" className="today-food-link">Open Food →</Link>

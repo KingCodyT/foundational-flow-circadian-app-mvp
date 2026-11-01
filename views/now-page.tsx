@@ -5,6 +5,7 @@ import { useMemo, useRef } from "react";
 import { TodayCoach } from '@/components/today-coach';
 import { eveningHeadline, reportedDays, responseAllowed } from '@/lib/today-coaching';
 import { eventSupportsSignal } from '@/lib/personalization/now-coaching';
+import { selectFirstRunGuidance } from "@/lib/personalization/first-run-guidance";
 import { FirstRunToday } from "@/components/first-run-today";
 import { JourneyNow } from "@/components/journey-now";
 import { FlowShell } from "@/components/flow-shell";
@@ -95,7 +96,7 @@ export default function NowPage() {
   return <JourneyNow profile={dailyProfile} voice={voice} reminder={surfacedEvent && activeEvent ? { ...activeEvent, action: coachingDecision.candidate.originalDecision.reason === "adapted_feasible_action_due_to_constraint" ? coachingDecision.candidate.adaptedAction || activeEvent.action : activeEvent.action } : null}
     headline={eveningHeadline(dailyProfile, activeEvent, now) ? 'The day’s done. Give your body the message.' : undefined}
     coaching={<>{process.env.NODE_ENV === 'development' && clientId === 'coaching-review-only' && <aside className="today-review-banner">LOCAL REVIEW · Synthetic profile and schedule. “Evening” refers to the test schedule, not your local time. Device clock: {new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',hour12:true,timeZoneName:'short'}).format(now)}.</aside>}<TodayCoach signalId={signalId || ''} updateWeekly={updateWeeklyCheckin} key={`${todayKey}:${signalId}`} profile={dailyProfile} clientId={clientId} now={now} day={todayKey}
-      reminder={displayedReminder} pending={pending} handled={handled}
+      reminder={displayedReminder} pending={pending} handled={handled} nextOpportunity={dailyProfile ? selectFirstRunGuidance(dailyProfile, now, eventStateByDate, signalId) ?? undefined : undefined}
       count={reportedDays(eventStateByDate, signalId, new Date(), profileTimeZone)} established={currentPersonalization.primaryCoachingTarget.coachingState === 'ESTABLISHED'}
       respond={respond} saveProfile={setDailyProfile} /></>}
     preview={preview} respond={respond} now={now} primarySignalId={currentPersonalization.primaryCoachingTarget.signalId}

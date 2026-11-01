@@ -1,4 +1,5 @@
 "use client";
+import { focusReason, establishedReason } from '@/lib/coaching-explanations';
 
 import { useMemo, useRef } from "react";
 
@@ -23,7 +24,7 @@ import { buildVoiceRelationshipOutput } from "@/lib/voice/voice-relationship";
 
 export default function NowPage() {
   const submitted = useRef(new Set<string>());
-  const { dailyProfile, setDailyProfile, updateWeeklyCheckin, clientId, participationLevel, eventStateByDate,
+  const { answers, dailyProfile, setDailyProfile, updateWeeklyCheckin, clientId, participationLevel, eventStateByDate,
     now, environment, currentPersonalization, reconsideration, firstRunHandoff, notificationState, getEventStateForDate, getFoodTimingEvidenceForDate, setEventRecord, isHydrated } = useCircadian();
   const profileTimeZone = dailyProfile?.timeZone ?? null;
   const todayKey = localDateKey(now, profileTimeZone);
@@ -95,9 +96,9 @@ export default function NowPage() {
   if (firstRunHandoff && dailyProfile) return <FirstRunToday now={now} voice={voice} />;
   return <JourneyNow profile={dailyProfile} voice={voice} reminder={surfacedEvent && activeEvent ? { ...activeEvent, action: coachingDecision.candidate.originalDecision.reason === "adapted_feasible_action_due_to_constraint" ? coachingDecision.candidate.adaptedAction || activeEvent.action : activeEvent.action } : null}
     headline={eveningHeadline(dailyProfile, activeEvent, now) ? 'The day’s done. Give your body the message.' : undefined}
-    coaching={<>{process.env.NODE_ENV === 'development' && clientId === 'coaching-review-only' && <aside className="today-review-banner">LOCAL REVIEW · Synthetic profile and schedule. “Evening” refers to the test schedule, not your local time. Device clock: {new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',hour12:true,timeZoneName:'short'}).format(now)}.</aside>}<TodayCoach signalId={signalId || ''} updateWeekly={updateWeeklyCheckin} key={`${todayKey}:${signalId}`} profile={dailyProfile} clientId={clientId} now={now} day={todayKey}
+    coaching={<><p className="today-focus-line">{focusReason(answers, signalId || '')}</p>{process.env.NODE_ENV === 'development' && clientId === 'coaching-review-only' && <aside className="today-review-banner">LOCAL REVIEW · Synthetic profile and schedule. “Evening” refers to the test schedule, not your local time. Device clock: {new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',hour12:true,timeZoneName:'short'}).format(now)}.</aside>}<TodayCoach signalId={signalId || ''} updateWeekly={updateWeeklyCheckin} key={`${todayKey}:${signalId}`} profile={dailyProfile} clientId={clientId} now={now} day={todayKey}
       reminder={displayedReminder} pending={pending} handled={handled} nextOpportunity={dailyProfile ? selectFirstRunGuidance(dailyProfile, now, eventStateByDate, signalId) ?? undefined : undefined}
-      count={reportedDays(eventStateByDate, signalId, new Date(), profileTimeZone)} established={currentPersonalization.primaryCoachingTarget.coachingState === 'ESTABLISHED'}
+      establishedExplanation={establishedReason(answers, signalId || '', currentPersonalization.signalStates[signalId || '']?.notes)} count={reportedDays(eventStateByDate, signalId, new Date(), profileTimeZone)} established={currentPersonalization.primaryCoachingTarget.coachingState === 'ESTABLISHED'}
       respond={respond} saveProfile={setDailyProfile} /></>}
     preview={preview} respond={respond} now={now} primarySignalId={currentPersonalization.primaryCoachingTarget.signalId}
     primaryState={currentPersonalization.primaryCoachingTarget.coachingState} progress={progress}>

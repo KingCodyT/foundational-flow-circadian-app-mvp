@@ -41,3 +41,11 @@ test('future morning and overnight labels follow saved local clock, with no prio
  assert.equal(overnight.copy.heading,'Start here tomorrow at 1:00 AM');
  assert.doesNotMatch(overnight.copy.why,/missed|ended|passed|last opportunity/);
 });
+test('completed supporting and same-focus steps explain the count and actual next date, including overnight',()=>{
+ for(const [p,now,signal] of [[profile,new Date('2026-11-02T04:05:00Z'),'morning_light_timing'],[{...profile,wakeTime:'18:00',targetBedtime:'09:00',workStructure:'overnight'},new Date('2026-11-02T15:05:00Z'),'morning_light_timing'],[profile,new Date('2026-11-01T14:05:00Z'),'morning_light_timing']]){
+  const {copy,next}=context(p,now,signal);
+  const html=renderToStaticMarkup(React.createElement(TodayCoach,{profile:p,now,signalId:signal,clientId:'test',day:'2026-11-01',reminder:null,pending:null,count:0,established:false,respond:()=>false,saveProfile(){},updateWeekly(){},firstStepContext:copy,handled:{status:'completed',at:now.toISOString()},nextOpportunity:next}));
+  if(copy.next)assert.match(html,/supporting step done.*does not add a completion/);else assert.doesNotMatch(html,/supporting step/);
+  assert.match(html,/Your next focus opportunity is/);assert.ok(html.includes(new Intl.DateTimeFormat('en-US',{timeZone:p.timeZone,hour:'numeric',minute:'2-digit',hour12:true}).format(new Date(next.start))));
+ }
+});

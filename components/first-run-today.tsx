@@ -1,9 +1,9 @@
 "use client";
+import { focusReason } from '@/lib/coaching-explanations';
 
 import { firstStepExplanation } from '@/lib/personalization/first-step-explanation';
 import { TodayCoach } from './today-coach';
 import { reportedDays } from '@/lib/today-coaching';
-import { questionnaire } from '@/lib/questionnaire';
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCircadian } from "./circadian-provider";
@@ -84,8 +84,6 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
       </>}
   </div>;
   const signalId = currentPersonalization?.primaryCoachingTarget.signalId || '';
-  const question = questionnaire.find(q => q.id === signalId);
-  const answer = question?.options.find(option => option.value === answers[question.id]);
   const respond = (response: "completed" | "skipped" | "adjust", remindAt?: string): boolean => {
     const at = new Date();
     const key = `${effective.dateKey}:${effective.eventId}:${response}:${remindAt || ''}`;
@@ -114,8 +112,7 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
   return <JourneyNow profile={profile} now={now} voice={voice} reminder={reminder} preview={null}
     primarySignalId={signalId} primaryState={currentPersonalization?.primaryCoachingTarget.coachingState} progress={[]} respond={respond}
     coaching={<>
-      <details className="today-focus-line"><summary>Why this focus?</summary><p>{answer ? `You reported: “${answer.detail || answer.label}” That helped choose this focus.` : 'Your assessment answers helped choose this focus.'} Your focus stays selected as you practice.</p>
-      </details>
+      <p className="today-focus-line">{focusReason(answers, signalId)}</p>
       <TodayCoach signalId={signalId} updateWeekly={updateWeeklyCheckin} profile={profile} clientId={clientId} now={now}
         firstStepContext={explanation} handled={handled} nextOpportunity={nextOpportunity} day={effective.dateKey} reminder={reminder} pending={current ? null : upcoming} count={reportedDays(eventStateByDate, signalId, now, profile.timeZone)}
         established={false} respond={respond} saveProfile={setDailyProfile} />

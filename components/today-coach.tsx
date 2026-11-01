@@ -7,7 +7,7 @@ import { deferredTime, isLightReduction, smallerAction, savedClockTime, savedZon
 import { shiftDateKey } from '@/lib/schedule-time';
 
 type Props = {
-  signalId: string; updateWeekly: (id: string, action: WeeklyAction) => void;
+  establishedExplanation?: string; signalId: string; updateWeekly: (id: string, action: WeeklyAction) => void;
   profile: DailyProfile | null; clientId: string; now: Date; day: string;
   reminder: ContextualReminder | null; pending: ContextualReminder | null;
   firstStepContext?: { heading: string; why: string; next?: { start: string; action: string; label: string; clock: string; reason?: string } };
@@ -15,7 +15,7 @@ type Props = {
   respond: (response: 'completed' | 'skipped' | 'adjust', at?: string) => boolean;
   saveProfile: (profile: DailyProfile) => void;
 };
-export function TodayCoach({signalId, updateWeekly, profile, clientId, now, day, reminder, pending, handled, nextOpportunity, firstStepContext, count, established, respond, saveProfile}: Props) {
+export function TodayCoach({establishedExplanation, signalId, updateWeekly, profile, clientId, now, day, reminder, pending, handled, nextOpportunity, firstStepContext, count, established, respond, saveProfile}: Props) {
   const [view, setView] = useState('action');
   const [error, setError] = useState('');
   const [returning, setReturning] = useState(false);
@@ -46,8 +46,8 @@ export function TodayCoach({signalId, updateWeekly, profile, clientId, now, day,
     <div className="today-coach-fields"><label>Wake time<input type="time" ref={wakeInput} defaultValue={profile.wakeTime || ''} required /></label><label>Bedtime<input type="time" ref={bedInput} defaultValue={profile.targetBedtime || ''} required /></label></div>
     <div className="today-coach-actions">{button('Save schedule',()=>{const wake=wakeInput.current?.value || '', bed=bedInput.current?.value || '';if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(wake)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(bed)){setError('Add both times to continue.');return;}saveProfile({...profile,wakeTime:wake,targetBedtime:bed});confirmReturn();},true)}{button('Cancel',()=>change('action'))}</div>
   </> : <><h3>Good to see you again.</h3><p>Is your usual schedule still about right? Wake {savedClockTime(profile.wakeTime)}, bedtime {savedClockTime(profile.targetBedtime)} ({savedZoneLabel(profile)}).</p><p>No catch-up list. Time away from the app doesn’t tell us how your days went.</p><div className="today-coach-actions">{button('Still about right',confirmReturn,true)}{button('Update schedule',()=>change('schedule'))}</div></>;
-  else if (profile && (established || profile.weeklyCheckins?.[signalId]?.mode === 'weekly')) content = <>{handled && <p>{handled.status === 'completed' ? 'You marked today’s step done.' : 'You left today’s step. There’s nothing to make up.'}</p>}<EstablishedCheckin profile={profile} signalId={signalId} now={now} established={established} update={updateWeekly} /></>;
-  else if (handled) content = <><h3>{handled.status === 'completed' ? 'That’s enough for now.' : 'Leave this one for today.'}</h3><p>{handled.status === 'completed' ? 'You marked this step done.' : 'Today’s prompt is closed. There’s nothing to make up.'}</p><p>Next: your focus stays in place. {established ? 'It is now established, so routine prompts stop.' : nextOpportunity ? `Your next focus opportunity is ${time(new Date(nextOpportunity.start))}: ${nextOpportunity.action}.` : 'Come back for the next useful opportunity.'}</p></>;
+  else if (profile && (established || profile.weeklyCheckins?.[signalId]?.mode === 'weekly')) content = <>{handled && <p>{handled.status === 'completed' ? 'You marked today’s step done.' : 'You left today’s step. There’s nothing to make up.'}</p>}<EstablishedCheckin explanation={establishedExplanation} profile={profile} signalId={signalId} now={now} established={established} update={updateWeekly} /></>;
+  else if (handled) content = <><h3>{handled.status === 'completed' ? 'That’s enough for now.' : 'Leave this one for today.'}</h3><p>{handled.status === 'completed' ? firstStepContext?.next ? 'You marked this supporting step done. It does not add a completion to your selected focus.' : 'You marked this step done.' : 'Today’s prompt is closed. There’s nothing to make up.'}</p><p>Next: your focus stays in place. {established ? 'It is now established, so routine prompts stop.' : nextOpportunity ? `Your next focus opportunity is ${time(new Date(nextOpportunity.start))}: ${nextOpportunity.action}.` : 'Come back for the next useful opportunity.'}</p></>;
 
   else if (reminder) {
     const light = isLightReduction(reminder.id), alternative = smallerAction(reminder.id), later = deferredTime(reminder, now);

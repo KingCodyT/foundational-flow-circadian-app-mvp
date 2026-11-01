@@ -10,11 +10,12 @@ type Props = {
   signalId: string; updateWeekly: (id: string, action: WeeklyAction) => void;
   profile: DailyProfile | null; clientId: string; now: Date; day: string;
   reminder: ContextualReminder | null; pending: ContextualReminder | null;
+  firstStepContext?: { why: string; next?: { start: string; action: string; label: string; reason?: string } };
   nextOpportunity?: { start: string; action: string }; handled?: DailyEventState[string]; count: number; established: boolean;
   respond: (response: 'completed' | 'skipped' | 'adjust', at?: string) => boolean;
   saveProfile: (profile: DailyProfile) => void;
 };
-export function TodayCoach({signalId, updateWeekly, profile, clientId, now, day, reminder, pending, handled, nextOpportunity, count, established, respond, saveProfile}: Props) {
+export function TodayCoach({signalId, updateWeekly, profile, clientId, now, day, reminder, pending, handled, nextOpportunity, firstStepContext, count, established, respond, saveProfile}: Props) {
   const [view, setView] = useState('action');
   const [error, setError] = useState('');
   const [returning, setReturning] = useState(false);
@@ -38,6 +39,7 @@ export function TodayCoach({signalId, updateWeekly, profile, clientId, now, day,
   };
   const button = (label: string, fn: () => void, primary = false) => <button className={primary ? 'journey-primary' : 'journey-outline'} onClick={fn}>{label}</button>;
   const time = (date: Date) => `${new Intl.DateTimeFormat('en-US',{timeZone:profile?.timeZone || undefined,weekday:'long',month:'short',day:'numeric'}).format(date)} at ${new Intl.DateTimeFormat('en-US',{timeZone:profile?.timeZone || undefined,hour:'numeric',minute:'2-digit',hour12:true}).format(date)} (${savedZoneLabel(profile)})`;
+  const explanation = firstStepContext && <><p>{firstStepContext.why}</p>{firstStepContext.next && <p><strong>{firstStepContext.next.label}: {time(new Date(firstStepContext.next.start))}.</strong> {firstStepContext.next.action}. {firstStepContext.next.reason}</p>}</>;
   let content;
   if (returning && profile) content = view === 'schedule' ? <>
     <h3>What fits your days now?</h3><p>Your location, timezone, and other schedule details stay as saved.</p>
@@ -54,8 +56,8 @@ export function TodayCoach({signalId, updateWeekly, profile, clientId, now, day,
     else if (view === 'safety') content = <><h3>Keep safety first.</h3><p>Driving, working, and moving safely come first. Leave this step for today.</p><div className="today-coach-actions">{skip}{button('Back',()=>change('constraints'))}</div></>;
     else if (view === 'shared' || view === 'tired') content = <><h3>{view === 'shared' ? 'Just the light you control.' : 'Keep the step manageable.'}</h3><p>{light ? view === 'shared' ? 'Dim one unnecessary light you control, without changing the room for everyone. If that isn’t practical, skip it.' : 'If you’re already near an unnecessary lamp, switch just that one off.' : alternative || 'There isn’t a smaller version of this step to suggest safely. Keep your usual routine or leave it for today.'}</p>{light && <p>Keep enough light to see and move safely. Don’t change lighting while driving or doing safety-critical work.</p>}<div className="today-coach-actions">{(light || alternative) && done}{skip}{button('Back',()=>change('constraints'))}</div></>;
     else if(view === 'later') content = <><h3>{later ? 'Set this step aside for 15 minutes?' : 'There isn’t room for another 15-minute delay.'}</h3><p>{later ? `The step will return here at ${time(later)}, within this opportunity. This does not confirm a background notification.` : 'You can take the current step now if it fits, or leave it today.'}</p><div className="today-coach-actions">{later && button('Later — 15 minutes',()=>submit('adjust',later.toISOString()),true)}{button(later?'Cancel':'See the step now',()=>change('action'))}{skip}</div></>;
-    else content = <><h3>{reminder.action}</h3><p>{reminder.reason}</p>{light && <><p>Your saved bedtime is {savedClockTime(profile?.targetBedtime)} ({savedZoneLabel(profile)}).</p><p>Keep the light you need for safety. Don’t dim lights while driving or doing safety-critical work.</p></>}<div className="today-coach-actions">{button('Done',()=>submit('completed'),true)}{button('Smaller step',()=>change('constraints'))}{button('Later',()=>change('later'))}{skip}</div></>;
-  } else if(pending) content = <><h3>Your next opportunity: {time(pending.start)}.</h3><p>{pending.action}</p><p>It will appear here when the window opens. Background notification delivery is not confirmed here.</p></>;
+    else content = <><h3>{reminder.action}</h3><p>{reminder.reason}</p>{explanation}{light && <><p>Your saved bedtime is {savedClockTime(profile?.targetBedtime)} ({savedZoneLabel(profile)}).</p><p>Keep the light you need for safety. Don’t dim lights while driving or doing safety-critical work.</p></>}<div className="today-coach-actions">{button('Done',()=>submit('completed'),true)}{button('Smaller step',()=>change('constraints'))}{button('Later',()=>change('later'))}{skip}</div></>;
+  } else if(pending) content = <><h3>Your next opportunity: {time(pending.start)}.</h3><p>{pending.action}</p>{firstStepContext && <p>{pending.reason}</p>}{explanation}<p>It will appear here when the window opens. Background notification delivery is not confirmed here.</p></>;
   else if(nextOpportunity) content = <><h3>Your next focus opportunity: {time(new Date(nextOpportunity.start))}.</h3><p>{nextOpportunity.action}</p><p>Your focus stays in place. There’s nothing to make up from earlier windows.</p></>;
   else content = <><h3>Nothing to catch up on.</h3><p>Your focus stays in place. Return for the next useful opportunity; missed windows don’t become overdue tasks.</p></>;
   return <section className="journey-card today-coaching-loop"><div ref={region} tabIndex={-1} aria-label="Today coaching" role="region">{content}<p role="alert">{error}</p></div>{count>0 && <p className="today-coach-progress">You reported this focus on {count} {count===1?'day':'different days'} in the past 7 days. This reflects your reports, not a measured change in sleep.</p>}</section>;

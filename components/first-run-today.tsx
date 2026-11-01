@@ -1,5 +1,6 @@
 "use client";
 
+import { firstStepExplanation } from '@/lib/personalization/first-step-explanation';
 import { TodayCoach } from './today-coach';
 import { reportedDays } from '@/lib/today-coaching';
 import { questionnaire } from '@/lib/questionnaire';
@@ -106,16 +107,17 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
   };
   const handled = record && ["completed", "skipped"].includes(record.status) ? record : undefined;
   const nextOpportunity = selectFirstRunGuidance(profile, now, eventStateByDate, signalId) ?? undefined;
+  const explanation = firstStepExplanation(profile, now, signalId, effective, nextOpportunity);
   const upcoming: ContextualReminder = { id: effective.eventId, name: effective.action, action: effective.action,
     reason: effective.reason, guidance: effective.reason, start: new Date(effective.start), end: new Date(effective.end),
     status: "upcoming", scheduledFor: effective.start, priority: 90, responses: ["Done", "Not today", "Adjust"] };
   return <JourneyNow profile={profile} now={now} voice={voice} reminder={reminder} preview={null}
     primarySignalId={signalId} primaryState={currentPersonalization?.primaryCoachingTarget.coachingState} progress={[]} respond={respond}
     coaching={<>
-      <details className="today-focus-line"><summary>Why this focus and first step?</summary><p>{answer ? `You reported: “${answer.detail || answer.label}” That helped choose this focus.` : 'Your assessment answers helped choose this focus.'} Your focus stays selected as you practice.</p>
-      <p>This first available step follows your saved schedule. It may support a different part of your day; it does not change your focus.</p></details>
+      <details className="today-focus-line"><summary>Why this focus?</summary><p>{answer ? `You reported: “${answer.detail || answer.label}” That helped choose this focus.` : 'Your assessment answers helped choose this focus.'} Your focus stays selected as you practice.</p>
+      </details>
       <TodayCoach signalId={signalId} updateWeekly={updateWeeklyCheckin} profile={profile} clientId={clientId} now={now}
-        handled={handled} nextOpportunity={nextOpportunity} day={effective.dateKey} reminder={reminder} pending={current ? null : upcoming} count={reportedDays(eventStateByDate, signalId, now, profile.timeZone)}
+        firstStepContext={explanation} handled={handled} nextOpportunity={nextOpportunity} day={effective.dateKey} reminder={reminder} pending={current ? null : upcoming} count={reportedDays(eventStateByDate, signalId, now, profile.timeZone)}
         established={false} respond={respond} saveProfile={setDailyProfile} />
       <details className="today-focus-line"><summary>Optional reminder settings</summary><p>You can use Today without enabling notifications.</p>{setup}</details>
     </>}>{null}</JourneyNow>;

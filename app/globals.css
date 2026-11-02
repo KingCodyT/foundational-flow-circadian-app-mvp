@@ -534,3 +534,41 @@ a {
  .journey:has(.journey-steps) fieldset select{min-width:0;flex:1;padding:10px 6px;font-size:16px;min-height:44px;}
  .journey:has(.journey-steps) .journey-steps small{font-size:9px;}
 }
+
+/* Mobile Food, Timeline and Profile continuity; active-route scope only. */
+@media(max-width:600px){
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]){background:#eaf0ef;--journey-cream:#eaf0ef;padding-bottom:86px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-landscape{height:420px;background-image:linear-gradient(180deg,#08202f99,#08202f44 65%,#eaf0ef),url("/images/coastal-hero-placeholder.jpg");background-position:center,center 44%;background-size:cover;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-inner{padding:14px 16px 20px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-brand{padding:0 0 18px;gap:8px;color:white;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-wordmark{font-size:9px;letter-spacing:1.2px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-wordmark svg{width:42px;height:38px;color:#f1bf58;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-wordmark small{font-size:6px;letter-spacing:2.3px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-brand>p{font-size:6px;letter-spacing:1px;line-height:1.8;color:white;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-secondary{padding:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-secondary>.profile-page{background:transparent;padding:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-intro,.profile-intro){padding:0 0 20px;min-height:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-intro,.profile-intro) h1{font-size:34px;line-height:1.12;color:white;margin:8px 0 12px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-intro,.profile-intro)>p{font-size:15px;line-height:1.45;color:white;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .profile-intro .journey-eyebrow{font-size:11px;letter-spacing:2px;color:#ffe0a0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-card,.profile-section){background:#fffefb;padding:20px 16px;border-radius:16px;margin:12px 0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-card,.profile-section) h2{font-size:21px;font-weight:500;letter-spacing:0;text-transform:none;color:#254c7b;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-card,.profile-section) p{font-size:15px;line-height:1.45;color:#36494b;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-primary,button[type="submit"]){background:#365fad;color:white;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-primary,.journey-outline){min-height:48px;font-size:15px;padding:12px 16px;white-space:normal;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-outline{border-color:#365fad;color:#254c7b;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(input,select,textarea){font-size:16px;min-width:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) fieldset{min-width:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) fieldset select{flex:1;min-height:44px;padding:10px 6px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(button,a,summary,input,select):focus-visible{outline:3px solid #365fad;outline-offset:3px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-nav{position:fixed;bottom:0;left:0;right:0;z-index:20;background:#122d38;color:#dce8e8;border-top:2px solid #c5953c;margin:0;padding:8px 10px max(8px,env(safe-area-inset-bottom));border-radius:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-nav a{min-height:48px;color:#dce8e8;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-nav a[aria-current="page"]{color:#f6c45b;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .food-idea-controls{flex-wrap:wrap;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .food-idea-grid{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+ .journey:has(.journey-nav a[href="/timeline"][aria-current="page"]) .timeline-day{background:#fffefb;border-radius:16px;padding:16px;margin:8px 0 0;}
+ .journey:has(.journey-nav a[href="/timeline"][aria-current="page"]) .timeline-selected-date{margin:0;color:#254c7b;font-size:24px;}
+ .journey:has(.journey-nav a[href="/timeline"][aria-current="page"]) .timeline-date-navigation button{border-color:#365fad;color:#254c7b;}
+}

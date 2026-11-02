@@ -491,3 +491,46 @@ a {
 
 .light-visible-gradient {height:28px;border:1px solid #c0cfcb;border-radius:6px;background:linear-gradient(90deg,#7139a5 0%,#4545bf 16%,#2674cb 30%,#38b9c6 43%,#61b65c 56%,#eed75b 70%,#eb963e 84%,#c8453d 100%);}
 .light-spectrum-endpoints {display:flex;justify-content:space-between;gap:12px;font-size:11px;margin-top:7px;}
+
+/* Mobile setup continuity with the approved coastal Today review. */
+@media(max-width:600px) {
+ .journey:has(.journey-steps){background:#eaf0ef;--journey-cream:#eaf0ef;}
+ .journey:has(.journey-steps) .journey-landscape{height:440px;background-image:linear-gradient(180deg,#08202f99,#08202f55 65%,#eaf0ef),url('/images/coastal-hero-placeholder.jpg');background-position:center,center 44%;background-size:cover;}
+ .journey:has(.journey-steps) .journey-inner{padding:14px 16px 24px;}
+ .journey:has(.journey-steps) .journey-brand{padding:0 0 18px;gap:8px;color:#fff;}
+ .journey:has(.journey-steps) .journey-wordmark{font-size:9px;letter-spacing:1.2px;}
+ .journey:has(.journey-steps) .journey-wordmark svg{width:42px;height:38px;color:#f1bf58;}
+ .journey:has(.journey-steps) .journey-wordmark small{font-size:6px;letter-spacing:2.3px;}
+ .journey:has(.journey-steps) .journey-brand>p{font-size:6px;letter-spacing:1px;line-height:1.8;color:#fff;}
+ .journey:has(.journey-steps) .journey-intro{padding:0;min-height:0;}
+ .journey:has(.journey-steps) .journey-intro h1{font-size:32px;line-height:1.12;color:#fff;margin:8px 0 12px;letter-spacing:-.5px;}
+ .journey:has(.journey-steps) .journey-intro p{font-size:15px;color:#fff;line-height:1.45;}
+ .journey:has(.journey-steps) .journey-intro .journey-eyebrow{font-size:11px;letter-spacing:2px;color:#ffe0a0;}
+ .journey:has(.journey-steps) .journey-steps{margin:20px 0 14px;padding:12px 4px;background:#f5faf8;border-radius:12px;}
+ .journey:has(.journey-steps) .journey-steps span{width:30px;height:30px;font-size:14px;margin-bottom:6px;}
+ .journey:has(.journey-steps) .journey-steps small{font-size:10px;line-height:1.2;display:block;color:#314b60;}
+ .journey:has(.journey-steps) .journey-steps li:after{top:15px;left:calc(50% + 18px);right:calc(-50% + 18px);}
+ .journey:has(.journey-steps) .journey-steps [aria-current] span{background:#365fad;border-color:#365fad;color:white;}
+ .journey:has(.journey-steps) .journey-content{gap:12px;}
+ .journey:has(.journey-steps) .journey-card{background:#fffefb;border-radius:16px;padding:20px 16px;}
+ .journey:has(.journey-steps) .journey-card h2{font-size:21px;font-weight:500;letter-spacing:0;text-transform:none;color:#254c7b;}
+ .journey:has(.journey-steps) .journey-card h3{font-size:24px;}
+ .journey:has(.journey-steps) .journey-card p{font-size:15px;line-height:1.45;color:#36494b;}
+ .journey:has(.journey-steps) .journey-card-heading{margin-bottom:18px;}
+ .journey:has(.journey-steps) .journey-grid{grid-template-columns:1fr;gap:18px;}
+ .journey:has(.journey-steps) .journey-field>span{font-size:15px;}
+ .journey:has(.journey-steps) .journey-field :is(input,select){font-size:16px;}
+ .journey:has(.journey-steps) .journey-segments label{font-size:13px;min-height:44px;padding:9px 6px;}
+ .journey:has(.journey-steps) .journey-segments .selected{background:#365fad;color:#fff;}
+ .journey:has(.journey-steps) .journey-primary{background:#365fad;color:#fff;}
+ .journey:has(.journey-steps) :is(.journey-primary,.journey-outline){min-height:48px;font-size:15px;padding:12px 16px;gap:8px;white-space:normal;}
+ .journey:has(.journey-steps) .journey-outline{border-color:#365fad;color:#254c7b;}
+ .journey:has(.journey-steps) .journey-actions{margin:4px 0;gap:10px;}
+ .journey:has(.journey-steps) .journey-save{font-size:14px;min-height:44px;}
+ .journey:has(.journey-steps) :is(button,a,input,select):focus-visible{outline:3px solid #365fad;outline-offset:3px;}
+}
+@media(max-width:600px){
+ .journey:has(.journey-steps) fieldset{min-width:0;}
+ .journey:has(.journey-steps) fieldset select{min-width:0;flex:1;padding:10px 6px;font-size:16px;min-height:44px;}
+ .journey:has(.journey-steps) .journey-steps small{font-size:9px;}
+}

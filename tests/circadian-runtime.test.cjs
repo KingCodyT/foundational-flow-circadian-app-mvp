@@ -463,3 +463,38 @@ test('Profile assessment presentation exposes no mutation handlers and keeps rea
  h.navigate('/timeline');h.navigate('/profile');
  assert.equal(h.value.runtime,runtime);assert.equal(h.value.acceptedFocus,focus);assert.equal(h.storage.get(key),saved);assert.equal(h.writes.length,writes);
 });
+
+test('Today loop real provider: explicit smaller completion, refresh, timezone/day rollover and skip', t => {
+  const oldRAF = global.requestAnimationFrame;
+  global.requestAnimationFrame = fn => { fn(); return 0; };
+  t.after(()=>{global.requestAnimationFrame=oldRAF;});
+  const initial=base({answers:{evening_light_reduction:'bright_home'},dailyProfile:{wakeTime:'07:00',targetBedtime:'22:00',timeZone:'UTC',locationPermissionGranted:false,remindersEnabled:false,coachingTargetSignalId:'evening_light_reduction'}});
+  const h=host(t,initial,'2026-09-10T20:05:00Z',true);
+  const text=node=>node.children.map(x=>typeof x==='string'?x:text(x)).join('');
+  const click=label=>{const b=h.rendered.findAllByType('button').find(x=>text(x)===label);assert.ok(b,label);Renderer.act(()=>b.props.onClick());};
+  click('Smaller step');click('I’m sharing the room');assert.equal(h.value.eventStateByDate?.['2026-09-10']?.dim_house,undefined);
+  click('I did that');assert.equal(h.value.eventStateByDate['2026-09-10'].dim_house.status,'completed');
+  const accepted=clone(h.value.acceptedFocus);h.reload();assert.ok(text(h.rendered).includes('You marked this step done.'));assert.deepEqual(h.value.acceptedFocus,accepted);
+  h.tick('2026-09-11T20:05:00Z');assert.ok(text(h.rendered).includes('Smaller step'));click('Not today');assert.equal(h.value.eventStateByDate['2026-09-11'].dim_house.status,'skipped');
+  assert.equal(h.value.eventStateByDate['2026-09-10'].dim_house.status,'completed');h.reload();assert.ok(text(h.rendered).includes('Today’s prompt is closed.'));
+  h.action(v=>v.setDailyProfile({...v.dailyProfile,timeZone:'America/Los_Angeles'}));assert.deepEqual(h.value.acceptedFocus,accepted);
+  assert.equal(h.value.dailyProfile.remindersEnabled,false);
+});
+
+test('weekly check-ins persist in real provider without touching evidence, focus, anchors or notifications', t => {
+ const events=Object.fromEntries(Array.from({length:7},(_,i)=>[`2026-10-${20+i}`,{dim_house:{status:'completed',at:`2026-10-${20+i}T20:00:00Z`}}]));
+ const initial=base({answers:{evening_light_reduction:'bright_home'},dailyProfile:{timeZone:'America/Los_Angeles',wakeTime:'07:00',targetBedtime:'22:00',lastMealTime:'18:30',locationPermissionGranted:false,remindersEnabled:false,mealRemindersEnabled:false,coachingTargetSignalId:'evening_light_reduction'},eventStateByDate:events});
+ const h=host(t,initial,'2026-11-01T20:00:00Z'),id='evening_light_reduction';
+ assert.equal(h.value.currentPersonalization.primaryCoachingTarget.coachingState,'ESTABLISHED');
+ const focus=clone(h.value.acceptedFocus),evidence=clone(h.value.eventStateByDate);
+ h.action(v=>v.updateWeeklyCheckin(id,{type:'weekly'}));
+ const anchor=h.value.dailyProfile.weeklyCheckins[id].anchorAt;
+ h.reload();assert.equal(h.value.dailyProfile.weeklyCheckins[id].anchorAt,anchor);
+ h.tick('2026-11-20T20:00:00Z');
+ h.action(v=>{v.updateWeeklyCheckin(id,{type:'answer',expectedAnchor:anchor,response:'on_track'});v.updateWeeklyCheckin(id,{type:'answer',expectedAnchor:anchor,response:'on_track'});});
+ assert.equal(h.value.dailyProfile.weeklyCheckins[id].anchorAt,'2026-11-20T20:00:00.000Z');
+ h.reload();assert.deepEqual(h.value.eventStateByDate,evidence);assert.deepEqual(h.value.acceptedFocus,focus);
+ assert.equal(h.value.dailyProfile.lastMealTime,'18:30');assert.equal(h.value.dailyProfile.targetBedtime,'22:00');assert.equal(h.value.dailyProfile.remindersEnabled,false);
+ h.action(v=>v.updateWeeklyCheckin(id,{type:'off'}));h.reload();assert.equal(h.value.dailyProfile.weeklyCheckins[id].mode,'off');
+ h.action(v=>v.updateWeeklyCheckin('morning_light_timing',{type:'weekly'}));assert.equal(h.value.dailyProfile.weeklyCheckins.morning_light_timing,undefined);
+});

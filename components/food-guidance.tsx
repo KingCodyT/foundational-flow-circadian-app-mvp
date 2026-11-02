@@ -6,6 +6,8 @@ import type { DailyProfile } from "@/types/circadian";
 import { foodGuidancePhase } from "@/lib/personalization/food-guidance";
 import { selectMealIdeas } from "@/lib/personalization/meal-ideas";
 import { seasonalFood } from "@/lib/seasonal/seasonal-food";
+import { recipeWindow } from '@/lib/personalization/recipe-window';
+import { recipesForSlot } from '@/lib/personalization/food-recipes';
 import { JourneyCard } from "./journey-design";
 
 const guidance = {
@@ -88,21 +90,45 @@ export function FoodGuidance({ profile, now, onPreferencesChange }: { profile: D
 }
 
 export function FoodPreview({ profile, now, suppressNudge = false }: { profile: DailyProfile | null; now: Date; suppressNudge?: boolean }) {
-  const phase = foodGuidancePhase(profile, now);
-  const season = seasonalFood(profile, now);
-  const { meals, seasonalApplied } = selectMealIdeas({phase, seasonal: season, plantBased: profile?.foodPreference === "plant", dairyFree: profile?.foodDairyFree ?? false, quick: profile?.foodQuick ?? false, offset: 0});
-  const meal = meals[0];
-  const timing = {early: 'A first-meal idea for the early part of your waking day.', daytime: 'A full-meal idea for the active part of your waking day.', evening: 'A smaller serving option near your usual bedtime; adjust it to your hunger.', general: 'A general meal idea until your daily schedule is available.'}[phase];
+  const timing = recipeWindow(profile, now);
+  const meal = recipesForSlot(timing.slot ?? 'first', profile)[0];
   return <JourneyCard className="food-guidance">
     <MealNudge profile={suppressNudge ? null : profile} now={now}>
     <h2>Food for your day</h2>
-    <p className="food-idea-note">{season && seasonalApplied ? `${season.regionName} · ${season.periodLabel}` : 'General meal idea'}</p>
-    <h3>{meal.title}</h3>
-    <p>{meal.ingredients}</p>
-    <p className="food-idea-note"><strong>Why this meal:</strong> {seasonalApplied ? 'The produce is listed in your regional seasonal calendar. ' : ''}{timing}</p>
-    {seasonalApplied ? <p className="food-idea-note">Protein and pantry staples aren’t verified as local.</p> : <p className="food-idea-note">{season ? 'No matching seasonal produce is listed in our current collection for this period.' : 'Choose your growing region in Food to get seasonal suggestions.'}</p>}
-    <p className="food-idea-note">{profile?.foodPreference === "plant" ? "Plant-based" : "Omnivore"} idea · your food preferences apply here and in Food.</p>
-    <Link href="/food" className="journey-outline inline-flex mt-4">Explore meal ideas</Link>
+    <p>{timing.reason}</p>
+    {meal ? <><h3>{meal.title}</h3><p className="food-idea-note">{meal.minutes} minutes · makes {meal.servings} servings. Open Food for ounce portions, cooking steps and swaps.</p></>
+      : <p className="food-idea-note">No recipes in this slot match your saved preferences yet. Browse other meal slots or review your filters in Food.</p>}
+    <p className="food-idea-note">Same recipes and preferences as Food. No meal logging needed.</p>
+    <Link href="/food" className="journey-outline inline-flex mt-4">See recipes for my schedule</Link>
     </MealNudge>
   </JourneyCard>;
+}
+
+export function FoodLearning({profile,now}:{profile:DailyProfile|null;now:Date}) {
+ const content=guidance[foodGuidancePhase(profile,now)];
+ return <>      <details className="timeline-disclosure go-deeper">
+        <summary>Go deeper: local light, local season, local food</summary>
+        <p>Our starting point is simple: notice the daylight where you live, learn what grows and is harvested around you, and bring that seasonal variety into your meals.</p>
+        <h4>Sunlight starts the story</h4>
+        <p>Plants capture light through photosynthesis and use that energy to build sugars and other compounds. Food connects us to that process, directly through plants and through the animals that eat them. The energy stored in food is chemical energy.</p>
+        <h4>Your place has its own seasons</h4>
+        <p>Latitude shapes how daylight changes through the year. Temperature, rainfall, elevation, soil, and local growing practices also shape what can grow and when it is ready to harvest. Two places at the same latitude can have very different harvest calendars.</p>
+        <h4>Bring it to your plate</h4>
+        <p>Start with one ingredient: ask a nearby grower what they are harvesting now, or check a regional harvest calendar. Use that vegetable or fruit in a meal you already enjoy. Seasonal here means the time that food naturally grows and is harvested in your region; a supermarket shelf alone does not tell that story.</p>
+        <p className="food-idea-note">Choose your growing region to see which recipe ingredients appear in the seasonal calendar. Your saved schedule helps you browse meal slots; it does not prescribe a time to eat. Calendar availability is a regional guide, and local growers can confirm the current harvest.</p>
+        <h4>Explore the underlying science</h4>
+        <p>For a closer look at light capture, a 2023 experiment measured single-photon absorption and energy transfer in a bacterial photosynthetic complex. It explores the first steps of photosynthesis, rather than testing dietary benefits. <a href="https://www.nature.com/articles/s41586-023-06121-5" target="_blank" rel="noreferrer" className="underline">Read the photosynthesis experiment (opens in a new tab)</a>.</p>
+        <CodyDiscovery />
+      </details>
+      <details className="timeline-disclosure">
+        <summary>About food timing</summary>
+        <p>{content.reason}</p>
+        <p>Early-day ideas pair a protein source with breakfast foods. Daytime ideas use a full-meal format. Near-bedtime ideas offer smaller serving formats if you only need a snack. These are practical suggestions, not tested recipes for changing your metabolism.</p>
+        <p>For comfort before sleep, avoid very large or heavy meals; a light snack can fit. <a href="https://www.nhlbi.nih.gov/health/sleep-deprivation/healthy-sleep-habits" target="_blank" rel="noreferrer" className="underline">NIH sleep guidance</a>. The three-hour display window is a planning aid, not a biological cutoff.</p>
+        <p><strong>Carbohydrates:</strong> In controlled studies, glucose tolerance was generally better in the biological morning than evening. That does not establish a universal clock-time cutoff for carbohydrates. <a href="https://pubmed.ncbi.nlm.nih.gov/25870289/" target="_blank" rel="noreferrer" className="underline">Read the study</a>.</p>
+        <p><strong>Protein:</strong> Include sources across your meals. Evidence for an optimal distribution is mixed, so we don’t assign a special protein hour. <a href="https://pubmed.ncbi.nlm.nih.gov/32429355/" target="_blank" rel="noreferrer" className="underline">Read the review</a>.</p>
+        <p><strong>Fats:</strong> There is no established best hour for eating fats. A small late-dinner trial found changes in overnight glucose and fat metabolism, but it cannot prescribe an ideal fat schedule. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7337187/" target="_blank" rel="noreferrer" className="underline">Read the trial</a>.</p>
+        <p>These are general meal ideas, not a prescribed diet. Choose foods that fit your allergies and any dietary plan from your clinician.</p>
+      </details>
+</>;
 }

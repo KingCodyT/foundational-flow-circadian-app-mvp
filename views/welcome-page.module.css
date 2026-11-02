@@ -49,3 +49,42 @@
 .homepage :global(.ff-cta){background:#c89432;color:#111514}
 .homepage :global(.ff-cta):hover{background:#d5a442}
 .homepage :global(.ff-footer){background:#111514;color:#d8d2c7;border-top:1px solid #464a47}
+
+/* Mobile continuity; preserve the existing narrative and section order. */
+@media(max-width:600px){
+ .homepage{font-family:"Avenir Next","Segoe UI",sans-serif;--ff-paper:#f5faf8;--ff-ink:#173653;--ff-muted:#36494b;--ff-soft:#eaf0ef;}
+ .homepage :global(.ff-cta){background:#365fad;color:white;border-radius:999px;}
+ .homepage :global(.ff-cta):hover{background:#254c7b;}
+ .homepage :global(.ff-number){color:#365fad;font-weight:500;}
+ .homepage :global(.ff-method){background:#eaf0ef;}
+ .homepage :global(.ff-start){background:#dceaf7;}
+ .homepage :global(.ff-hero) h1{font-size:38px;font-weight:400;}
+ .homepage :global(.ff-cta):focus-visible{outline:3px solid #365fad;outline-offset:4px;}
+}
+
+/* Approved mobile blue palette: override remaining legacy earth-tone surfaces. */
+@media(max-width:600px){
+ .homepage{--ff-paper:#f5f8fc;--ff-ink:#173653;--ff-muted:#364f68;--ff-line:#c9d6e5;--ff-soft:#e7eff8;--ff-gold:#365fad;}
+ .homepage :global(.ff-nav){background:#122d38;color:#fff;border-top-color:#c5953c;}
+ .homepage :global(.ff-hero){background:#dceaf7;color:#173653;}
+ .homepage :global(.ff-hero) :global(.ff-eyebrow),.homepage :global(.ff-scene-caption),.homepage :global(.ff-hero) h1 em{color:#365fad;}
+ .homepage :global(.ff-hero) :global(.ff-lead){color:#173653;}
+ .homepage :global(.ff-hero) :global(.ff-intro){color:#364f68;}
+ .homepage :global(.ff-method){background:#e7eff8;}
+ .homepage :global(.ff-start){background:#365fad;color:#fff;border-top-color:#c5953c;}
+ .homepage :global(.ff-start) :global(.ff-eyebrow),.homepage :global(.ff-start) p,.homepage :global(.ff-start) :global(.ff-detail){color:#fff;}
+ .homepage :global(.ff-cta){background:#f3c96e;color:#163b43;}
+ .homepage :global(.ff-cta):hover{background:#ffe0a0;}
+ .homepage :global(.ff-cta):focus-visible{outline-color:#fff;}
+ .homepage :global(.ff-footer){background:#122d38;color:#dce8e8;border-top-color:#587280;}
+}
+
+/* Cobalt is the primary mobile welcome surface; pale blue supports it. */
+@media(max-width:600px){
+ .homepage{--ff-paper:#365fad;--ff-ink:#fff;--ff-muted:#fff;--ff-line:#91afd9;--ff-gold:#fff;}
+ .homepage :global(.ff-hero){background:#365fad;color:#fff;}
+ .homepage :global(.ff-hero) :global(.ff-eyebrow),.homepage :global(.ff-scene-caption),.homepage :global(.ff-hero) h1 em{color:#fff;}
+ .homepage :global(.ff-hero) :global(.ff-lead),.homepage :global(.ff-hero) :global(.ff-intro){color:#fff;}
+ .homepage :global(.ff-method){background:#dceaf7;color:#173653;--ff-ink:#173653;--ff-muted:#364f68;--ff-gold:#365fad;--ff-line:#a8bfda;}
+ .homepage :global(.ff-hero) h1 em{color:#dceaf7;}
+}

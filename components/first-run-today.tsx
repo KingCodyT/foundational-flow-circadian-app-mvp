@@ -1,7 +1,11 @@
 "use client";
+import { focusReason } from '@/lib/coaching-explanations';
 
+import { firstStepExplanation } from '@/lib/personalization/first-step-explanation';
+import { TodayCoach } from './today-coach';
+import { reportedDays } from '@/lib/today-coaching';
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCircadian } from "./circadian-provider";
 import { JourneyNow } from "./journey-now";
 import { JourneyCard, JourneyFrame } from "./journey-design";
@@ -13,7 +17,8 @@ import type { ContextualReminder } from "@/lib/personalization/contextual-remind
 
 export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelationshipOutput }) {
   const { dailyProfile: profile, firstRunHandoff, setFirstRunHandoff, eventStateByDate,
-    setEventRecord, setDailyProfile, notificationState, setScheduledNotification, deliverySetup } = useCircadian();
+    setEventRecord, setDailyProfile, notificationState, setScheduledNotification, deliverySetup, currentPersonalization, answers, clientId, updateWeeklyCheckin } = useCircadian();
+  const submitted = useRef(new Set<string>());
   const [permission, setPermission] = useState(getBrowserNotificationPermissionState);
   const [permissionError, setPermissionError] = useState(false);
   const saved = firstRunHandoff?.guidance;
@@ -21,7 +26,7 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
     profile ? selectFirstRunGuidance(profile, now, eventStateByDate) : null;
   const record = guidance ? eventStateByDate?.[guidance.dateKey]?.[guidance.eventId] : null;
   const effective = guidance && record?.remindAt ? { ...guidance, start: record.remindAt } : guidance;
-  const finished = Boolean(effective && (now > new Date(effective.end) || ["completed", "skipped"].includes(record?.status ?? "")));
+  const finished = Boolean(effective && (now >= new Date(effective.end)));
   const notification = effective ? firstRunNotification(effective) : null;
   const delivered = notificationState.deliveredNotifications.some(item => item.id === notification?.id);
 
@@ -38,12 +43,12 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
   }, [finished, guidance, saved, setFirstRunHandoff, notificationState.scheduledNotification, setScheduledNotification]);
   useEffect(() => {
     if (finished) return;
-    const shouldSchedule = profile?.remindersEnabled === true && permission === "GRANTED" && !delivered;
+    const shouldSchedule = profile?.remindersEnabled === true && permission === "GRANTED" && !delivered && !["completed", "skipped"].includes(record?.status ?? "");
     const planned = shouldSchedule ? notification : null;
     const existing = notificationState.scheduledNotification;
     if (planned && existing?.id !== planned.id) setScheduledNotification(planned);
     else if (!planned && existing?.id.startsWith("first-run:")) setScheduledNotification(null);
-  }, [finished, profile?.remindersEnabled, permission, delivered, notification, notificationState.scheduledNotification, setScheduledNotification]);
+  }, [finished, record?.status, profile?.remindersEnabled, permission, delivered, notification, notificationState.scheduledNotification, setScheduledNotification]);
 
   if (!profile || !effective) return <JourneyFrame image={7}><JourneyCard><h1>Your next step</h1><p>Add your wake time and bedtime so we can time your first guidance.</p><Link href="/profile#your-schedule">Complete your schedule</Link></JourneyCard></JourneyFrame>;
   const current = now >= new Date(effective.start) && !finished;
@@ -78,23 +83,39 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
         <Link href="/profile#preferences-heading">Reminder settings</Link>
       </>}
   </div>;
+  const signalId = currentPersonalization?.primaryCoachingTarget.signalId || '';
+  const respond = (response: "completed" | "skipped" | "adjust", remindAt?: string): boolean => {
+    const at = new Date();
+    const key = `${effective.dateKey}:${effective.eventId}:${response}:${remindAt || ''}`;
+    const terminalKey = `${effective.dateKey}:${effective.eventId}:terminal`;
+    if (["completed", "skipped"].includes(record?.status ?? "") || submitted.current.has(terminalKey)) return false;
+    if (at < new Date(effective.start) || at >= new Date(effective.end) || finished || submitted.current.has(key)) return false;
+    if (response === "adjust") {
+      const deferred = remindAt ? new Date(remindAt) : null;
+      if (!deferred || !Number.isFinite(+deferred) || deferred <= at || deferred >= new Date(effective.end)) return false;
+      submitted.current.add(key);
+      setEventRecord(effective.dateKey, effective.eventId, { status: "upcoming", at: at.toISOString(), remindAt });
+    } else {
+      submitted.current.add(terminalKey);
+      submitted.current.add(key);
+      setEventRecord(effective.dateKey, effective.eventId, { status: response, at: at.toISOString() });
+      if (notificationState.scheduledNotification?.id.startsWith("first-run:")) setScheduledNotification(null);
+    }
+    return true;
+  };
+  const handled = record && ["completed", "skipped"].includes(record.status) ? record : undefined;
+  const nextOpportunity = selectFirstRunGuidance(profile, now, eventStateByDate, signalId) ?? undefined;
+  const explanation = firstStepExplanation(profile, now, signalId, effective, nextOpportunity);
+  const upcoming: ContextualReminder = { id: effective.eventId, name: effective.action, action: effective.action,
+    reason: effective.reason, guidance: effective.reason, start: new Date(effective.start), end: new Date(effective.end),
+    status: "upcoming", scheduledFor: effective.start, priority: 90, responses: ["Done", "Not today", "Adjust"] };
   return <JourneyNow profile={profile} now={now} voice={voice} reminder={reminder} preview={null}
-    primarySignalId={null} progress={[]} firstRun={{
-      heading: tomorrow ? "You’re ready for tomorrow" : "Your next step",
-      action: `${current ? "Now" : `At ${time}${tomorrow ? " tomorrow" : ""}`}, ${effective.action.charAt(0).toLowerCase()}${effective.action.slice(1)}.`,
-      reason: tomorrow ? `Your first guidance will arrive here at ${time}, based on your schedule. ${effective.reason}` : effective.reason,
-      focus: effective.focus, setup,
-      summary: "Your saved schedule gives us a starting point. Your responses will help tailor guidance over time.",
-    }} respond={(response, remindAt) => {
-      if (!current) return;
-      if (response === "adjust") {
-        const at = remindAt ? new Date(remindAt) : null;
-        if (!at || at <= now || at > new Date(effective.end)) return;
-        setEventRecord(effective.dateKey, effective.eventId, { status: "upcoming", at: now.toISOString(), remindAt });
-      } else {
-        setEventRecord(effective.dateKey, effective.eventId, { status: response, at: now.toISOString() });
-        setFirstRunHandoff(null);
-        if (notificationState.scheduledNotification?.id.startsWith("first-run:")) setScheduledNotification(null);
-      }
-    }}>{null}</JourneyNow>;
+    primarySignalId={signalId} primaryState={currentPersonalization?.primaryCoachingTarget.coachingState} progress={[]} respond={respond}
+    coaching={<>
+      <p className="today-focus-line">{focusReason(answers, signalId)}</p>
+      <TodayCoach signalId={signalId} updateWeekly={updateWeeklyCheckin} profile={profile} clientId={clientId} now={now}
+        firstStepContext={explanation} handled={handled} nextOpportunity={nextOpportunity} day={effective.dateKey} reminder={reminder} pending={current ? null : upcoming} count={reportedDays(eventStateByDate, signalId, now, profile.timeZone)}
+        established={false} respond={respond} saveProfile={setDailyProfile} />
+      <details className="today-focus-line"><summary>Optional reminder settings</summary><p>You can use Today without enabling notifications.</p>{setup}</details>
+    </>}>{null}</JourneyNow>;
 }

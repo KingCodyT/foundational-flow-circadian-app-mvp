@@ -8,9 +8,11 @@ import type { ContextualReminder } from "@/lib/personalization/contextual-remind
 import type { VoiceRelationshipOutput } from "@/lib/voice/voice-relationship";
 import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
 import { FoodPreview } from "./food-guidance";
+import { LightGuidePreview } from "./light-guide-preview";
 import { LightCheckIn } from "./light-check-in";
 
-export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, children }: {
+export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, coaching, headline, children }: {
+  coaching?: ReactNode; headline?: string;
   profile: DailyProfile | null; now: Date; voice: VoiceRelationshipOutput; reminder: ContextualReminder | null;
   preview: string | null;
   firstRun?: { heading: string; action: string; reason: string; focus: string; setup: ReactNode; summary: string };
@@ -21,15 +23,16 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
   const [adjusting, setAdjusting] = useState(false);
   const action = (firstRun || voice.mode === "COACHING") && reminder;
   const later = new Date(now.getTime() + 15 * 60000);
-  return <JourneyFrame image={7}>
+  return <JourneyFrame image={7}><div className={coaching ? "today-reviewed" : undefined}>
     <header className="journey-intro today-intro">
       <p className="journey-eyebrow">TODAY</p>
       <p className="today-date">{new Intl.DateTimeFormat("en-US", { timeZone: profile?.timeZone || undefined, weekday: "long", month: "long", day: "numeric" }).format(now)}</p>
-      <h1>{profile?.displayName ? `Hello, ${profile.displayName}.` : "Welcome to today."}</h1>
+      <h1>{headline || (profile?.displayName ? `Hello, ${profile.displayName}.` : "Welcome to today.")}</h1>
     </header>
     <main className="journey-content today-content">
-      <JourneyCard className="today-coaching-focus"><h2>Your current coaching focus</h2><h3>{firstRun?.focus || (primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : profile?.wakeTime && profile?.targetBedtime ? "Your saved sleep and wake schedule" : "Your daily schedule")}</h3>{!firstRun && primaryState && <p>{primaryState.replaceAll("_", " ")}</p>}</JourneyCard>
-      {(firstRun || action) && <JourneyCard className="journey-focus today-moment">
+      {coaching ? <p className="today-focus-line">Current focus: <strong>{primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : "Your daily schedule"}</strong></p> : <JourneyCard className="today-coaching-focus"><h2>Your current coaching focus</h2><h3>{firstRun?.focus || (primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : profile?.wakeTime && profile?.targetBedtime ? "Your saved sleep and wake schedule" : "Your daily schedule")}</h3>{!firstRun && primaryState && <p>{primaryState.replaceAll("_", " ")}</p>}</JourneyCard>}
+      {coaching}
+      {!coaching && (firstRun || action) && <JourneyCard className="journey-focus today-moment">
         <h2>{firstRun?.heading || "What matters now"}</h2>
         <h3>{firstRun?.action || (action ? reminder.action : hasLocation ? "You’re set for now." : "Save your location to personalize your day.")}</h3>
         <p>{firstRun?.reason || (action ? reminder.reason : hasLocation ? "Your schedule is working in the background. We’ll bring you one useful step when the timing matters." : "Local daylight is foundational to your guidance. Add your location using the button below.")}</p>
@@ -46,10 +49,16 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
         </div>}
       </JourneyCard>}
       {firstRun && <p className="today-context">{firstRun.summary}</p>}
-      <LocationRequiredNotice profile={profile} />
+      {coaching ? <div className="today-supporting">
+        {!hasLocation && <div className="today-location-summary"><p>Daylight timing needs your location.</p><Link href="/profile#profile-location">Add location</Link><details><summary>Why location matters</summary><p>Location is optional. Your schedule still works without it; sunrise, sunset, and day length need coordinates. A location label alone does not provide those coordinates.</p></details></div>}
+        <LightGuidePreview profile={profile} now={now} />
+        <details><summary>Food ideas for your day</summary><FoodPreview profile={profile} now={now} suppressNudge={reminder?.id === "last_meal"} /></details>
+        <Link href="/food" className="today-food-link">Open Food →</Link>
+        {primaryState && <details><summary>About your current focus</summary><p>Current stage: {primaryState.replaceAll("_", " ").toLowerCase()}. Your focus stays selected unless you explicitly change it.</p></details>}
+      </div> : <><LocationRequiredNotice profile={profile} />
       {hasLocation && <LightCheckIn profile={profile} now={now} />}
-      <FoodPreview profile={profile} now={now} suppressNudge={reminder?.id === "last_meal"} />
+      <FoodPreview profile={profile} now={now} suppressNudge={reminder?.id === "last_meal"} /></>}
       {children}
-    </main>
+    </main></div>
   </JourneyFrame>;
 }

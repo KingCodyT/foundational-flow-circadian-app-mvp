@@ -1,3 +1,4 @@
+import { normalizeWeeklyCheckins } from './weekly-checkin';
 import {
   AnswerMap,
   ParticipationLevel,
@@ -55,6 +56,7 @@ export function normalizeDailyProfile(profile?: DailyProfile | null, fallbackTim
 
   return {
     ...profile,
+    ...(profile.weeklyCheckins !== undefined ? {weeklyCheckins: normalizeWeeklyCheckins(profile.weeklyCheckins)} : {}),
     timeZone: profile.timeZone || fallbackTimeZone || null,
   };
 }

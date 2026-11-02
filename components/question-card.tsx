@@ -27,6 +27,7 @@ export function QuestionCard({
             return (
               <button
                 key={option.value}
+                data-selected={isSelected}
                 type="button"
                 onClick={() => onSelect(option.value)}
                 className={`rounded-[1.5rem] border px-4 py-4 text-left transition ${

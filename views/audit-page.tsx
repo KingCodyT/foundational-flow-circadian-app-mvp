@@ -11,7 +11,8 @@ import { categoryDefinitions, questionnaire } from "@/lib/questionnaire";
 
 export default function AuditPage() {
   const router = useRouter();
-  const { answers, isHydrated, setAnswer } = useCircadian();
+  const { answers, clientId, isHydrated, setAnswer } = useCircadian();
+  const [positionReady, setPositionReady] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showValidation, setShowValidation] = useState(false);
   const currentQuestion = questionnaire[currentIndex];
@@ -19,19 +20,36 @@ export default function AuditPage() {
   const isCurrentStepComplete = Boolean(answers[currentQuestion.id]);
   const isFinalStep = currentIndex === questionnaire.length - 1;
 
+  useEffect(() => {
+    if (!isHydrated || !router.isReady) return;
+    const key = `ff-assessment-position:${clientId}`;
+    const query = Number(router.query.question);
+    let saved = 0;
+    try { saved = Number(localStorage.getItem(key)); } catch {}
+    const index = Number.isInteger(query) && query >= 1 && query <= questionnaire.length ? query - 1 :
+      Number.isInteger(saved) && saved >= 0 && saved < questionnaire.length ? saved : 0;
+    if (!router.query.question) void router.replace({ pathname: router.pathname, query: { question: index + 1 } }, undefined, { shallow: true });
+    setCurrentIndex(index);
+    setPositionReady(true);
+    try { localStorage.setItem(key, String(index)); } catch {}
+  }, [isHydrated, clientId, router.isReady, router.query.question]);
+  const move = (index: number) => {
+    setShowValidation(false);
+    void router.push({ pathname: router.pathname, query: { question: index + 1 } }, undefined, { shallow: true });
+  };
   useEffect(() => { window.scrollTo({ top: 0, behavior: "auto" }); }, [currentIndex]);
 
   function handleNext() {
     if (!isCurrentStepComplete) return setShowValidation(true);
     setShowValidation(false);
     if (isFinalStep) return void router.push("/setup");
-    setCurrentIndex((value) => value + 1);
+    move(currentIndex + 1);
   }
 
-  if (!isHydrated) return <FlowShell><p role="status">Loading your assessment…</p></FlowShell>;
+  if (!isHydrated || !positionReady) return <FlowShell><p role="status">Loading your assessment…</p></FlowShell>;
 
   return <FlowShell>
-    <section className="grid gap-10 py-6 lg:grid-cols-[0.42fr_0.58fr] lg:py-10">
+    <section className="mobile-assessment grid gap-10 py-6 lg:grid-cols-[0.42fr_0.58fr] lg:py-10">
       <div className="space-y-8 lg:sticky lg:top-6 lg:self-start">
         <SectionHeading eyebrow={currentCategory.title} title="A clearer picture, one answer at a time." description={currentCategory.intention}/>
         <div className="rounded-[2rem] border border-[var(--color-line)] bg-white/70 p-6">
@@ -46,12 +64,12 @@ export default function AuditPage() {
       <div className="space-y-5">
         <div className="rounded-[1.5rem] border border-[var(--color-line)] bg-white/65 px-5 py-4">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">Question {currentIndex + 1} of {questionnaire.length}</p>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">These answers become the starting evidence for your personalization model.</p>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">Your answers help choose a useful starting focus.</p>
         </div>
         <QuestionCard question={currentQuestion} selectedValue={answers[currentQuestion.id]} onSelect={(value) => { setAnswer(currentQuestion.id, value); setShowValidation(false); }}/>
         {showValidation && <div role="alert" className="rounded-[1.5rem] border border-[rgba(179,145,80,0.35)] bg-[rgba(179,145,80,0.12)] px-4 py-3 text-sm text-[var(--color-charcoal)]">Choose an answer before continuing.</div>}
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-          <button type="button" onClick={() => { setShowValidation(false); setCurrentIndex((value) => Math.max(0, value - 1)); }} disabled={currentIndex === 0} className="inline-flex items-center justify-center rounded-full border border-[var(--color-line)] px-5 py-3 text-sm font-medium text-[var(--color-charcoal)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35">Previous question</button>
+          <button type="button" onClick={() => { setShowValidation(false); move(Math.max(0, currentIndex - 1)); }} disabled={currentIndex === 0} className="inline-flex items-center justify-center rounded-full border border-[var(--color-line)] px-5 py-3 text-sm font-medium text-[var(--color-charcoal)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35">Previous question</button>
           <button type="button" onClick={handleNext} className="inline-flex items-center justify-center rounded-full bg-[var(--color-charcoal)] px-5 py-3 text-sm font-medium text-[var(--color-cream)] transition hover:bg-[var(--color-gold)] hover:text-[var(--color-charcoal)]">{isFinalStep ? "Continue to profile setup" : "Next question"}</button>
         </div>
       </div>

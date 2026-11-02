@@ -220,3 +220,16 @@ test('unanswered bedroom darkness can still be supplied without inferring work p
  app.click('Next:');app.click('Next:');app.click('Next:');app.click('Next:');
  assert.deepEqual(app.answerWrites,[['bedroom_darkness','mostly_dark']]);app.close();
 });
+
+for (const gender of [undefined, 'unspecified']) test('optional or legacy gender survives setup resume: ' + gender, () => {
+  const profile = { wakeTime: '07:00', targetBedtime: '23:00', timeZone: 'UTC', ...(gender ? { gender } : {}) };
+  let app = mount(profile);
+  app.click('Next:'); app.click('Save and Finish Later');
+  const saved = app.saved; app.close();
+  app = mount(profile, saved);
+  assert.match(app.stage(), /Schedule/);
+  app.click('Next:'); app.click('Next:'); app.click('Next:');
+  assert.equal(app.completed, true);
+  assert.equal(app.persisted.gender, gender);
+  app.close();
+});

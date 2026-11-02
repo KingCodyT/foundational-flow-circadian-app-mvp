@@ -1,3 +1,4 @@
+import { eventSupportsSignal } from "./now-coaching";
 import { buildTodaysFlow } from "../flow-engine";
 import { scheduleDateKey, scheduleTime, shiftDateKey } from "../schedule-time";
 import type { DailyEventState, DailyProfile } from "@/types/circadian";
@@ -19,7 +20,7 @@ export const guidanceTime = (at: string | Date, zone?: string | null) =>
 
 /** Schedule-based orientation, not a diagnosis or a new coaching target. */
 export function selectFirstRunGuidance(profile: DailyProfile, now: Date,
-  records: Record<string, DailyEventState> | null = null): FirstRunGuidance | null {
+  records: Record<string, DailyEventState> | null = null, signalId?: string | null): FirstRunGuidance | null {
   if (!profile.wakeTime || !profile.targetBedtime) return null;
   const today = scheduleDateKey(now, profile.timeZone);
   const candidates: FirstRunGuidance[] = [];
@@ -35,7 +36,8 @@ export function selectFirstRunGuidance(profile: DailyProfile, now: Date,
     const bedAt = new Date(bedtime.start.getTime() + 45 * 60000);
     for (const event of events) {
       if (!["morning_light", "dim_house", "digital_sunset", "sleep_window"].includes(event.id)) continue;
-      if (event.start < now) continue; // never relabel a missed opportunity as upcoming
+      if (signalId && !eventSupportsSignal(event.id, signalId)) continue;
+      if (!event.end || event.end <= now) continue; // Keep an open window; never revive an ended one.
       const dateKey = scheduleDateKey(event.start, profile.timeZone);
       const record = records?.[dateKey]?.[event.id];
       if (record && ["completed", "skipped"].includes(record.status)) continue;

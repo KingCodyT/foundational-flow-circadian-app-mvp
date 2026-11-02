@@ -384,3 +384,251 @@ a {
 .journey-nav{background:#111514;color:#d8d2c7;border-top:2px solid #c89432}
 .journey-nav a[aria-current="page"]{color:#c89432}
 .journey-nav a[aria-current="page"]:after{background:#c89432}
+
+/* Today response loop: scoped to the existing Today surface. */
+.today-coaching-loop [role=region]:focus { outline: 2px solid #8a641e; outline-offset: 6px; border-radius: 8px; }
+.today-coach-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+.today-coach-actions .journey-primary,.today-coach-actions .journey-outline { min-height: 48px; padding: 10px 20px; font-size: 17px; }
+.today-coach-actions .journey-primary { color: white; }
+.today-coach-fields { display:flex; flex-wrap:wrap; gap:20px; }
+.today-coach-fields label { display:grid; gap:8px; }
+.today-coach-fields input { padding:12px; border:1px solid #b5aa97; border-radius:8px; background:#fffdf8; }
+.today-coach-progress { border-top:1px solid #d2cabc; padding-top:20px; font-size:15px!important; }
+.today-coach-note { font-size:14px!important; }
+.today-coaching-loop [role=alert]:empty { display:none; }
+.today-coaching-loop [role=alert] { color:#8b241c; }
+@media(max-width:600px){.today-coach-actions>button{flex-grow:1}.today-intro h1{white-space:normal;overflow-wrap:break-word}}
+.today-coaching-loop h3 { font-size:28px; line-height:1.2; margin:8px 0 16px; }
+.today-coaching-loop p { margin:12px 0; }
+
+/* Focused Today hierarchy; onboarding and other surfaces keep their layout. */
+.today-reviewed {max-width:760px;margin:0 auto;}
+.today-reviewed .today-intro {min-height:0;padding:10px 8px 20px;background:rgba(250,247,240,.94);border-radius:16px;margin-bottom:8px;}
+.today-reviewed .today-intro h1 {font-size:clamp(30px,4vw,43px);line-height:1.12;white-space:normal;color:#20211e;}
+.today-reviewed .today-date {margin:4px 0;font-size:14px!important;color:#57584f;}
+.today-reviewed .journey-eyebrow {font-size:13px;letter-spacing:3px;margin:0;}
+.today-reviewed .today-content {gap:12px;}
+.today-reviewed .today-focus-line {font-size:13px;color:#393a33;margin:0;padding:10px 12px;background:#f5f1e9;border-radius:8px;line-height:1.5;}
+.today-reviewed .today-focus-line strong {font-weight:600;}
+.today-reviewed .today-coaching-loop {background:#fffdf8;border:1px solid #d8cbb3;padding:30px;box-shadow:0 10px 32px #342c1710;}
+.today-reviewed .today-coaching-loop p {color:#4d5047;font-size:17px;line-height:1.55;}
+.today-reviewed .today-coach-actions .journey-primary {background:#795619;color:#fff;}
+.today-reviewed .today-supporting {padding:12px 16px;background:#f5f1e9;border-radius:12px;}
+.today-reviewed .today-supporting p {font-size:14px;line-height:1.5;}
+.today-reviewed .today-supporting details {border-top:1px solid #dcd5c8;padding:12px 0;}
+.today-reviewed .today-supporting summary {font-size:15px;cursor:pointer;min-height:28px;}
+.today-reviewed .today-supporting a {font-size:14px;color:#705018;text-decoration:underline;text-underline-offset:3px;}
+.today-reviewed .today-supporting .journey-card {background:transparent;box-shadow:none;border:0;padding:14px 0;}
+.today-reviewed .today-supporting .journey-card h3 {font-size:22px;}
+.today-reviewed .today-supporting .journey-outline {display:inline-flex;min-height:42px;font-size:15px;padding:8px 15px;}
+.today-reviewed .today-location-summary>p {display:inline;margin-right:12px;}
+.today-reviewed .today-location-summary>details {border-top:0;padding-bottom:8px;}
+.today-reviewed .today-food-link {display:inline-block;margin-bottom:14px;}
+@media(max-width:600px){.today-reviewed .today-coaching-loop{padding:24px 20px}.today-reviewed .today-intro{padding:12px}.today-reviewed .today-coaching-loop h3{font-size:27px}}
+.today-review-banner {background:#252722;color:#fff6df;border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.5;}
+
+.today-reviewed .light-guide-preview {border-left:3px solid #b58c3b;padding:4px 0 4px 14px;margin:8px 0 18px;}
+.today-reviewed .light-guide-preview h2 {font-size:20px;line-height:1.3;letter-spacing:normal;text-transform:none;margin:0 0 10px;color:#292820;}
+.today-reviewed .light-guide-preview p {margin:7px 0;}
+.today-reviewed .light-guide-preview .light-guide-basis {font-size:12px;color:#625d52;}
+.today-reviewed .light-guide-preview > details {border-top:0;padding:8px 0 0;}
+.today-reviewed .light-guide-preview > details > summary {color:#705018;font-weight:600;min-height:44px;line-height:1.5;padding:8px 0;}
+
+/* Phone-only Today visual review. Other routes and desktop retain their styling. */
+@media (max-width: 600px) {
+  .journey:has(.today-reviewed) {background:#eaf0ef;--journey-cream:#eaf0ef;padding-bottom:82px;}
+  .journey:has(.today-reviewed) .journey-landscape {height:410px;background-image:linear-gradient(180deg,rgba(8,32,47,.48),rgba(8,32,47,.08) 60%,#eaf0ef),url('/images/coastal-hero-placeholder.jpg');background-position:center,center 44%;background-size:cover;}
+  .journey:has(.today-reviewed) .journey-inner {padding:14px 16px 20px;}
+  .journey:has(.today-reviewed) .journey-brand {padding:0 0 18px;gap:8px;color:#fff;}
+  .journey:has(.today-reviewed) .journey-wordmark {color:#fff;font-size:9px;letter-spacing:1.2px;}
+  .journey:has(.today-reviewed) .journey-wordmark svg {width:42px;height:38px;color:#f1bf58;}
+  .journey:has(.today-reviewed) .journey-wordmark small {font-size:6px;letter-spacing:2.3px;}
+  .journey:has(.today-reviewed) .journey-brand>p {font-size:6px;letter-spacing:1px;line-height:1.8;color:#fff;}
+  .journey:has(.today-reviewed) .today-intro {background:transparent;box-shadow:none;border:0;padding:0 0 14px;min-height:0;color:#fff;}
+  .journey:has(.today-reviewed) .today-intro .today-date {font-size:12px;color:#fff;margin:0 0 5px;}
+  .journey:has(.today-reviewed) .today-intro .journey-eyebrow {display:none;}
+  .journey:has(.today-reviewed) .today-intro h1 {font-size:32px;line-height:1.08;margin:0;color:#fff;text-shadow:0 2px 12px #08202f99;}
+  .journey:has(.today-reviewed) .today-content {gap:10px;}
+  .journey:has(.today-reviewed) .today-focus-line {background:#f7fbf8f5;color:#213c3c;border:0;border-radius:10px;padding:9px 12px;margin:0;font-size:12px;line-height:1.4;}
+  .journey:has(.today-reviewed) .today-focus-line strong {color:#163c37;}
+  .journey:has(.today-reviewed) .today-coaching-loop {background:#fffefb;border:1px solid #fff;border-top:4px solid #c08b32;border-radius:18px;padding:18px 18px 14px;box-shadow:0 8px 26px #102f4020;}
+  .journey:has(.today-reviewed) .today-coaching-loop h3 {font-size:27px;line-height:1.15;color:#163c37;margin:0 0 12px;}
+  .journey:has(.today-reviewed) .today-coaching-loop p {font-size:15px;line-height:1.45;color:#36494b;margin:9px 0;}
+  .journey:has(.today-reviewed) .today-coach-actions {display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px;}
+  .journey:has(.today-reviewed) .today-coach-actions button {min-height:48px;padding:11px 8px;font-size:14px;line-height:1.25;border-radius:12px;white-space:normal;}
+  .journey:has(.today-reviewed) .today-coach-actions .journey-primary {background:#255948;color:#fff;border-color:#255948;}
+  .journey:has(.today-reviewed) .today-coach-actions .journey-outline {background:#fffefb;color:#314b46;border-color:#94aaa2;}
+  .journey:has(.today-reviewed) .today-supporting {background:#f5faf8;padding:15px 14px;border-radius:14px;}
+  .journey:has(.today-reviewed) .light-guide-preview {border-left-color:#b8832c;margin:0 0 12px;}
+  .journey:has(.today-reviewed) .light-guide-preview h2 {font-size:19px;color:#163c37;}
+  .journey:has(.today-reviewed) .light-guide-preview p {color:#36494b;font-size:14px;}
+  .journey:has(.today-reviewed) .light-guide-preview .light-guide-basis {font-size:12px;color:#586967;}
+  .journey:has(.today-reviewed) .journey-nav {position:fixed;bottom:0;left:0;right:0;z-index:20;background:#122d38;color:#dce8e8;border-top:2px solid #c5953c;margin:0;padding:8px 10px max(8px,env(safe-area-inset-bottom));border-radius:0;}
+  .journey:has(.today-reviewed) .journey-nav a {min-height:48px;color:#dce8e8;}
+  .journey:has(.today-reviewed) .journey-nav a[aria-current='page'] {color:#f6c45b;}
+  .journey:has(.today-reviewed) :is(button,a,summary):focus-visible {outline:3px solid #157a93;outline-offset:3px;}
+}
+
+/* Featured education on phone Today, with the existing full guide on demand. */
+.light-guide-feature-title, .light-guide-mobile-feature {display:none;}
+@media (max-width:600px) {
+  .today-reviewed .light-guide-standard-title {display:none;}
+  .today-reviewed .light-guide-feature-title, .today-reviewed .light-guide-mobile-feature {display:block;}
+  .journey:has(.today-reviewed) .light-guide-preview {border:0;border-top:5px solid #d3a548;border-radius:16px;padding:22px 18px;margin:0 -14px 20px;background:#365FAD;box-shadow:0 8px 24px #102f4020;color:#fff;}
+  .journey:has(.today-reviewed) .light-guide-preview h2 {font-size:29px;font-weight:500;line-height:1.12;color:#fff;margin-bottom:12px;}
+  .journey:has(.today-reviewed) .light-guide-preview p {color:#fff;font-size:14px;line-height:1.5;}
+  .journey:has(.today-reviewed) .light-guide-preview .light-guide-basis {color:#fff;font-size:12px;}
+  .today-reviewed .light-wavelength-preview {border:1px solid #62838a;border-radius:12px;padding:14px;margin:18px 0;}
+  .today-reviewed .light-wavelength-preview h3 {font-size:20px;color:#fff;margin:0 0 14px;}
+  .light-wavelength-swatches {display:flex;gap:6px;}
+  .light-wavelength-swatches span {flex:1;min-width:0;font-size:11px;text-align:center;color:#fff;}
+  .light-wavelength-swatches i {display:block;height:26px;border:1px solid #c0cfcb;border-radius:4px;margin-bottom:7px;}
+  .journey:has(.today-reviewed) .light-guide-preview > details > summary {background:#f3c96e;color:#163b43;padding:14px;border-radius:10px;min-height:48px;font-size:15px;}
+  .today-reviewed .light-guide-preview > details[open] {background:#f5faf8;border-radius:10px;padding:0 12px 12px;}
+  .journey:has(.today-reviewed) .light-guide-preview > details[open] > summary {margin:0 -12px 12px;}
+  .journey:has(.today-reviewed) .light-guide-preview > details[open] :is(p,h2,h3,h4,h5,dt,dd,span,li) {color:#263f42;}
+}
+
+.light-visible-gradient {height:28px;border:1px solid #c0cfcb;border-radius:6px;background:linear-gradient(90deg,#7139a5 0%,#4545bf 16%,#2674cb 30%,#38b9c6 43%,#61b65c 56%,#eed75b 70%,#eb963e 84%,#c8453d 100%);}
+.light-spectrum-endpoints {display:flex;justify-content:space-between;gap:12px;font-size:11px;margin-top:7px;}
+
+/* Mobile setup continuity with the approved coastal Today review. */
+@media(max-width:600px) {
+ .journey:has(.journey-steps){background:#eaf0ef;--journey-cream:#eaf0ef;}
+ .journey:has(.journey-steps) .journey-landscape{height:440px;background-image:linear-gradient(180deg,#08202f99,#08202f55 65%,#eaf0ef),url('/images/coastal-hero-placeholder.jpg');background-position:center,center 44%;background-size:cover;}
+ .journey:has(.journey-steps) .journey-inner{padding:14px 16px 24px;}
+ .journey:has(.journey-steps) .journey-brand{padding:0 0 18px;gap:8px;color:#fff;}
+ .journey:has(.journey-steps) .journey-wordmark{font-size:9px;letter-spacing:1.2px;}
+ .journey:has(.journey-steps) .journey-wordmark svg{width:42px;height:38px;color:#f1bf58;}
+ .journey:has(.journey-steps) .journey-wordmark small{font-size:6px;letter-spacing:2.3px;}
+ .journey:has(.journey-steps) .journey-brand>p{font-size:6px;letter-spacing:1px;line-height:1.8;color:#fff;}
+ .journey:has(.journey-steps) .journey-intro{padding:0;min-height:0;}
+ .journey:has(.journey-steps) .journey-intro h1{font-size:32px;line-height:1.12;color:#fff;margin:8px 0 12px;letter-spacing:-.5px;}
+ .journey:has(.journey-steps) .journey-intro p{font-size:15px;color:#fff;line-height:1.45;}
+ .journey:has(.journey-steps) .journey-intro .journey-eyebrow{font-size:11px;letter-spacing:2px;color:#ffe0a0;}
+ .journey:has(.journey-steps) .journey-steps{margin:20px 0 14px;padding:12px 4px;background:#f5faf8;border-radius:12px;}
+ .journey:has(.journey-steps) .journey-steps span{width:30px;height:30px;font-size:14px;margin-bottom:6px;}
+ .journey:has(.journey-steps) .journey-steps small{font-size:10px;line-height:1.2;display:block;color:#314b60;}
+ .journey:has(.journey-steps) .journey-steps li:after{top:15px;left:calc(50% + 18px);right:calc(-50% + 18px);}
+ .journey:has(.journey-steps) .journey-steps [aria-current] span{background:#365fad;border-color:#365fad;color:white;}
+ .journey:has(.journey-steps) .journey-content{gap:12px;}
+ .journey:has(.journey-steps) .journey-card{background:#fffefb;border-radius:16px;padding:20px 16px;}
+ .journey:has(.journey-steps) .journey-card h2{font-size:21px;font-weight:500;letter-spacing:0;text-transform:none;color:#254c7b;}
+ .journey:has(.journey-steps) .journey-card h3{font-size:24px;}
+ .journey:has(.journey-steps) .journey-card p{font-size:15px;line-height:1.45;color:#36494b;}
+ .journey:has(.journey-steps) .journey-card-heading{margin-bottom:18px;}
+ .journey:has(.journey-steps) .journey-grid{grid-template-columns:1fr;gap:18px;}
+ .journey:has(.journey-steps) .journey-field>span{font-size:15px;}
+ .journey:has(.journey-steps) .journey-field :is(input,select){font-size:16px;}
+ .journey:has(.journey-steps) .journey-segments label{font-size:13px;min-height:44px;padding:9px 6px;}
+ .journey:has(.journey-steps) .journey-segments .selected{background:#365fad;color:#fff;}
+ .journey:has(.journey-steps) .journey-primary{background:#365fad;color:#fff;}
+ .journey:has(.journey-steps) :is(.journey-primary,.journey-outline){min-height:48px;font-size:15px;padding:12px 16px;gap:8px;white-space:normal;}
+ .journey:has(.journey-steps) .journey-outline{border-color:#365fad;color:#254c7b;}
+ .journey:has(.journey-steps) .journey-actions{margin:4px 0;gap:10px;}
+ .journey:has(.journey-steps) .journey-save{font-size:14px;min-height:44px;}
+ .journey:has(.journey-steps) :is(button,a,input,select):focus-visible{outline:3px solid #365fad;outline-offset:3px;}
+}
+@media(max-width:600px){
+ .journey:has(.journey-steps) fieldset{min-width:0;}
+ .journey:has(.journey-steps) fieldset select{min-width:0;flex:1;padding:10px 6px;font-size:16px;min-height:44px;}
+ .journey:has(.journey-steps) .journey-steps small{font-size:9px;}
+}
+
+/* Mobile Food, Timeline and Profile continuity; active-route scope only. */
+@media(max-width:600px){
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]){background:#eaf0ef;--journey-cream:#eaf0ef;padding-bottom:86px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-landscape{height:420px;background-image:linear-gradient(180deg,#08202f99,#08202f44 65%,#eaf0ef),url("/images/coastal-hero-placeholder.jpg");background-position:center,center 44%;background-size:cover;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-inner{padding:14px 16px 20px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-brand{padding:0 0 18px;gap:8px;color:white;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-wordmark{font-size:9px;letter-spacing:1.2px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-wordmark svg{width:42px;height:38px;color:#f1bf58;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-wordmark small{font-size:6px;letter-spacing:2.3px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-brand>p{font-size:6px;letter-spacing:1px;line-height:1.8;color:white;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-secondary{padding:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-secondary>.profile-page{background:transparent;padding:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-intro,.profile-intro){padding:0 0 20px;min-height:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-intro,.profile-intro) h1{font-size:34px;line-height:1.12;color:white;margin:8px 0 12px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-intro,.profile-intro)>p{font-size:15px;line-height:1.45;color:white;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .profile-intro .journey-eyebrow{font-size:11px;letter-spacing:2px;color:#ffe0a0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-card,.profile-section){background:#fffefb;padding:20px 16px;border-radius:16px;margin:12px 0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-card,.profile-section) h2{font-size:21px;font-weight:500;letter-spacing:0;text-transform:none;color:#254c7b;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-card,.profile-section) p{font-size:15px;line-height:1.45;color:#36494b;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-primary,button[type="submit"]){background:#365fad;color:white;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(.journey-primary,.journey-outline){min-height:48px;font-size:15px;padding:12px 16px;white-space:normal;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-outline{border-color:#365fad;color:#254c7b;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(input,select,textarea){font-size:16px;min-width:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) fieldset{min-width:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) fieldset select{flex:1;min-height:44px;padding:10px 6px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) :is(button,a,summary,input,select):focus-visible{outline:3px solid #365fad;outline-offset:3px;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-nav{position:fixed;bottom:0;left:0;right:0;z-index:20;background:#122d38;color:#dce8e8;border-top:2px solid #c5953c;margin:0;padding:8px 10px max(8px,env(safe-area-inset-bottom));border-radius:0;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-nav a{min-height:48px;color:#dce8e8;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .journey-nav a[aria-current="page"]{color:#f6c45b;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .food-idea-controls{flex-wrap:wrap;}
+ .journey:has(.journey-nav a:is([href="/food"],[href="/timeline"],[href="/profile"])[aria-current="page"]) .food-idea-grid{grid-template-columns:1fr;}
+}
+@media(max-width:600px){
+ .journey:has(.journey-nav a[href="/timeline"][aria-current="page"]) .timeline-day{background:#fffefb;border-radius:16px;padding:16px;margin:8px 0 0;}
+ .journey:has(.journey-nav a[href="/timeline"][aria-current="page"]) .timeline-selected-date{margin:0;color:#254c7b;font-size:24px;}
+ .journey:has(.journey-nav a[href="/timeline"][aria-current="page"]) .timeline-date-navigation button{border-color:#365fad;color:#254c7b;}
+}
+
+/* Assessment-only mobile presentation; all questions and ordering unchanged. */
+@media(max-width:600px){
+ .journey:has(.mobile-assessment){background:#eaf0ef;--journey-cream:#eaf0ef;}
+ .journey:has(.mobile-assessment) .journey-landscape{height:420px;background-image:linear-gradient(180deg,#08202f99,#08202f55 65%,#eaf0ef),url('/images/coastal-hero-placeholder.jpg');background-size:cover;background-position:center,center 44%;}
+ .journey:has(.mobile-assessment) .journey-inner{padding:14px 16px 24px;}
+ .journey:has(.mobile-assessment) .journey-brand{padding:0 0 18px;gap:8px;color:#fff;}
+ .journey:has(.mobile-assessment) .journey-wordmark{font-size:9px;letter-spacing:1.2px;}
+ .journey:has(.mobile-assessment) .journey-wordmark svg{width:42px;height:38px;color:#f1bf58;}
+ .journey:has(.mobile-assessment) .journey-wordmark small{font-size:6px;letter-spacing:2.3px;}
+ .journey:has(.mobile-assessment) .journey-brand>p{font-size:6px;letter-spacing:1px;line-height:1.8;color:#fff;}
+ .journey:has(.mobile-assessment) .journey-secondary{padding:0;}
+ .journey .mobile-assessment{background:transparent;padding:0;gap:16px;}
+ .mobile-assessment>div:first-child>div:first-child h1{font-size:32px;line-height:1.12;color:#fff;letter-spacing:-.5px;}
+ .mobile-assessment>div:first-child>div:first-child p{color:#fff;font-size:15px;line-height:1.45;}
+ .mobile-assessment>div:first-child>div:first-child>p{font-size:11px;letter-spacing:2px;color:#ffe0a0;}
+ .mobile-assessment>div:first-child>div:last-child{padding:16px;border-radius:16px;background:#fffefb;margin-top:18px;}
+ .mobile-assessment article{padding:18px 16px;border-radius:16px;background:#fffefb;}
+ .mobile-assessment article h3{font-size:24px;line-height:1.25;}
+ .mobile-assessment article p{font-size:14px;line-height:1.5;color:#36494b;}
+ .mobile-assessment article button{border-radius:12px;min-height:48px;padding:14px 12px;}
+ .mobile-assessment article button[data-selected="true"]{background:#365fad;border-color:#365fad;}
+ .mobile-assessment article button[data-selected="true"] p{color:white;}
+ .mobile-assessment>div:last-child>div:last-child>button:last-child{background:#365fad;color:white;}
+ .mobile-assessment button:focus-visible{outline:3px solid #365fad;outline-offset:3px;}
+ .mobile-assessment [role="alert"]{background:#fff4df;color:#54370c;}
+}
+
+/* Food recipes: scoped to the curated collection, leaving timing controls intact. */
+.food-recipes .recipe-eyebrow {font-size:.78rem;letter-spacing:.05em;color:#365fad;margin-bottom:.5rem;}
+.food-recipes h2,.food-recipes h3 {font-weight:500;line-height:1.2;}
+.food-recipes h2 {font-size:1.65rem;}
+.food-recipes .recipe-slots {display:flex;gap:6px;margin:20px 0 8px;}
+.food-recipes .recipe-slots button {flex:1;min-height:48px;border:1px solid #365fad;border-radius:12px;padding:8px 4px;color:#365fad;background:#fff;font-size:.85rem;}
+.food-recipes .recipe-slots button[aria-pressed="true"] {background:#365fad;color:#fff;}
+.food-recipes .recipe-card {background:#edf3fb;border:1px solid #c3d4ee;border-radius:18px;padding:18px;margin:18px 0;color:#173653;}
+.food-recipes .recipe-card h3 {font-size:1.45rem;}
+.food-recipes summary {cursor:pointer;min-height:48px;padding:12px 0;font-weight:500;color:#244c94;}
+.food-recipes li {margin:12px 0;line-height:1.6;}
+.food-recipes ul {list-style:disc;padding-left:20px;}
+.food-recipes ol {list-style:decimal;padding-left:22px;}
+.food-recipes a {text-decoration:underline;color:#244c94;}
+.food-recipes .recipe-filters label {display:block;margin:12px 0;}
+.food-recipes .recipe-filters select {display:block;width:100%;min-height:48px;}
+.food-recipes :is(button,summary,a,select,input):focus-visible {outline:3px solid #8b5a00;outline-offset:3px;}
+
+/* Food palette correction: applies at every width, not only the phone breakpoint. */
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) { --journey-cream:#365fad; background:#365fad; color:#fff; }
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-landscape { background-image:linear-gradient(180deg,rgba(237,243,251,.72) 0%,rgba(237,243,251,.72) 68%,#365fad 100%),var(--journey-image); }
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) :is(.journey-brand,.journey-brand p,.journey-intro,.journey-intro p,.journey-secondary>p,.journey-footer p) {color:#fff;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-card {background:#edf3fb;border-color:#c3d4ee;color:#173653;box-shadow:none;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-card p {color:#364f68;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-card h2 {font-weight:500;letter-spacing:normal;text-transform:none;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .recipe-card {background:#fff;border-color:#bdd0ed;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-outline {background:#fff;border-color:#365fad;color:#365fad;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-primary {background:#365fad;border-color:#365fad;color:#fff;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) :is(select,input:not([type=checkbox])) {background:#fff;color:#173653;border-color:#91afd9;}
+
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) :is(.journey-brand,.journey-brand p,.journey-intro,.journey-intro h1,.journey-intro p) {color:#173653;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-wordmark svg {color:#365fad;}

@@ -620,7 +620,7 @@ a {
 
 /* Food palette correction: applies at every width, not only the phone breakpoint. */
 .journey:has(.food-recipes) { --journey-cream:#365fad; background:#365fad; color:#fff; }
-.journey:has(.food-recipes) .journey-landscape { background-image:linear-gradient(180deg,rgba(54,95,173,.78),#365fad 95%),var(--journey-image); }
+.journey:has(.food-recipes) .journey-landscape { background-image:linear-gradient(180deg,rgba(54,95,173,.94),#365fad 95%),var(--journey-image); }
 .journey:has(.food-recipes) :is(.journey-brand,.journey-brand p,.journey-intro,.journey-intro p,.journey-secondary>p,.journey-footer p) {color:#fff;}
 .journey:has(.food-recipes) .journey-card {background:#edf3fb;border-color:#c3d4ee;color:#173653;box-shadow:none;}
 .journey:has(.food-recipes) .journey-card p {color:#364f68;}

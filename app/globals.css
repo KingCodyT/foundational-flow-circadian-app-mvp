@@ -433,3 +433,38 @@ a {
 .today-reviewed .light-guide-preview .light-guide-basis {font-size:12px;color:#625d52;}
 .today-reviewed .light-guide-preview > details {border-top:0;padding:8px 0 0;}
 .today-reviewed .light-guide-preview > details > summary {color:#705018;font-weight:600;min-height:44px;line-height:1.5;padding:8px 0;}
+
+/* Phone-only Today visual review. Other routes and desktop retain their styling. */
+@media (max-width: 600px) {
+  .journey:has(.today-reviewed) {background:#eaf0ef;--journey-cream:#eaf0ef;padding-bottom:82px;}
+  .journey:has(.today-reviewed) .journey-landscape {height:410px;background-image:linear-gradient(180deg,rgba(8,32,47,.48),rgba(8,32,47,.08) 60%,#eaf0ef),url('/images/coastal-hero-placeholder.jpg');background-position:center,center 44%;background-size:cover;}
+  .journey:has(.today-reviewed) .journey-inner {padding:14px 16px 20px;}
+  .journey:has(.today-reviewed) .journey-brand {padding:0 0 18px;gap:8px;color:#fff;}
+  .journey:has(.today-reviewed) .journey-wordmark {color:#fff;font-size:9px;letter-spacing:1.2px;}
+  .journey:has(.today-reviewed) .journey-wordmark svg {width:42px;height:38px;color:#f1bf58;}
+  .journey:has(.today-reviewed) .journey-wordmark small {font-size:6px;letter-spacing:2.3px;}
+  .journey:has(.today-reviewed) .journey-brand>p {font-size:6px;letter-spacing:1px;line-height:1.8;color:#fff;}
+  .journey:has(.today-reviewed) .today-intro {background:transparent;box-shadow:none;border:0;padding:0 0 14px;min-height:0;color:#fff;}
+  .journey:has(.today-reviewed) .today-intro .today-date {font-size:12px;color:#fff;margin:0 0 5px;}
+  .journey:has(.today-reviewed) .today-intro .journey-eyebrow {display:none;}
+  .journey:has(.today-reviewed) .today-intro h1 {font-size:32px;line-height:1.08;margin:0;color:#fff;text-shadow:0 2px 12px #08202f99;}
+  .journey:has(.today-reviewed) .today-content {gap:10px;}
+  .journey:has(.today-reviewed) .today-focus-line {background:#f7fbf8f5;color:#213c3c;border:0;border-radius:10px;padding:9px 12px;margin:0;font-size:12px;line-height:1.4;}
+  .journey:has(.today-reviewed) .today-focus-line strong {color:#163c37;}
+  .journey:has(.today-reviewed) .today-coaching-loop {background:#fffefb;border:1px solid #fff;border-top:4px solid #c08b32;border-radius:18px;padding:18px 18px 14px;box-shadow:0 8px 26px #102f4020;}
+  .journey:has(.today-reviewed) .today-coaching-loop h3 {font-size:27px;line-height:1.15;color:#163c37;margin:0 0 12px;}
+  .journey:has(.today-reviewed) .today-coaching-loop p {font-size:15px;line-height:1.45;color:#36494b;margin:9px 0;}
+  .journey:has(.today-reviewed) .today-coach-actions {display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:16px;}
+  .journey:has(.today-reviewed) .today-coach-actions button {min-height:48px;padding:11px 8px;font-size:14px;line-height:1.25;border-radius:12px;white-space:normal;}
+  .journey:has(.today-reviewed) .today-coach-actions .journey-primary {background:#255948;color:#fff;border-color:#255948;}
+  .journey:has(.today-reviewed) .today-coach-actions .journey-outline {background:#fffefb;color:#314b46;border-color:#94aaa2;}
+  .journey:has(.today-reviewed) .today-supporting {background:#f5faf8;padding:15px 14px;border-radius:14px;}
+  .journey:has(.today-reviewed) .light-guide-preview {border-left-color:#b8832c;margin:0 0 12px;}
+  .journey:has(.today-reviewed) .light-guide-preview h2 {font-size:19px;color:#163c37;}
+  .journey:has(.today-reviewed) .light-guide-preview p {color:#36494b;font-size:14px;}
+  .journey:has(.today-reviewed) .light-guide-preview .light-guide-basis {font-size:12px;color:#586967;}
+  .journey:has(.today-reviewed) .journey-nav {position:fixed;bottom:0;left:0;right:0;z-index:20;background:#122d38;color:#dce8e8;border-top:2px solid #c5953c;margin:0;padding:8px 10px max(8px,env(safe-area-inset-bottom));border-radius:0;}
+  .journey:has(.today-reviewed) .journey-nav a {min-height:48px;color:#dce8e8;}
+  .journey:has(.today-reviewed) .journey-nav a[aria-current='page'] {color:#f6c45b;}
+  .journey:has(.today-reviewed) :is(button,a,summary):focus-visible {outline:3px solid #157a93;outline-offset:3px;}
+}

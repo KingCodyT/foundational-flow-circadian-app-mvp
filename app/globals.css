@@ -599,3 +599,21 @@ a {
  .mobile-assessment button:focus-visible{outline:3px solid #365fad;outline-offset:3px;}
  .mobile-assessment [role="alert"]{background:#fff4df;color:#54370c;}
 }
+
+/* Food recipes: scoped to the curated collection, leaving timing controls intact. */
+.food-recipes .recipe-eyebrow {font-size:.78rem;letter-spacing:.05em;color:#365fad;margin-bottom:.5rem;}
+.food-recipes h2,.food-recipes h3 {font-weight:500;line-height:1.2;}
+.food-recipes h2 {font-size:1.65rem;}
+.food-recipes .recipe-slots {display:flex;gap:6px;margin:20px 0 8px;}
+.food-recipes .recipe-slots button {flex:1;min-height:48px;border:1px solid #365fad;border-radius:12px;padding:8px 4px;color:#365fad;background:#fff;font-size:.85rem;}
+.food-recipes .recipe-slots button[aria-pressed="true"] {background:#365fad;color:#fff;}
+.food-recipes .recipe-card {background:#edf3fb;border:1px solid #c3d4ee;border-radius:18px;padding:18px;margin:18px 0;color:#173653;}
+.food-recipes .recipe-card h3 {font-size:1.45rem;}
+.food-recipes summary {cursor:pointer;min-height:48px;padding:12px 0;font-weight:500;color:#244c94;}
+.food-recipes li {margin:12px 0;line-height:1.6;}
+.food-recipes ul {list-style:disc;padding-left:20px;}
+.food-recipes ol {list-style:decimal;padding-left:22px;}
+.food-recipes a {text-decoration:underline;color:#244c94;}
+.food-recipes .recipe-filters label {display:block;margin:12px 0;}
+.food-recipes .recipe-filters select {display:block;width:100%;min-height:48px;}
+.food-recipes :is(button,summary,a,select,input):focus-visible {outline:3px solid #8b5a00;outline-offset:3px;}

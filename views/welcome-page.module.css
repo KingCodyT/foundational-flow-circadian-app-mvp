@@ -62,8 +62,7 @@
  .homepage :global(.ff-cta):focus-visible{outline:3px solid #365fad;outline-offset:4px;}
 }
 
-/* Approved mobile blue palette: override remaining legacy earth-tone surfaces. */
-@media(max-width:600px){
+/* Approved blue palette at every width; layout remains responsive above. */
  .homepage{--ff-paper:#f5f8fc;--ff-ink:#173653;--ff-muted:#364f68;--ff-line:#c9d6e5;--ff-soft:#e7eff8;--ff-gold:#365fad;}
  .homepage :global(.ff-nav){background:#122d38;color:#fff;border-top-color:#c5953c;}
  .homepage :global(.ff-hero){background:#dceaf7;color:#173653;}
@@ -77,14 +76,11 @@
  .homepage :global(.ff-cta):hover{background:#ffe0a0;}
  .homepage :global(.ff-cta):focus-visible{outline-color:#fff;}
  .homepage :global(.ff-footer){background:#122d38;color:#dce8e8;border-top-color:#587280;}
-}
 
-/* Cobalt is the primary mobile welcome surface; pale blue supports it. */
-@media(max-width:600px){
+/* Cobalt is the primary welcome surface; pale blue supports it. */
  .homepage{--ff-paper:#365fad;--ff-ink:#fff;--ff-muted:#fff;--ff-line:#91afd9;--ff-gold:#fff;}
  .homepage :global(.ff-hero){background:#365fad;color:#fff;}
  .homepage :global(.ff-hero) :global(.ff-eyebrow),.homepage :global(.ff-scene-caption),.homepage :global(.ff-hero) h1 em{color:#fff;}
  .homepage :global(.ff-hero) :global(.ff-lead),.homepage :global(.ff-hero) :global(.ff-intro){color:#fff;}
  .homepage :global(.ff-method){background:#dceaf7;color:#173653;--ff-ink:#173653;--ff-muted:#364f68;--ff-gold:#365fad;--ff-line:#a8bfda;}
  .homepage :global(.ff-hero) h1 em{color:#dceaf7;}
-}

@@ -632,3 +632,49 @@ a {
 
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) :is(.journey-brand,.journey-brand p,.journey-intro,.journey-intro h1,.journey-intro p) {color:#173653;}
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-wordmark svg {color:#365fad;}
+
+/* Approved journey palette at all widths. Responsive geometry stays above. */
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) {
+ --journey-cream:#365fad;--color-charcoal:#173653;--color-muted:#364f68;--color-gold:#365fad;--color-cream:#fff;--color-line:#b9cce6;
+ background:#365fad;color:#173653;
+}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-landscape {
+ background-image:linear-gradient(180deg,rgba(54,95,173,.86),#365fad),url('/images/coastal-hero-placeholder.jpg');
+ background-size:cover;background-position:center,center 44%;
+}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) :is(.journey-brand,.journey-brand p,.journey-wordmark,.journey-intro,.journey-intro h1,.journey-intro p,.profile-intro,.profile-intro h1,.profile-intro p,.today-intro,.today-intro h1,.today-intro p){color:#fff;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) :is(.journey-card,.profile-section,.timeline-day,.today-coaching-loop,.today-supporting,.today-focus-line){background:#edf3fb;border-color:#bdd0ed;color:#173653;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) :is(.journey-card,.profile-section,.today-coaching-loop,.today-focus-line) :is(h2,h3,p,strong){color:#173653;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) :is(.journey-primary,.journey-segments .selected,.journey-steps [aria-current] span){background:#365fad;border-color:#365fad;color:#fff;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-outline{background:#fff;border-color:#365fad;color:#365fad;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) :is(.journey-field input:not([type=radio]),.journey-field select,.journey-segments){background:#fff;border-color:#91afd9;color:#173653;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-toggle input{accent-color:#365fad;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-steps{background:#edf3fb;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-steps small{color:#173653;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-nav{background:#122d38;color:#dceaf7;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-nav a{color:#dceaf7;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-nav a[aria-current='page']{color:#f3c96e;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-nav a[aria-current='page']:after{background:#f3c96e;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) :is(.today-intro,.profile-page){background:transparent;}
+.journey:has(.mobile-assessment) .mobile-assessment{background:transparent;}
+.journey .mobile-assessment>div:first-child>div:first-child :is(h1,p){color:#fff;}
+.journey .mobile-assessment article,.journey .mobile-assessment>div>div:not(:first-child),.journey .mobile-assessment>div:last-child>div:first-child{background:#edf3fb;color:#173653;}
+.journey .mobile-assessment article button[data-selected='true']{background:#365fad;border-color:#365fad;box-shadow:none;}
+.journey .mobile-assessment article button[data-selected='true'] p{color:#fff;}
+.journey .mobile-assessment article button[data-selected='true'] span{background:#edf3fb;color:#173653;border-color:#edf3fb;}
+.journey .mobile-assessment>div:last-child>div:last-child{background:transparent;}
+.journey .mobile-assessment>div:last-child>div:last-child>button:last-child{background:#365fad;color:#fff;border:1px solid #dceaf7;}
+.journey .mobile-assessment>div:last-child>div:last-child>button:first-child{color:#fff;border-color:#dceaf7;}
+.journey:has(.today-reviewed) .light-guide-preview{background:#365fad;color:#fff;}
+.journey:has(.today-reviewed) .light-guide-preview :is(h2,p){color:#fff;}
+.journey:has(.today-reviewed) .light-guide-preview details[open] :is(p,h2,h3,h4,h5,dt,dd,span,li){color:#173653;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .journey-wordmark svg{color:#f3c96e;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .timeline-page{color:#fff;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .timeline-page>p,.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .timeline-page>details>summary{color:#fff;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .timeline-page :is(.timeline-day,.timeline-glance,.journey-card){color:#173653;}
+.journey:has(.today-reviewed) .light-guide-preview>details>summary{background:#f3c96e;color:#173653;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) :is(button,a,input,select,summary):focus-visible{outline-color:#91b8f1;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .timeline-page section[aria-label='Day recap']{background:#edf3fb;color:#173653;}
+.journey:has(.journey-inner .journey-brand .journey-wordmark):not(:has(.food-recipes)) .timeline-zone{color:#fff;}
+.journey .timeline-page .timeline-disclosure,.journey .timeline-page .timeline-disclosure>summary,.journey .timeline-page .timeline-disclosure>p{color:#fff;}
+.journey .timeline-page .timeline-disclosure button,.journey .timeline-page [role='dialog']{color:#173653;}

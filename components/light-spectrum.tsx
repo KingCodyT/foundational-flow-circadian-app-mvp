@@ -20,8 +20,11 @@ export function LightBandDetails() {
 export function LightWavelengthPreview() {
   return <div className="light-wavelength-preview">
     <h3>Different light. Different pathways.</h3>
-    <div className="light-wavelength-swatches" aria-label="Selected light bands">{bands.map(band => <span key={band.id}><i aria-hidden="true" style={{backgroundColor:band.color}} />{band.id === 'blue' ? 'Blue–cyan' : band.id === 'red' ? 'Red' : band.id === 'nir' ? 'NIR' : band.name}</span>)}</div>
-    <p className="light-guide-basis">Selected bands, not measured proportions. UV and NIR are invisible; their colors are illustrative.</p>
+    <div className="light-wavelength-continuum" role="img" aria-label="Illustrative visible spectrum, from violet through blue, green and yellow to red. Ultraviolet is beyond violet; infrared is beyond red. Neither is visible.">
+      <div className="light-visible-gradient" />
+      <div className="light-spectrum-endpoints"><span>Violet · shorter</span><span>Red · longer</span></div>
+    </div>
+    <p className="light-guide-basis">Visible wavelengths, shown as a smooth illustration—not measured light or energy proportions. UV is beyond violet; infrared is beyond red. Both are invisible.</p>
     <p><strong>Light → eyes → body clock</strong><br />{bands[0].summary}</p>
   </div>;
 }

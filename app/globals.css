@@ -488,3 +488,6 @@ a {
   .journey:has(.today-reviewed) .light-guide-preview > details[open] > summary {margin:0 -12px 12px;}
   .journey:has(.today-reviewed) .light-guide-preview > details[open] :is(p,h2,h3,h4,h5,dt,dd,span,li) {color:#263f42;}
 }
+
+.light-visible-gradient {height:28px;border:1px solid #c0cfcb;border-radius:6px;background:linear-gradient(90deg,#7139a5 0%,#4545bf 16%,#2674cb 30%,#38b9c6 43%,#61b65c 56%,#eed75b 70%,#eb963e 84%,#c8453d 100%);}
+.light-spectrum-endpoints {display:flex;justify-content:space-between;gap:12px;font-size:11px;margin-top:7px;}

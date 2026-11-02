@@ -11,9 +11,10 @@ test('light preview explains day, night, and unavailable location without measur
 test('mobile feature previews existing light pathways without presenting swatches as measured spectrum',()=>{
  const html=renderToStaticMarkup(React.createElement(LightGuidePreview,{profile:null,now:new Date('2026-11-01T22:00:00Z')}));
  assert.match(html,/Light, timing &amp; your body/);
- assert.match(html,/Selected bands, not measured proportions/);
- assert.match(html,/UV and NIR are invisible/);
+ assert.match(html,/not measured light or energy proportions/);
+ assert.match(html,/Both are invisible/);
  assert.match(html,/Light → eyes → body clock/);
+ assert.match(html,/role="img" aria-label="Illustrative visible spectrum, from violet through blue, green and yellow to red/);
  assert.match(html,/Local light timing unavailable/);
  assert.doesNotMatch(html,/<details open/);
 });

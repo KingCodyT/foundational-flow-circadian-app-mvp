@@ -474,10 +474,10 @@ a {
 @media (max-width:600px) {
   .today-reviewed .light-guide-standard-title {display:none;}
   .today-reviewed .light-guide-feature-title, .today-reviewed .light-guide-mobile-feature {display:block;}
-  .journey:has(.today-reviewed) .light-guide-preview {border:0;border-top:5px solid #d3a548;border-radius:16px;padding:22px 18px;margin:0 -14px 20px;background:#2c5c62;box-shadow:0 8px 24px #102f4020;color:#fff;}
+  .journey:has(.today-reviewed) .light-guide-preview {border:0;border-top:5px solid #d3a548;border-radius:16px;padding:22px 18px;margin:0 -14px 20px;background:#365FAD;box-shadow:0 8px 24px #102f4020;color:#fff;}
   .journey:has(.today-reviewed) .light-guide-preview h2 {font-size:29px;font-weight:500;line-height:1.12;color:#fff;margin-bottom:12px;}
-  .journey:has(.today-reviewed) .light-guide-preview p {color:#e6f0ed;font-size:14px;line-height:1.5;}
-  .journey:has(.today-reviewed) .light-guide-preview .light-guide-basis {color:#c7d9d8;font-size:12px;}
+  .journey:has(.today-reviewed) .light-guide-preview p {color:#fff;font-size:14px;line-height:1.5;}
+  .journey:has(.today-reviewed) .light-guide-preview .light-guide-basis {color:#fff;font-size:12px;}
   .today-reviewed .light-wavelength-preview {border:1px solid #62838a;border-radius:12px;padding:14px;margin:18px 0;}
   .today-reviewed .light-wavelength-preview h3 {font-size:20px;color:#fff;margin:0 0 14px;}
   .light-wavelength-swatches {display:flex;gap:6px;}

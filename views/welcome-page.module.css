@@ -99,3 +99,7 @@
  .homepage :global(.ff-hero){grid-template-columns:1fr;background-image:linear-gradient(rgba(54,95,173,.86),rgba(54,95,173,.86)),url('/images/coastal-hero-placeholder.jpg');}
  .homepage :global(.ff-hero-photo){border-radius:26px;aspect-ratio:1.4;}
 }
+
+/* Welcome header: app address and a lighter cobalt surface. */
+.homepage :global(.ff-nav){background:#466fb8;}
+.homepage :global(.ff-nav-note){color:#fff;}

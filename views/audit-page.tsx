@@ -49,7 +49,7 @@ export default function AuditPage() {
   if (!isHydrated || !positionReady) return <FlowShell><p role="status">Loading your assessment…</p></FlowShell>;
 
   return <FlowShell>
-    <section className="grid gap-10 py-6 lg:grid-cols-[0.42fr_0.58fr] lg:py-10">
+    <section className="mobile-assessment grid gap-10 py-6 lg:grid-cols-[0.42fr_0.58fr] lg:py-10">
       <div className="space-y-8 lg:sticky lg:top-6 lg:self-start">
         <SectionHeading eyebrow={currentCategory.title} title="A clearer picture, one answer at a time." description={currentCategory.intention}/>
         <div className="rounded-[2rem] border border-[var(--color-line)] bg-white/70 p-6">

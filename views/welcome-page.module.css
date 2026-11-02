@@ -49,3 +49,15 @@
 .homepage :global(.ff-cta){background:#c89432;color:#111514}
 .homepage :global(.ff-cta):hover{background:#d5a442}
 .homepage :global(.ff-footer){background:#111514;color:#d8d2c7;border-top:1px solid #464a47}
+
+/* Mobile continuity; preserve the existing narrative and section order. */
+@media(max-width:600px){
+ .homepage{font-family:"Avenir Next","Segoe UI",sans-serif;--ff-paper:#f5faf8;--ff-ink:#173653;--ff-muted:#36494b;--ff-soft:#eaf0ef;}
+ .homepage :global(.ff-cta){background:#365fad;color:white;border-radius:999px;}
+ .homepage :global(.ff-cta):hover{background:#254c7b;}
+ .homepage :global(.ff-number){color:#365fad;font-weight:500;}
+ .homepage :global(.ff-method){background:#eaf0ef;}
+ .homepage :global(.ff-start){background:#dceaf7;}
+ .homepage :global(.ff-hero) h1{font-size:38px;font-weight:400;}
+ .homepage :global(.ff-cta):focus-visible{outline:3px solid #365fad;outline-offset:4px;}
+}

@@ -6,6 +6,8 @@ import type { DailyProfile } from "@/types/circadian";
 import { foodGuidancePhase } from "@/lib/personalization/food-guidance";
 import { selectMealIdeas } from "@/lib/personalization/meal-ideas";
 import { seasonalFood } from "@/lib/seasonal/seasonal-food";
+import { recipeWindow } from '@/lib/personalization/recipe-window';
+import { recipesForSlot } from '@/lib/personalization/food-recipes';
 import { JourneyCard } from "./journey-design";
 
 const guidance = {
@@ -88,21 +90,16 @@ export function FoodGuidance({ profile, now, onPreferencesChange }: { profile: D
 }
 
 export function FoodPreview({ profile, now, suppressNudge = false }: { profile: DailyProfile | null; now: Date; suppressNudge?: boolean }) {
-  const phase = foodGuidancePhase(profile, now);
-  const season = seasonalFood(profile, now);
-  const { meals, seasonalApplied } = selectMealIdeas({phase, seasonal: season, plantBased: profile?.foodPreference === "plant", dairyFree: profile?.foodDairyFree ?? false, quick: profile?.foodQuick ?? false, offset: 0});
-  const meal = meals[0];
-  const timing = {early: 'A first-meal idea for the early part of your waking day.', daytime: 'A full-meal idea for the active part of your waking day.', evening: 'A smaller serving option near your usual bedtime; adjust it to your hunger.', general: 'A general meal idea until your daily schedule is available.'}[phase];
+  const timing = recipeWindow(profile, now);
+  const meal = recipesForSlot(timing.slot ?? 'first', profile)[0];
   return <JourneyCard className="food-guidance">
     <MealNudge profile={suppressNudge ? null : profile} now={now}>
     <h2>Food for your day</h2>
-    <p className="food-idea-note">{season && seasonalApplied ? `${season.regionName} · ${season.periodLabel}` : 'General meal idea'}</p>
-    <h3>{meal.title}</h3>
-    <p>{meal.ingredients}</p>
-    <p className="food-idea-note"><strong>Why this meal:</strong> {seasonalApplied ? 'The produce is listed in your regional seasonal calendar. ' : ''}{timing}</p>
-    {seasonalApplied ? <p className="food-idea-note">Protein and pantry staples aren’t verified as local.</p> : <p className="food-idea-note">{season ? 'No matching seasonal produce is listed in our current collection for this period.' : 'Choose your growing region in Food to get seasonal suggestions.'}</p>}
-    <p className="food-idea-note">{profile?.foodPreference === "plant" ? "Plant-based" : "Omnivore"} idea · your food preferences apply here and in Food.</p>
-    <Link href="/food" className="journey-outline inline-flex mt-4">Explore meal ideas</Link>
+    <p>{timing.reason}</p>
+    {meal ? <><h3>{meal.title}</h3><p className="food-idea-note">{meal.minutes} minutes · makes {meal.servings} servings. Open Food for ounce portions, cooking steps and swaps.</p></>
+      : <p className="food-idea-note">No recipes in this slot match your saved preferences yet. Browse other meal slots or review your filters in Food.</p>}
+    <p className="food-idea-note">Same recipes and preferences as Food. No meal logging needed.</p>
+    <Link href="/food" className="journey-outline inline-flex mt-4">See recipes for my schedule</Link>
     </MealNudge>
   </JourneyCard>;
 }

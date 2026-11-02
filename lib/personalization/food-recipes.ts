@@ -203,3 +203,9 @@ export const FOOD_RECIPES: FoodRecipe[] = [
     "swap": "Use thinly sliced cabbage instead of broccoli; cook until tender before adding the noodles."
   }
 ];
+
+// Shared by Today and Food: never substitute an incompatible recipe.
+export function recipesForSlot(slot: MealSlot, preferences: {foodPreference?: 'omnivore'|'plant'; foodDairyFree?: boolean; foodQuick?: boolean}|null) {
+  if (preferences?.foodPreference === 'plant') return [];
+  return FOOD_RECIPES.filter(r => r.slot === slot && (!preferences?.foodDairyFree || r.dairyFree) && (!preferences?.foodQuick || r.minutes <= 30));
+}

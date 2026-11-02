@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { DailyProfile } from '@/types/circadian';
-import { FOOD_RECIPES, type MealSlot } from '@/lib/personalization/food-recipes';
+import { recipesForSlot, type MealSlot } from '@/lib/personalization/food-recipes';
 import { recipeWindow } from '@/lib/personalization/recipe-window';
 import { seasonalFood } from '@/lib/seasonal/seasonal-food';
 import { JourneyCard } from './journey-design';
@@ -10,7 +10,7 @@ export function FoodRecipes({profile,now,onPreferencesChange}:{profile:DailyProf
  const [selection,setSelection]=useState<MealSlot|null>(null);
  const slot=selection??timing.slot??'first';
  const season=seasonalFood(profile,now);
- const recipes=FOOD_RECIPES.filter(r=>r.slot===slot && (!profile?.foodDairyFree || r.dairyFree) && (!profile?.foodQuick || r.minutes<=30));
+ const recipes=recipesForSlot(slot, profile);
  const plant=profile?.foodPreference==='plant';
  return <JourneyCard className="food-recipes">
   <p className="recipe-eyebrow">Meals for your waking day</p>

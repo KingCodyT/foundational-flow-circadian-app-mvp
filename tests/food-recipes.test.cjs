@@ -41,3 +41,19 @@ test('saved plant and quick preferences are not silently overridden',()=>{
  assert.equal(r.root.findAllByType('article').length,0);assert.match(text(r.root),/preference|filters/);R.act(()=>r.unmount());
  }
 });
+const {FoodPreview}=load('components/food-guidance.tsx');
+const {recipesForSlot}=load('lib/personalization/food-recipes.ts');
+test('Today and Food share recipes and filters for day, overnight and unknown schedules',(t)=>{
+ const priorWindow=global.window,priorSelf=global.self; global.self=global; global.window={localStorage:{getItem:()=>null},addEventListener(){},removeEventListener(){}};t.after(()=>{global.window=priorWindow;global.self=priorSelf;});
+ const profiles=[p,{...p,wakeTime:'17:00',targetBedtime:'09:00',lastMealTime:'05:00',workStructure:'overnight'},null,{...p,foodDairyFree:true},{...p,foodPreference:'plant'},{...p,foodQuick:true}];
+ for(const profile of profiles){
+ const now=new Date('2026-11-02T18:00Z');let preview,food;
+ R.act(()=>{preview=R.create(React.createElement(FoodPreview,{profile,now,suppressNudge:true}));food=R.create(React.createElement(FoodRecipes,{profile,now,onPreferencesChange:()=>{}}));});
+ const expected=recipesForSlot(recipeWindow(profile,now).slot??'first',profile)[0];
+ if(expected){assert.ok(text(preview.root).includes(expected.title));assert.ok(text(food.root).includes(expected.title));}
+ else assert.match(text(preview.root),/No recipes/);
+ assert.equal(preview.root.findAllByType('a').find(a=>a.props.href==='/food').props.href,'/food');
+ assert.doesNotMatch(text(preview.root),/tofu|oats/i);
+ R.act(()=>{preview.unmount();food.unmount();});
+ }
+});

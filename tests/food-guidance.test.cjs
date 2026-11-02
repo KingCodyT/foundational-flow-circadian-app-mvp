@@ -84,21 +84,21 @@ test('mounted food card updates from daytime to bedtime as the clock advances', 
  Renderer.act(()=>renderer.unmount());
 });
 
-test('Today shows one seasonal meal, explains timing, and handles missing region honestly', (t) => {
+test('Today shows one sourced recipe and explains saved or unknown timing', (t) => {
  const priorWindow = global.window; global.window = {localStorage:{getItem:()=>null},addEventListener(){},removeEventListener(){}}; t.after(() => { if (priorWindow === undefined) delete global.window; else global.window = priorWindow; });
  const priorSelf = global.self; global.self = global; t.after(() => { if (priorSelf === undefined) delete global.self; else global.self = priorSelf; });
  const {FoodPreview} = load('components/food-guidance.tsx');
  const text=n=>n.children.map(c=>typeof c==='string'?c:text(c)).join('');
  let renderer;
  Renderer.act(()=>{renderer=Renderer.create(React.createElement(FoodPreview,{profile:{...profile,foodRegion:'NCA'},now:new Date('2026-10-02T21:00Z'),suppressNudge:true}));});
- assert.match(text(renderer.root),/Northern California · Early October/);
- assert.match(text(renderer.root),/regional seasonal calendar/);
+ assert.match(text(renderer.root),/Chicken and chickpea salad/);
+ assert.doesNotMatch(text(renderer.root),/regional seasonal calendar/);
  assert.equal(renderer.root.findAllByType('h3').length,1);
- assert.match(text(renderer.root),/active part of your waking day/);
+ assert.match(text(renderer.root),/middle of your saved waking day/);
  Renderer.act(()=>renderer.update(React.createElement(FoodPreview,{profile:{...profile,foodRegion:'NCA'},now:new Date('2026-10-03T04:00Z'),suppressNudge:true})));
- assert.match(text(renderer.root),/smaller serving option/);
+ assert.match(text(renderer.root),/planned sleep is within three hours/);
  Renderer.act(()=>renderer.update(React.createElement(FoodPreview,{profile:null,now:new Date('2026-10-02T21:00Z'),suppressNudge:true})));
- assert.match(text(renderer.root),/Choose your growing region/);
+ assert.match(text(renderer.root),/don’t have a usable waking schedule/);
  assert.doesNotMatch(text(renderer.root),/produce is listed/);
  Renderer.act(()=>renderer.unmount());
 });

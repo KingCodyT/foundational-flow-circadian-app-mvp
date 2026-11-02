@@ -19,3 +19,19 @@ Validation:
 - Initial browser keyboard automation timed out before dispatch; recovered via fresh tab and native documented controls, then verified successful keyboard action. No unresolved blocker.
 
 Limits: six recipes only, no plant-only recipes yet; no cooking validation or brand-specific recalculation; no actual local stock/harvest verification. Overnight schedule follows the saved fixed anchors and cannot infer changing shifts. Local server is not a friend-shareable release.
+
+## Today reconciliation follow-up
+
+Today previously used selectMealIdeas (generated seasonal/fixed combinations including tofu/oats) and foodGuidancePhase (overnight => general). It now uses the same recipeWindow and recipesForSlot functions as Food. Saved dietary filters apply identically, including honest empty states. /food handoff uses the current saved schedule; crossing a timing boundary naturally recalculates, with no stored meal-slot override. MealNudge and all timing/completion engines are unchanged. Existing legacy FoodGuidance is retained but not used by the actual Food page or Today preview.
+
+Source/quantity audit:
+1. Potato, spinach and egg skillet — https://codyoakland.com/recipe/potato-spinach-and-egg-skillet/
+2. Salmon, cucumber and warm rice breakfast bowls — https://codyoakland.com/recipe/salmon-cucumber-and-warm-rice-breakfast-bowls/
+3. Chicken and chickpea salad with whole-wheat pita — https://codyoakland.com/recipe/lemon-chicken-and-white-bean-salad/
+4. Chicken, broccoli and cottage cheese baked potato bowls — https://codyoakland.com/recipe/broccoli-and-cottage-cheese-baked-potatoes/
+5. Salmon and lentil spinach patties with cucumber yogurt — https://codyoakland.com/recipe/salmon-and-lentil-spinach-patties-with-cucumber-yogurt/
+6. Chicken and chickpea bowls with broccoli and ginger noodles — https://codyoakland.com/recipe/chickpea-and-broccoli-noodles-with-ginger/
+
+Original Recipe JSON-LD was fetched from each URL and retained locally in /tmp/cody-food-sources.json. Source slugs differ from current titles for recipes3,4,6; the title/ingredients came from the current published content, not the slug. Audit script compared all86 gram/mL occurrences in original ingredient and instruction fields with converted values in the matching app recipe: no missing converted values. Formula: grams/28.349523125 for weight oz; mL/29.5735295625 for US fl oz; round to two decimal places. Examples:300g potato=10.58oz;850g salmon=29.98oz;60mL water=2.03fl oz;20mL oil=.68fl oz. The85–90g patty range was manually corrected to3–3.17oz (both range endpoints). Batch servings remain2/2/2/4/4/2; quantities are whole-recipe totals, not per-person portions. Egg counts were cross-checked against source instructions/notes. Teaspoons already in source remain teaspoons. No nutrition is recalculated from these rounded conversions. This verifies transcription/conversion, not kitchen yield or nutritional accuracy.
+
+Follow-up validation:480/480 non-browser tests pass and TypeScript passes. Real390px Today preview opened Food with the same last-meal recipe/slot. Isolated actual browser rendered Today and Food side-by-side for day, overnight and unknown profiles with matching recipes/reasons. No owner state writes. New mobile screenshot Library ID:libfile_8b5862916d8881919cce3a2da433cb0a. Production build was passed in the immediately preceding Food implementation; not rerun for this selector/preview-only follow-up.

@@ -620,7 +620,7 @@ a {
 
 /* Food palette correction: applies at every width, not only the phone breakpoint. */
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) { --journey-cream:#365fad; background:#365fad; color:#fff; }
-.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-landscape { background-image:linear-gradient(180deg,rgba(54,95,173,.94),#365fad 95%),var(--journey-image); }
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-landscape { background-image:linear-gradient(180deg,rgba(237,243,251,.72) 0%,rgba(237,243,251,.72) 68%,#365fad 100%),var(--journey-image); }
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) :is(.journey-brand,.journey-brand p,.journey-intro,.journey-intro p,.journey-secondary>p,.journey-footer p) {color:#fff;}
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-card {background:#edf3fb;border-color:#c3d4ee;color:#173653;box-shadow:none;}
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-card p {color:#364f68;}
@@ -629,3 +629,6 @@ a {
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-outline {background:#fff;border-color:#365fad;color:#365fad;}
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-primary {background:#365fad;border-color:#365fad;color:#fff;}
 .journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) :is(select,input:not([type=checkbox])) {background:#fff;color:#173653;border-color:#91afd9;}
+
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) :is(.journey-brand,.journey-brand p,.journey-intro,.journey-intro h1,.journey-intro p) {color:#173653;}
+.journey:has(.journey-nav a[href="/food"][aria-current="page"]):has(.food-recipes) .journey-wordmark svg {color:#365fad;}

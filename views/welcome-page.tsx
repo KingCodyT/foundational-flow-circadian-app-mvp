@@ -6,7 +6,7 @@ export default function WelcomePage() {
 return <>
 <Head><title>Foundational Flow | Make sense of your day</title><meta name="description" content="Understand the timing of your day and find a practical next step. Begin with 16 questions about your current habits." /></Head>
 <div className={styles.homepage} aria-label="Foundational Flow homepage">
- <header className="ff-nav"><div className="ff-brand">Foundational Flow<span style={{ color: "var(--ff-gold)" }}>.</span></div><span className="ff-nav-note">A clearer path to feeling better.</span></header>
+ <header className="ff-nav"><div className="ff-brand">circadianflow.app</div><span className="ff-nav-note">A clearer path to feeling better.</span></header>
  <main>
   <section className="ff-hero" aria-label="Welcome">
    <div><div className="ff-eyebrow">Where biology meets real life</div><h1 id="ff-headline">Your days should feel<br /><em>like yours again.</em></h1><p className="ff-lead">Energy for the people you love. Focus for the work that matters. Evenings when you can finally unwind. That’s worth taking seriously.</p><p className="ff-intro">Foundational Flow helps you connect the dots between your daily habits, your body’s timing, and how you feel—so you can start changing what matters.</p></div>

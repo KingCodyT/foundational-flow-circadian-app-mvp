@@ -8,3 +8,12 @@ test('light preview explains day, night, and unavailable location without measur
  if(!p)assert.doesNotMatch(html,/Based on your saved location/);
  }
 });
+test('mobile feature previews existing light pathways without presenting swatches as measured spectrum',()=>{
+ const html=renderToStaticMarkup(React.createElement(LightGuidePreview,{profile:null,now:new Date('2026-11-01T22:00:00Z')}));
+ assert.match(html,/Light, timing &amp; your body/);
+ assert.match(html,/Selected bands, not measured proportions/);
+ assert.match(html,/UV and NIR are invisible/);
+ assert.match(html,/Light → eyes → body clock/);
+ assert.match(html,/Local light timing unavailable/);
+ assert.doesNotMatch(html,/<details open/);
+});

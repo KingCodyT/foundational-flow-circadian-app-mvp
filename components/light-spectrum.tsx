@@ -16,3 +16,12 @@ export function LightBandDetails() {
     </details>)}
   </section>;
 }
+
+export function LightWavelengthPreview() {
+  return <div className="light-wavelength-preview">
+    <h3>Different light. Different pathways.</h3>
+    <div className="light-wavelength-swatches" aria-label="Selected light bands">{bands.map(band => <span key={band.id}><i aria-hidden="true" style={{backgroundColor:band.color}} />{band.id === 'blue' ? 'Blue–cyan' : band.id === 'red' ? 'Red' : band.id === 'nir' ? 'NIR' : band.name}</span>)}</div>
+    <p className="light-guide-basis">Selected bands, not measured proportions. UV and NIR are invisible; their colors are illustrative.</p>
+    <p><strong>Light → eyes → body clock</strong><br />{bands[0].summary}</p>
+  </div>;
+}

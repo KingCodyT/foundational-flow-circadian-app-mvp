@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { DailyProfile } from '@/types/circadian';
 import { getLightCheckIn } from '@/lib/light-check-in';
+import { LightWavelengthPreview } from './light-spectrum';
 import { LightCheckIn } from './light-check-in';
 
 export function LightGuidePreview({profile, now}: {profile: DailyProfile | null; now: Date}) {
@@ -9,7 +10,8 @@ export function LightGuidePreview({profile, now}: {profile: DailyProfile | null;
   const phase = state?.phase;
   const label = phase?.label || (state?.polar === 'day' ? 'Extended daylight' : state?.polar === 'night' ? 'Extended darkness' : 'Local light timing unavailable');
   return <section className="light-guide-preview" aria-label="Explore your light">
-    <h2>What’s your light doing right now?</h2>
+    <h2><span className="light-guide-standard-title">What’s your light doing right now?</span><span className="light-guide-feature-title">Light, timing &amp; your body</span></h2>
+    <div className="light-guide-mobile-feature"><p className="light-guide-intro">Get to know the light that shapes your day.</p><LightWavelengthPreview /></div>
     <p className="light-guide-phase"><strong>{label}</strong>{state && ' · Based on your saved location'}</p>
     <p>{phase?.light || (state ? 'Sunrise and sunset may not occur every day here. Let your planned sleep schedule guide your light choices.' : 'Add your location for local daylight timing. You can still explore how light interacts with your body.')}</p>
     <p>{state ? 'Explore today’s light spectrum, what changes next, and how light interacts with your body.' : 'Explore light wavelengths, your body clock, and the science behind them.'}</p>

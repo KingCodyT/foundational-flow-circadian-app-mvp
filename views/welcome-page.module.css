@@ -84,3 +84,18 @@
  .homepage :global(.ff-hero) :global(.ff-lead),.homepage :global(.ff-hero) :global(.ff-intro){color:#fff;}
  .homepage :global(.ff-method){background:#dceaf7;color:#173653;--ff-ink:#173653;--ff-muted:#364f68;--ff-gold:#365fad;--ff-line:#a8bfda;}
  .homepage :global(.ff-hero) h1 em{color:#dceaf7;}
+
+/* Coastal scenery supports the cobalt hero; keep text on a readable wash. */
+.homepage :global(.ff-hero){
+ background-color:#365fad;
+ background-image:linear-gradient(90deg,rgba(54,95,173,.86) 0%,rgba(54,95,173,.86) 48%,rgba(54,95,173,.68) 100%),url('/images/coastal-hero-placeholder.jpg');
+ background-size:cover;
+ background-position:center 48%;
+ grid-template-columns:1.12fr .88fr;
+}
+.homepage :global(.ff-hero-photo){border-radius:36px;aspect-ratio:1/1.08;}
+.homepage :global(.ff-scene-caption){background:rgba(54,95,173,.86);width:fit-content;padding:3px 9px;border-radius:8px;}
+@media(max-width:620px){
+ .homepage :global(.ff-hero){grid-template-columns:1fr;background-image:linear-gradient(rgba(54,95,173,.86),rgba(54,95,173,.86)),url('/images/coastal-hero-placeholder.jpg');}
+ .homepage :global(.ff-hero-photo){border-radius:26px;aspect-ratio:1.4;}
+}

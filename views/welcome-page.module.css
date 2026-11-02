@@ -78,3 +78,13 @@
  .homepage :global(.ff-cta):focus-visible{outline-color:#fff;}
  .homepage :global(.ff-footer){background:#122d38;color:#dce8e8;border-top-color:#587280;}
 }
+
+/* Cobalt is the primary mobile welcome surface; pale blue supports it. */
+@media(max-width:600px){
+ .homepage{--ff-paper:#365fad;--ff-ink:#fff;--ff-muted:#fff;--ff-line:#91afd9;--ff-gold:#fff;}
+ .homepage :global(.ff-hero){background:#365fad;color:#fff;}
+ .homepage :global(.ff-hero) :global(.ff-eyebrow),.homepage :global(.ff-scene-caption),.homepage :global(.ff-hero) h1 em{color:#fff;}
+ .homepage :global(.ff-hero) :global(.ff-lead),.homepage :global(.ff-hero) :global(.ff-intro){color:#fff;}
+ .homepage :global(.ff-method){background:#dceaf7;color:#173653;--ff-ink:#173653;--ff-muted:#364f68;--ff-gold:#365fad;--ff-line:#a8bfda;}
+ .homepage :global(.ff-hero) h1 em{color:#dceaf7;}
+}

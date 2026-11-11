@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { LocationSetupLink, useLocationReturnSection } from './location-setup-link';
 import type { DailyProfile } from '@/types/circadian';
 import { getSolarSpectrum, powerTrend } from '@/lib/solar-spectrum';
 import { hasValidCoordinates } from '@/lib/solar';
@@ -13,14 +13,15 @@ const groups = [
 ];
 
 export function SunlightNow({ profile, now }: { profile: DailyProfile | null; now: Date }) {
+  useLocationReturnSection('sunlight-now');
   const located = profile?.locationPermissionGranted && hasValidCoordinates(profile.latitude, profile.longitude);
   const state = located ? getSolarSpectrum(now, profile.latitude!, profile.longitude!) : null;
   const future = located ? getSolarSpectrum(new Date(+now + 15 * 60000), profile.latitude!, profile.longitude!) : null;
   const spectrum = state?.spectrum;
-  return <section className="sunlight-now" aria-labelledby="sunlight-now-title">
+  return <section id="sunlight-now" className="sunlight-now" aria-labelledby="sunlight-now-title">
     <header><div><p className="sunlight-eyebrow">Your outdoor day</p><h2 id="sunlight-now-title">Sunlight now</h2></div><span className="sunlight-mode">{state ? 'Live calculation' : 'Location needed'}</span></header>
     <p className="sunlight-intro">Wavelengths reaching the ground now, estimated for a clear sky.</p>
-    {!state ? <div className="sunlight-empty"><p>Add your location to see the current solar position and estimated light mix. No location means no invented local readings.</p><Link href="/profile#profile-location">Set up my local light →</Link></div> : <>
+    {!state ? <div className="sunlight-empty"><p>Add your location to see the current solar position and estimated light mix. No location means no invented local readings.</p><LocationSetupLink section="sunlight-now">Set up my local light →</LocationSetupLink></div> : <>
       <div className="sunlight-reading"><strong>{formatTimeInZone(now, profile?.timeZone)}</strong><span>{Math.round(state.elevation)}° solar elevation</span><span>{spectrum ? `${powerTrend(spectrum.total, future?.spectrum?.total)} over the next 15 minutes` : state.status === 'night' ? 'Nighttime' : 'Near the horizon'}</span></div>
       {spectrum ? <><p className="sunlight-basis">Estimated clear-sky energy mix, not a sensor reading. Weather, shade and windows change the light reaching you.</p><div className="sunlight-strip" role="img" aria-label="Modeled energy shares: ultraviolet, visible and infrared. Colors for invisible bands are illustrative.">{groups.map(group => { const share = spectrum.bands.filter(b => group.ids.includes(b.id)).reduce((sum,b) => sum + b.percent, 0); return <span key={group.name} style={{ flexGrow: share, backgroundColor: group.color }} />; })}</div></> : <p className="sunlight-basis">{state.status === 'night' ? 'The sun is below the horizon. No daytime spectrum is shown. Your indoor lighting still matters to your body clock.' : 'The sun is near or below the horizon. This clear-sky model pauses below 5° elevation rather than inventing twilight readings.'}</p>}
       <div className="sunlight-bands">{groups.map(group => {

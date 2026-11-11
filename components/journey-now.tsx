@@ -1,4 +1,5 @@
 import { hasValidCoordinates } from "@/lib/solar";
+import { LocationSetupLink } from './location-setup-link';
 import { LocationRequiredNotice } from "./location-required-notice";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -51,7 +52,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
       </JourneyCard>}
       {firstRun && <p className="today-context">{firstRun.summary}</p>}
       {coaching ? <div className="today-supporting">
-        {!hasLocation && <div className="today-location-summary"><p>Daylight timing needs your location.</p><Link href="/profile#profile-location">Add location</Link><details><summary>Why location matters</summary><p>Location is optional. Your schedule still works without it; sunrise, sunset, and day length need coordinates. A location label alone does not provide those coordinates.</p></details></div>}
+        {!hasLocation && <div className="today-location-summary"><p>Daylight timing needs your location.</p><LocationSetupLink section="sunlight-now">Add location</LocationSetupLink><details><summary>Why location matters</summary><p>Location is optional. Your schedule still works without it; sunrise, sunset, and day length need coordinates. A location label alone does not provide those coordinates.</p></details></div>}
         <details id="today-light-guide"><summary>More about today’s light</summary><LightCheckIn profile={profile} now={now} /></details>
         <Link href="/food" className="today-food-link">Open Food →</Link>
         {primaryState && <details><summary>About your current focus</summary><p>Current stage: {primaryState.replaceAll("_", " ").toLowerCase()}. Your focus stays selected unless you explicitly change it.</p></details>}

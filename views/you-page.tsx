@@ -2,6 +2,8 @@
 
 import { LocationRequiredNotice } from "@/components/location-required-notice";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { locationReturnLabel, locationReturnPath } from "@/lib/location/location-navigation";
 import { CodyDiscovery } from "@/components/cody-discovery";
 import { WearableSettings } from "@/components/wearable-settings";
 import FoodTimingHistory from "@/components/food-timing-history";
@@ -37,6 +39,9 @@ function formatDayLength(minutes?: number | null) {
 }
 
 export default function YouPage() {
+  const router = useRouter();
+  const returnTo = locationReturnPath(router.query.returnTo);
+  const editingLocation = router.query.edit === "location";
   const {
     dailyProfile,
     participationLevel,
@@ -51,7 +56,21 @@ export default function YouPage() {
 
   const progress = profileProgress(eventStateByDate, now, profileTimeZone);
 
-  if (!isHydrated) return <FlowShell><p role="status">Loading your profile…</p></FlowShell>;
+  if (!isHydrated || !router.isReady) return <FlowShell><p role="status">Loading your profile…</p></FlowShell>;
+
+  if (editingLocation) {
+    const destination = returnTo || '/profile';
+    const label = returnTo ? locationReturnLabel(returnTo) : 'Profile';
+    return <FlowShell><section className="profile-page">
+      <header className="profile-intro"><p className="journey-eyebrow">LOCATION</p><h1>Add your location</h1>
+        <p>Save a location and we’ll return you to {label}{returnTo?.includes('#') ? ', right where you left off' : ''}. Your answers and schedule stay unchanged.</p>
+      </header>
+      <Link href={destination} replace className="journey-outline">Cancel and return to {label}</Link>
+      <section className="profile-section">
+        <DailyProfileForm key={router.asPath} section="location" onLocationSaved={() => { void router.replace(destination); }} />
+      </section>
+    </section></FlowShell>;
+  }
 
   return <FlowShell>
     <section className="profile-page">

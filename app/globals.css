@@ -719,3 +719,37 @@ a {
 .journey .sunlight-explore>summary{cursor:pointer;color:#234c93;font-weight:700;padding:12px 0;min-height:44px;}
 .journey .sunlight-empty a{color:#234c93;font-weight:700;display:inline-block;padding:10px 0;}
 @media(max-width:540px){.journey .sunlight-now{padding:18px;border-radius:20px;}.journey .sunlight-bands{grid-template-columns:1fr;}.journey .sunlight-band-heading h3{font-size:20px;}}
+
+/* Personalized app home: current essentials first, learning on demand. */
+.journey:has(.today-dashboard) .journey-brand>p{display:none;}
+.journey:has(.today-dashboard) .journey-brand{padding-bottom:12px;}
+.journey:has(.today-dashboard) .journey-inner{padding-top:16px;}
+.journey .today-dashboard .today-intro{padding:0 4px 8px;}
+.journey .today-dashboard .today-intro h1{font-size:26px;}
+.journey .today-dashboard .today-date{font-size:12px!important;}
+.journey .day-dashboard{background:#edf3fb;color:#173653;padding:18px;border-radius:20px;}
+.journey .day-dashboard p{color:#173653;}
+.journey .day-dashboard-clock{display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.journey .day-dashboard-clock p{font-size:11px;letter-spacing:.06em;margin:0;}
+.journey .day-dashboard-clock strong{font-size:34px;line-height:1.4;font-variant-numeric:tabular-nums;}
+.journey .day-dashboard-clock>span{font-size:14px;text-align:right;}
+.journey .day-dashboard-clock small{display:block;font-size:10px;overflow-wrap:anywhere;}
+.journey .day-dashboard-times{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:12px 0;padding:12px 0;border-block:1px solid #adc4e9;}
+.journey .day-dashboard-times dt{font-size:11px;}.journey .day-dashboard-times dd{font-size:14px;font-weight:700;margin:4px 0 0;}
+.journey .day-dashboard-actions{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.journey .day-dashboard-actions h2{font-size:17px;margin:0;}.journey .day-dashboard-actions p{font-size:13px;line-height:1.5;margin:6px 0;}
+.journey .day-dashboard a{color:#234c93;text-decoration:underline;display:inline-block;padding:8px 0;font-size:13px;}
+.journey .day-dashboard-note{font-size:11px;line-height:1.5;margin-bottom:0;}
+.journey .today-dashboard .sunlight-now{margin:0;padding:18px;border-radius:20px;}
+.journey .today-dashboard .sunlight-now h2{font-size:23px;}
+.journey .today-dashboard .sunlight-intro{font-size:13px;margin:6px 0;}
+.journey .today-dashboard .sunlight-reading{padding:8px 0;font-size:12px;}
+.journey .today-dashboard .sunlight-strip{height:10px;margin:10px 0;}
+.journey .today-dashboard .sunlight-bands{gap:8px;margin-top:8px;grid-template-columns:repeat(2,minmax(0,1fr));}
+.journey .today-dashboard .sunlight-bands article{padding:12px;border-radius:12px;}
+.journey .today-dashboard .sunlight-band-heading h3{font-size:15px;}
+.journey .today-dashboard .sunlight-band-heading>strong{font-size:16px;}
+.journey .today-dashboard .sunlight-bands p{font-size:12px;line-height:1.4;}
+.journey .today-dashboard .sunlight-bands .sunlight-range{font-size:10px;}
+.journey .today-dashboard .sunlight-footnote,.journey .today-dashboard .sunlight-basis{font-size:11px;line-height:1.5;}
+@media(max-width:420px){.journey .day-dashboard-times{grid-template-columns:repeat(2,minmax(0,1fr));}.journey .day-dashboard-actions{grid-template-columns:1fr;gap:10px;}.journey .today-dashboard .sunlight-band-heading{display:block;}.journey .today-dashboard .sunlight-band-heading>strong{display:block;text-align:left;margin-top:6px;}.journey .today-dashboard .sunlight-band-heading small{display:inline;margin-left:4px;}}

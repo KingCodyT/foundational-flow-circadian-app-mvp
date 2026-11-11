@@ -23,3 +23,24 @@ test('current readings update with the shared clock, retaining polar support',()
  assert.match(render(polar,'2026-12-21T12:00:00Z'),/Nighttime/);
  assert.match(render(polar,'2026-06-21T12:00:00Z'),/energy share/);
 });
+const {DayDashboard}=load('components/day-dashboard.tsx');
+const dashboard=(p,at)=>renderToStaticMarkup(React.createElement(DayDashboard,{profile:p,now:new Date(at)}));
+test('dashboard exposes current timing, saved plans and options without disclosures',()=>{
+ const html=dashboard(profile,'2026-11-01T20:00:00Z');
+ for(const label of ['Your day at a glance','Sunrise','Sunset','Usual wake','Planned bed','Light for this moment','Food &amp; movement','not measured sleep']) assert.ok(html.includes(label),label);
+ assert.doesNotMatch(html,/<details/);assert.match(html,/6:00 AM/);assert.match(html,/10:00 PM/);
+ assert.match(html,/daylight break/);assert.match(dashboard(profile,'2026-11-02T05:00:00Z'),/bedtime is approaching/);
+});
+test('dashboard avoids ordinary morning advice for shift schedules, missing data and polar nights',()=>{
+ const shift=dashboard({...profile,workStructure:'overnight'},'2026-11-01T20:00:00Z');assert.match(shift,/planned waking and sleeping hours/);assert.doesNotMatch(shift,/take a daylight break/);
+ const empty=dashboard(null,'2026-11-01T20:00:00Z');assert.match(empty,/Location needed/);assert.match(empty,/Not set/);
+ const polar=dashboard({...profile,latitude:80,longitude:0,timeZone:'UTC'},'2026-12-21T12:00:00Z');assert.match(polar,/Extended darkness/);assert.match(polar,/No crossing today/);
+});
+test('dashboard precedes coaching and exploration; completed returning users open Today',()=>{
+ const fs=require('node:fs');const journey=fs.readFileSync('components/journey-now.tsx','utf8');
+ assert.ok(journey.indexOf('<DayDashboard')<journey.indexOf('{coaching}'));
+ assert.ok(journey.indexOf('<SunlightNow')<journey.indexOf('{coaching}'));
+ const home=fs.readFileSync('views/welcome-page.tsx','utf8');
+ assert.match(home,/hasCompletedAudit && Boolean\(dailyProfile\?\.wakeTime && dailyProfile\?\.targetBedtime\)/);
+ assert.match(home,/router.replace\('\/today'\)/);
+});

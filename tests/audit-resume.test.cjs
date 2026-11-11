@@ -14,3 +14,9 @@ test('assessment restores saved position, URL history and answers without changi
  router.query={question:2};act(()=>tree.update(render()));assert.equal(shown.question.id,questionnaire[1].id);assert.equal(shown.selectedValue,questionnaire[1].options[0].value);
  act(()=>tree.unmount());router.query={};act(()=>{tree=create(render())});assert.equal(shown.question.id,questionnaire[1].id);act(()=>tree.unmount());
 });
+
+test('assessment puts Next above Previous on phones and retains desktop row order',()=>{
+ const source=fs.readFileSync('views/audit-page.tsx','utf8');
+ assert.match(source,/flex flex-col-reverse gap-3 sm:flex-row sm:justify-between/);
+ assert.ok(source.indexOf('Previous question')<source.indexOf('Next question'));
+});

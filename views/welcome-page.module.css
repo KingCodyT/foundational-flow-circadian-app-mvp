@@ -1,3 +1,5 @@
+/* Existing welcome layout, below the shared coastal palette. */
+@layer journey-layout {
 
 .homepage{--ff-paper:light-dark(#faf9f5,#202420);--ff-ink:light-dark(#263b34,#eeeae0);--ff-muted:light-dark(#56655e,#bac5bc);--ff-line:light-dark(#d9ddd3,#465149);--ff-soft:light-dark(#eff1e9,#29352d);--ff-gold:light-dark(#9b753b,#d4b27d);font-family:Arial,Helvetica,sans-serif;color:var(--ff-ink);background:var(--ff-paper);font-size:16px;line-height:1.65;overflow-wrap:break-word}
 .homepage *{box-sizing:border-box}.homepage h1,.homepage h2,.homepage h3,.homepage p{margin:0}.homepage button,.homepage a{font:inherit}.homepage a{color:inherit;text-underline-offset:5px}.homepage :global(.ff-nav){display:flex;align-items:center;justify-content:space-between;gap:20px;padding:26px 7%;border-bottom:1px solid var(--ff-line);padding-right:max(7%,95px)}.homepage :global(.ff-brand){font-family:Georgia,serif;font-size:23px;letter-spacing:-.6px}.homepage :global(.ff-nav) a{font-size:13px;text-decoration:none;border-bottom:1px solid var(--ff-line);white-space:nowrap}.homepage :global(.ff-eyebrow){font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--ff-gold);font-weight:500}.homepage :global(.ff-hero){display:grid;grid-template-columns:1.2fr .8fr;align-items:center;gap:45px;padding:65px 7% 60px}.homepage h1{font-family:Georgia,serif;font-size:clamp(34px,4.4vw,51px);line-height:1.12;font-weight:400;letter-spacing:-1.5px;margin:18px 0 23px}.homepage :global(.ff-lead){color:var(--ff-muted);max-width:480px;font-size:17px}.homepage :global(.ff-intro){margin-top:17px;max-width:490px}.homepage :global(.ff-down){display:inline-flex;align-items:center;gap:12px;margin-top:27px;font-size:13px;text-decoration:none;border-bottom:1px solid var(--ff-gold);padding-bottom:4px}.homepage :global(.ff-landscape){position:relative;min-height:310px;background:linear-gradient(180deg,light-dark(#d6e2da,#2e4947),light-dark(#e8e5c9,#636653) 48%,light-dark(#aabfb1,#334b43) 49%,light-dark(#53786c,#1b3430));overflow:hidden;border-radius:160px 160px 3px 3px}.homepage :global(.ff-sun){position:absolute;left:46%;top:30%;width:62px;height:62px;border-radius:50%;background:#f5e4b6;box-shadow:0 0 65px 30px #f5e4b644}.homepage :global(.ff-ridge){position:absolute;left:-25%;bottom:-65%;width:150%;height:100%;border-radius:50%;background:light-dark(#375e53,#142c26);transform:rotate(-15deg)}.homepage :global(.ff-ridge).back{bottom:-48%;left:-5%;background:light-dark(#7f9d89,#3a5b4c);transform:rotate(18deg)}.homepage :global(.ff-scene-caption){font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ff-muted);margin-top:12px}.homepage :global(.ff-section){padding:49px 7%;border-top:1px solid var(--ff-line)}.homepage :global(.ff-two){display:grid;grid-template-columns:.85fr 1.15fr;gap:60px}.homepage h2{font-family:Georgia,serif;font-size:32px;font-weight:400;line-height:1.2;letter-spacing:-.5px;margin-top:12px}.homepage :global(.ff-copy) p+p{margin-top:15px}.homepage :global(.ff-copy){color:var(--ff-muted)}.homepage :global(.ff-copy) strong{color:var(--ff-ink);font-weight:500}.homepage :global(.ff-method){background:var(--ff-soft)}.homepage :global(.ff-steps){display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin-top:32px}.homepage :global(.ff-step){border-top:1px solid var(--ff-line);padding-top:17px}.homepage :global(.ff-number){font-size:12px;color:var(--ff-gold);margin-bottom:9px}.homepage h3{font-weight:500;font-size:18px;margin-bottom:9px}.homepage :global(.ff-step) p{color:var(--ff-muted);font-size:14px}.homepage :global(.ff-method) h2{max-width:550px}.homepage :global(.ff-example){display:flex;gap:16px;align-items:baseline;padding:23px 0 0;margin-top:25px;border-top:1px solid var(--ff-line);font-size:14px;color:var(--ff-muted)}.homepage :global(.ff-example) span{white-space:nowrap;color:var(--ff-gold);font-size:11px;text-transform:uppercase;letter-spacing:1px}.homepage :global(.ff-start){text-align:center;padding:55px 7% 48px;border-top:1px solid var(--ff-line)}.homepage :global(.ff-start) p{max-width:580px;margin:18px auto;color:var(--ff-muted)}.homepage :global(.ff-cta){display:inline-flex;align-items:center;justify-content:center;gap:20px;border:0;border-radius:4px;background:var(--ff-ink);color:var(--ff-paper);padding:14px 25px;font-size:15px;margin-top:7px;min-height:48px}.homepage :global(.ff-detail){font-size:12px;color:var(--ff-muted);margin-top:13px}.homepage :global(.ff-footer){padding:23px 7%;border-top:1px solid var(--ff-line);display:flex;justify-content:space-between;gap:25px;color:var(--ff-muted);font-size:11px}.homepage :global(.ff-footer) span:last-child{max-width:320px}.homepage :global(.ff-handoff){max-width:580px;margin:23px auto 0;padding:20px;border:1px solid var(--ff-line);text-align:left;background:var(--ff-soft)}.homepage :global(.ff-handoff) p{font-size:14px;margin:8px 0}.homepage [hidden]{display:none}
@@ -82,7 +84,7 @@
  .homepage :global(.ff-hero){background:#365fad;color:#fff;}
  .homepage :global(.ff-hero) :global(.ff-eyebrow),.homepage :global(.ff-scene-caption),.homepage :global(.ff-hero) h1 em{color:#fff;}
  .homepage :global(.ff-hero) :global(.ff-lead),.homepage :global(.ff-hero) :global(.ff-intro){color:#fff;}
- .homepage :global(.ff-method){background:#dceaf7;color:#173653;--ff-ink:#173653;--ff-muted:#364f68;--ff-gold:#365fad;--ff-line:#a8bfda;}
+ .homepage :global(.ff-method){background:#dceaf7;color:#173653;}
  .homepage :global(.ff-hero) h1 em{color:#dceaf7;}
 
 /* Coastal scenery supports the cobalt hero; keep text on a readable wash. */
@@ -103,3 +105,28 @@
 /* Welcome header: app address and a lighter cobalt surface. */
 .homepage :global(.ff-nav){background:#466fb8;}
 .homepage :global(.ff-nav-note){color:#fff;}
+
+}
+
+/* Match the in-app coastal palette without changing the welcome narrative. */
+.homepage {
+  --ff-paper: var(--coastal-bg);
+  --ff-ink: var(--coastal-text);
+  --ff-muted: var(--coastal-copy);
+  --ff-line: var(--coastal-line);
+  --ff-soft: var(--coastal-raised);
+  --ff-gold: var(--coastal-gold);
+  background: var(--coastal-bg);
+  color: var(--coastal-text);
+}
+.homepage :global(.ff-nav), .homepage :global(.ff-footer) { background: var(--coastal-nav); color: var(--coastal-copy); border-color: var(--coastal-line); }
+.homepage :global(.ff-hero) { background: var(--coastal-bg); color: var(--coastal-text); }
+.homepage :global(.ff-method), .homepage :global(.ff-start), .homepage :global(.ff-example) { background: var(--coastal-raised); color: var(--coastal-text); border-color: var(--coastal-line); }
+.homepage :global(.ff-hero) h1 em, .homepage :global(.ff-eyebrow), .homepage :global(.ff-number), .homepage :global(.ff-scene-caption) { color: var(--coastal-gold); }
+.homepage :global(.ff-hero) :global(.ff-lead) { color: var(--coastal-text); }
+.homepage :global(.ff-hero) :global(.ff-intro), .homepage :global(.ff-start) p, .homepage :global(.ff-detail), .homepage :global(.ff-nav-note) { color: var(--coastal-copy); }
+.homepage :global(.ff-cta) { background: var(--coastal-gold); color: var(--coastal-bg); }
+.homepage :global(.ff-cta):hover { background: var(--coastal-gold-hover); }
+.homepage :global(.ff-cta):focus-visible { outline-color: var(--coastal-gold); }
+
+.homepage :global(.ff-scene-caption) { background: var(--coastal-control); }

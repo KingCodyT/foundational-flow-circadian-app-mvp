@@ -56,7 +56,7 @@ test('home shows a meal suggestion without recipe instructions or invented local
 
 test('home and light exploration omit generic sun-gazing and safety instructions',()=>{
  const fs=require('node:fs');
- for(const p of ['components/day-dashboard.tsx','lib/light-check-in.ts','components/light-check-in.tsx','components/solar-spectrum.tsx']){
+ for(const p of ['components/day-dashboard.tsx','lib/light-check-in.ts','components/light-check-in.tsx','components/solar-spectrum.tsx','components/light-spectrum.tsx','lib/solar-spectrum.ts']){
   assert.doesNotMatch(fs.readFileSync(p,'utf8'),/directly at the sun|If safe and accessible|move safely|Protect your skin|use sun protection|avoid burning/);
  }
 });

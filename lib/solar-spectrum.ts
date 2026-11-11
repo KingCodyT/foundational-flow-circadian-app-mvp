@@ -3,7 +3,7 @@ import { getSolarElevation } from './solar';
 
 // Adjacent, non-overlapping integration bins. UVB below 300 nm is outside SPECTRL2.
 export const SPECTRAL_BANDS = [
-  {id:'uvb',name:'UVB',low:300,high:315,color:'#55538c',invisible:true,meaning:'Can initiate vitamin D production in skin; also causes sunburn and DNA damage. Energy share is not a safe exposure guide.'},
+  {id:'uvb',name:'UVB',low:300,high:315,color:'#55538c',invisible:true,meaning:'Can initiate vitamin D production in skin; also causes sunburn and DNA damage. Energy share does not calculate personal exposure.'},
   {id:'uva',name:'UVA',low:315,high:400,color:'#73528f',invisible:true,meaning:'Interacts with skin pigments and light-sensitive nitric oxide stores. Its effects depend on exposure, not its share alone.'},
   {id:'violet',name:'Violet',low:400,high:450,color:'#7753aa',invisible:false,meaning:'Part of visible daylight, absorbed by visual pigments in the eyes. Color bands overlap in their biological effects.'},
   {id:'blue',name:'Blue–cyan',low:450,high:500,color:'#24758d',invisible:false,meaning:'Includes wavelengths to which melanopsin is especially sensitive, helping the eyes convey timing information to the body clock.'},

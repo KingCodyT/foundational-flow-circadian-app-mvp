@@ -13,11 +13,11 @@ export function DayDashboard({profile, now, children}: {profile: DailyProfile | 
   const light = getLightCheckIn(profile, now);
   const phase = foodGuidancePhase(profile, now);
   const shift = profile?.workStructure === 'shift' || profile?.workStructure === 'overnight';
-  const lightAction = shift ? 'Match light to your planned waking and sleeping hours, not sunrise alone. Keep the light needed for safe work.'
-    : phase === 'evening' ? 'Your saved bedtime is approaching. Soften unnecessary light while keeping enough to move safely.'
+  const lightAction = shift ? 'Match light to your planned waking and sleeping hours, not sunrise alone.'
+    : phase === 'evening' ? 'Your saved bedtime is approaching. Soften unnecessary light as you wind down.'
     : phase === 'general' ? 'Use your planned sleep and wake times to guide light choices. The sun’s position alone does not tell us your body-clock phase.'
     : light?.phase?.id === 'night' ? 'It is dark outdoors. Use the lighting you need for your waking activities; dim unnecessary light as sleep approaches.'
-    : light ? 'If safe and accessible, take a daylight break. Look around naturally, never directly at the sun. Protect your skin from UV.'
+    : light ? 'Take a daylight break. Step outdoors, enjoy the sky, and notice how the light is changing.'
     : 'Add a location for local daylight guidance. Your saved schedule still applies.';
   const timing = recipeWindow(profile, now);
   const meal = timing.slot ? recipesForSlot(timing.slot, profile)[0] : null;

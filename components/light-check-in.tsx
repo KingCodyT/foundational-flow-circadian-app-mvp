@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { LocationSetupLink, useLocationReturnSection } from './location-setup-link';
 import { LightBandDetails } from './light-spectrum';
 import { CodyDiscovery } from './cody-discovery';
 import type { DailyProfile } from '@/types/circadian';
@@ -20,12 +20,13 @@ const lightToKnow = {
 } as const;
 
 export function LightCheckIn({ profile, now }: { profile: DailyProfile | null; now: Date }) {
+  useLocationReturnSection('light-check-in');
   const state = getLightCheckIn(profile, now);
   const phase = state?.phase;
   const shifted = profile?.workStructure === 'shift' || profile?.workStructure === 'overnight';
   return <JourneyCard className={`light-check-in ${phase?.id === 'night' ? 'light-check-in-night' : ''}`}>
-    <div className="light-check-in-heading"><div><h2>LIGHT AROUND YOU NOW</h2><p className="light-check-in-kicker">A moment to reconnect with your day</p></div><div className="light-check-in-icon"><RhythmIcon kind={phase?.id === 'night' ? 'moon' : 'sunset'}/></div></div>
-    {!state ? <><h3>Your local light starts with your location</h3><p>Save your location to see what’s changing in the daylight, a gentle suggestion for right now, and what comes next.</p><Link className="journey-outline" href="/profile" scroll={true}>Set up my local light</Link></> : <>
+    <div id="light-check-in" className="light-check-in-heading"><div><h2>LIGHT AROUND YOU NOW</h2><p className="light-check-in-kicker">A moment to reconnect with your day</p></div><div className="light-check-in-icon"><RhythmIcon kind={phase?.id === 'night' ? 'moon' : 'sunset'}/></div></div>
+    {!state ? <><h3>Your local light starts with your location</h3><p>Save your location to see what’s changing in the daylight, a gentle suggestion for right now, and what comes next.</p><LocationSetupLink className="journey-outline" section="light-check-in">Set up my local light</LocationSetupLink></> : <>
       <p className="light-check-in-status">{phase?.label || (state.polar === 'day' ? 'Extended daylight' : state.polar === 'night' ? 'Extended darkness' : 'Solar timing unavailable')} · {formatTimeInZone(now, profile?.timeZone)}</p>
       <h3>{phase?.action || 'Let your sleep schedule guide your light'}</h3>
       <p>{shifted ? 'Working nights or changing shifts? This card describes the outdoor day. Fit light exposure to your planned sleep; local sunrise may be your wind-down time.' : phase?.invitation || 'At this latitude, sunrise and sunset may not occur every day. Keep your planned sleep hours in mind when choosing brighter or dimmer surroundings.'}</p>

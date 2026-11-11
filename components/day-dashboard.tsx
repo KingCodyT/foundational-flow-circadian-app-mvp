@@ -1,11 +1,12 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import type { DailyProfile } from '@/types/circadian';
 import { getLightCheckIn } from '@/lib/light-check-in';
 import { foodGuidancePhase } from '@/lib/personalization/food-guidance';
 import { formatTimeInZone } from '@/lib/live-clock';
 import { savedClockTime } from '@/lib/today-coaching';
 
-export function DayDashboard({profile, now}: {profile: DailyProfile | null; now: Date}) {
+export function DayDashboard({profile, now, children}: {profile: DailyProfile | null; now: Date; children?: ReactNode}) {
   const light = getLightCheckIn(profile, now);
   const phase = foodGuidancePhase(profile, now);
   const shift = profile?.workStructure === 'shift' || profile?.workStructure === 'overnight';
@@ -24,6 +25,7 @@ export function DayDashboard({profile, now}: {profile: DailyProfile | null; now:
       <div><dt>Usual wake</dt><dd>{profile?.wakeTime ? savedClockTime(profile.wakeTime) : 'Not set'}</dd></div>
       <div><dt>Planned bed</dt><dd>{profile?.targetBedtime ? savedClockTime(profile.targetBedtime) : 'Not set'}</dd></div>
     </dl>
+    {children}
     <div className="day-dashboard-actions"><article><h2>Light for this moment</h2><p>{lightAction}</p></article><article><h2>Food & movement</h2><p>{food} {phase === 'evening' ? 'Keep movement comfortable as you wind down.' : 'If comfortable, take a short movement break when your day allows.'}</p><Link href="/food">Meal ideas →</Link></article></div>
     <p className="day-dashboard-note">Solar times are calculated; wake and bed are your saved plans, not measured sleep. These options do not change your selected focus or require logging. <Link href="/profile#your-schedule">Edit my day</Link></p>
   </section>;

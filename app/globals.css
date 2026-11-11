@@ -753,3 +753,6 @@ a {
 .journey .today-dashboard .sunlight-bands .sunlight-range{font-size:10px;}
 .journey .today-dashboard .sunlight-footnote,.journey .today-dashboard .sunlight-basis{font-size:11px;line-height:1.5;}
 @media(max-width:420px){.journey .day-dashboard-times{grid-template-columns:repeat(2,minmax(0,1fr));}.journey .day-dashboard-actions{grid-template-columns:1fr;gap:10px;}.journey .today-dashboard .sunlight-band-heading{display:block;}.journey .today-dashboard .sunlight-band-heading>strong{display:block;text-align:left;margin-top:6px;}.journey .today-dashboard .sunlight-band-heading small{display:inline;margin-left:4px;}}
+
+.journey .today-dashboard .day-dashboard>.sunlight-now{padding:10px 0;border:0;border-radius:0;margin-bottom:14px;border-bottom:1px solid #adc4e9;}
+.journey .today-dashboard .day-dashboard>.sunlight-now .sunlight-eyebrow,.journey .today-dashboard .day-dashboard>.sunlight-now .sunlight-intro{display:none;}

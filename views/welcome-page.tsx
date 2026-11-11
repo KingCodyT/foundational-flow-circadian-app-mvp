@@ -1,8 +1,17 @@
+import { useEffect } from "react";
+import { useRouter } from "next/router";
+import { useCircadian } from "@/components/circadian-provider";
 import Head from "next/head";
 import Link from "next/link";
 import styles from "./welcome-page.module.css";
 
 export default function WelcomePage() {
+const router = useRouter();
+const { isHydrated, hasCompletedAudit, dailyProfile } = useCircadian();
+const returning = hasCompletedAudit && Boolean(dailyProfile?.wakeTime && dailyProfile?.targetBedtime);
+useEffect(() => { if (isHydrated && returning) void router.replace('/today'); }, [isHydrated, returning, router]);
+if (!isHydrated || returning) return <main><p role="status">Opening your day…</p></main>;
+
 return <>
 <Head><title>Foundational Flow | Make sense of your day</title><meta name="description" content="Understand the timing of your day and find a practical next step. Begin with 16 questions about your current habits." /></Head>
 <div className={styles.homepage} aria-label="Foundational Flow homepage">

@@ -756,3 +756,6 @@ a {
 
 .journey .today-dashboard .day-dashboard>.sunlight-now{padding:10px 0;border:0;border-radius:0;margin-bottom:14px;border-bottom:1px solid #adc4e9;}
 .journey .today-dashboard .day-dashboard>.sunlight-now .sunlight-eyebrow,.journey .today-dashboard .day-dashboard>.sunlight-now .sunlight-intro{display:none;}
+
+.journey .day-dashboard-actions article{border:1px solid #c6d5eb;background:#fff;border-radius:12px;padding:14px;min-width:0;}
+.journey .day-dashboard-actions a{min-height:44px;display:inline-flex;align-items:center;}

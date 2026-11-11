@@ -27,7 +27,7 @@ const {DayDashboard}=load('components/day-dashboard.tsx');
 const dashboard=(p,at)=>renderToStaticMarkup(React.createElement(DayDashboard,{profile:p,now:new Date(at)}));
 test('dashboard exposes current timing, saved plans and options without disclosures',()=>{
  const html=dashboard(profile,'2026-11-01T20:00:00Z');
- for(const label of ['Your day at a glance','Sunrise','Sunset','Usual wake','Planned bed','Light for this moment','Food &amp; movement','not measured sleep']) assert.ok(html.includes(label),label);
+ for(const label of ['Your day at a glance','Sunrise','Sunset','Usual wake','Planned bed','Light for this moment','A meal for this moment','not measured sleep']) assert.ok(html.includes(label),label);
  assert.doesNotMatch(html,/<details/);assert.match(html,/6:00 AM/);assert.match(html,/10:00 PM/);
  assert.match(html,/daylight break/);assert.match(dashboard(profile,'2026-11-02T05:00:00Z'),/bedtime is approaching/);
 });
@@ -43,4 +43,13 @@ test('dashboard precedes coaching and exploration; completed returning users ope
  const home=fs.readFileSync('views/welcome-page.tsx','utf8');
  assert.match(home,/hasCompletedAudit && Boolean\(dailyProfile\?\.wakeTime && dailyProfile\?\.targetBedtime\)/);
  assert.match(home,/router.replace\('\/today'\)/);
+});
+
+test('home shows a meal suggestion without recipe instructions or invented local seasonality',()=>{
+ const html=dashboard(profile,'2026-11-01T20:00:00Z');
+ assert.match(html,/Planning food/);assert.match(html,/regional harvest calendar/);
+ assert.doesNotMatch(html,/ingredients|servings|fl oz|kcal|cooking steps/i);
+ const unsupported=dashboard({...profile,latitude:-33.86,longitude:151.2,timeZone:'Australia\/Sydney'},'2026-11-11T02:00:00Z');
+ assert.match(unsupported,/calendar is not available/);assert.doesNotMatch(unsupported,/listed in the regional/);
+ const journey=require('node:fs').readFileSync('components/journey-now.tsx','utf8');assert.doesNotMatch(journey,/FoodPreview/);
 });

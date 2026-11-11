@@ -71,3 +71,10 @@ test('selected recipe hover retains an accessible gold action surface', () => {
   assert.match(selectedHover.toString(), /background: var\(--coastal-gold-hover\)/);
   assert.match(selectedHover.toString(), /color: var\(--coastal-bg\)/);
 });
+
+test('installed app launch and browser chrome use the coastal background', () => {
+  const manifest = JSON.parse(read('public/manifest.webmanifest'));
+  assert.equal(manifest.background_color, tokens['--coastal-bg']);
+  assert.equal(manifest.theme_color, tokens['--coastal-bg']);
+  assert.match(read('pages/_app.tsx'), /name="theme-color" content="#102936"/);
+});

@@ -78,3 +78,13 @@ test('installed app launch and browser chrome use the coastal background', () =>
   assert.equal(manifest.theme_color, tokens['--coastal-bg']);
   assert.match(read('pages/_app.tsx'), /name="theme-color" content="#102936"/);
 });
+
+test('secondary hero text remains readable over the brightest possible photo', () => {
+  const secondaryHero = theme.nodes.find(n => n.selector === '.journey:not(:has(.today-dashboard)) .journey-landscape');
+  assert.ok(secondaryHero);
+  assert.match(secondaryHero.toString(), /#102936b3/);
+  const alpha=0xb3/255;
+  const composite='#'+[0x10,0x29,0x36].map(value=>Math.round(value*alpha+255*(1-alpha)).toString(16).padStart(2,'0')).join('');
+  assert.ok(contrast(tokens['--coastal-text'],composite)>=4.5);
+  assert.match(theme.toString(), /\.mobile-assessment > div:first-child > div:first-child p\s*\{\s*color: var\(--coastal-text\)/);
+});

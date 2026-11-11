@@ -31,10 +31,11 @@ function host(t, initial = base(), instant = '2026-09-10T12:00:00Z', renderPages
   global.document = { visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
   function Probe({ name }) { value = useCircadian(); return React.createElement('route', { name }); }
   function navigate(next) { route = typeof next === "string" ? next : `${next.pathname}?${new URLSearchParams(next.query)}`; renderer.update(tree()); }
+  const routeEvents = { on() {}, off() {} };
   const tree = () => {
     if (!renderPages) return React.createElement(CircadianProvider, null, React.createElement(Probe, { key: route, name: route }));
     const url = new URL(route, 'https://synthetic.invalid');
-    const router = { pathname: url.pathname, route: url.pathname, asPath: route, query: Object.fromEntries(url.searchParams), isReady: true,
+    const router = { pathname: url.pathname, route: url.pathname, asPath: route, events: routeEvents, query: Object.fromEntries(url.searchParams), isReady: true,
       push: next => { navigate(next); return Promise.resolve(true); }, prefetch: () => Promise.resolve() };
     const Page = load(`pages/${url.pathname.slice(1)}.tsx`).default;
     return React.createElement(RouterContext.Provider, { value: router }, React.createElement(CircadianProvider, null,

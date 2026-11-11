@@ -172,3 +172,13 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .journey-timeline svg { color: var(--coastal-gold); }
 
 .journey .recipe-slots button[aria-pressed="true"]:hover:not(:disabled) { background: var(--coastal-gold-hover); color: var(--coastal-bg); }
+
+/* Text-heavy secondary screens need a darker photo wash than Today's large
+   clock. Keep the same coastal image and palette, with readable intro copy. */
+.journey:not(:has(.today-dashboard)) .journey-landscape {
+  background-image: linear-gradient(180deg,#081b30b8 0%,#102936b3 45%,#102936d9 78%,#102936 100%),url('/images/coastal-hero-placeholder.jpg');
+}
+.journey .mobile-assessment > div:first-child > div:first-child p {
+  color: var(--coastal-text);
+  text-shadow: 0 2px 10px #071c2b;
+}

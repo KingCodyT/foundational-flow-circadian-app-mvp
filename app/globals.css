@@ -785,3 +785,4 @@ a {
 .journey .day-dashboard-actions a{color:#234c93;font-weight:600;}
 .journey .today-dashboard .sunlight-explore>summary{background:#d9e5fc;border-radius:10px;padding:12px;color:#234c93;}
 @media(max-width:420px){.journey .day-dashboard-clock{padding:14px;gap:10px;}.journey .day-dashboard-clock strong{font-size:32px;}.journey .day-dashboard-times{gap:8px;}.journey .day-dashboard-times>div{padding:8px;}}
+.journey .day-dashboard-clock p,.journey .day-dashboard-clock small{color:#fff;}

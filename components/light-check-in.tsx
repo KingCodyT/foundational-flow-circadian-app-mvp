@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { SolarSpectrum } from './solar-spectrum';
 import { LightBandDetails } from './light-spectrum';
 import { CodyDiscovery } from './cody-discovery';
 import type { DailyProfile } from '@/types/circadian';
@@ -34,7 +33,6 @@ export function LightCheckIn({ profile, now }: { profile: DailyProfile | null; n
       <div className="light-check-in-next"><strong>{state.next ? 'Coming next' : 'Your next check-in'}</strong><span>{state.next ? `${state.next.label} · around ${formatTimeInZone(state.next.at, profile?.timeZone)}` : 'Come back as your local day unfolds.'}</span></div>
       <p className="light-check-in-note">Updates while Today is open and when you return. Based on your saved location—not a wearable or a measurement of the light reaching you.</p>
     </>}
-    {state && <details className="light-check-in-deeper go-deeper"><summary>Explore the light spectrum</summary><SolarSpectrum profile={profile} now={now} /></details>}
     <details className="light-check-in-deeper go-deeper"><summary>Go deeper: light, your body clock, and your cells</summary>
       <LightBandDetails />
       <h4>How light becomes a timing signal</h4><p>Light-sensitive cells in the retina send information to the brain’s central clock. That clock helps coordinate daily rhythms across the body, including the timing of sleep and hormone release. The response depends on brightness, wavelength, duration, and your biological timing.</p>

@@ -9,6 +9,7 @@ import type { VoiceRelationshipOutput } from "@/lib/voice/voice-relationship";
 import { SIGNAL_REGISTRY } from "@/lib/personalization/signal-registry";
 import { FoodPreview } from "./food-guidance";
 import { LightGuidePreview } from "./light-guide-preview";
+import { SunlightNow } from "./sunlight-now";
 import { LightCheckIn } from "./light-check-in";
 
 export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, coaching, headline, children }: {
@@ -49,6 +50,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
         </div>}
       </JourneyCard>}
       {firstRun && <p className="today-context">{firstRun.summary}</p>}
+      <SunlightNow profile={profile} now={now} />
       {coaching ? <div className="today-supporting">
         {!hasLocation && <div className="today-location-summary"><p>Daylight timing needs your location.</p><Link href="/profile#profile-location">Add location</Link><details><summary>Why location matters</summary><p>Location is optional. Your schedule still works without it; sunrise, sunset, and day length need coordinates. A location label alone does not provide those coordinates.</p></details></div>}
         <LightGuidePreview profile={profile} now={now} />

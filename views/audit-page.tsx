@@ -68,7 +68,7 @@ export default function AuditPage() {
         </div>
         <QuestionCard question={currentQuestion} selectedValue={answers[currentQuestion.id]} onSelect={(value) => { setAnswer(currentQuestion.id, value); setShowValidation(false); }}/>
         {showValidation && <div role="alert" className="rounded-[1.5rem] border border-[rgba(179,145,80,0.35)] bg-[rgba(179,145,80,0.12)] px-4 py-3 text-sm text-[var(--color-charcoal)]">Choose an answer before continuing.</div>}
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
           <button type="button" onClick={() => { setShowValidation(false); move(Math.max(0, currentIndex - 1)); }} disabled={currentIndex === 0} className="inline-flex items-center justify-center rounded-full border border-[var(--color-line)] px-5 py-3 text-sm font-medium text-[var(--color-charcoal)] transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35">Previous question</button>
           <button type="button" onClick={handleNext} className="inline-flex items-center justify-center rounded-full bg-[var(--color-charcoal)] px-5 py-3 text-sm font-medium text-[var(--color-cream)] transition hover:bg-[var(--color-gold)] hover:text-[var(--color-charcoal)]">{isFinalStep ? "Continue to profile setup" : "Next question"}</button>
         </div>

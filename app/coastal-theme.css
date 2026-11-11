@@ -1,0 +1,174 @@
+/* One palette for every route. Geometry and content remain in globals.css/components.
+   Unlayered theme rules deliberately outrank the older route-specific styling,
+   including mobile rules, without specificity escalation or !important. */
+:root {
+  --coastal-bg: #102936;
+  --coastal-panel: #102936ed;
+  --coastal-raised: #1d3b4b;
+  --coastal-control: #173240;
+  --coastal-nav: #0b202cf5;
+  --coastal-text: #f4f4ed;
+  --coastal-copy: #cbd8df;
+  --coastal-muted: #b5cad7;
+  --coastal-gold: #f4d28f;
+  --coastal-gold-hover: #ffe2ab;
+  --coastal-line: #58717e80;
+  --coastal-control-line: #8299a4;
+  --coastal-danger: #ffb5aa;
+}
+
+html, body { background: var(--coastal-bg); color: var(--coastal-text); color-scheme: dark; }
+.journey {
+  /* Compatibility aliases for the existing Tailwind/component contracts. */
+  --journey-cream: var(--coastal-bg);
+  --color-charcoal: var(--coastal-text);
+  --color-warm-gray: var(--coastal-muted);
+  --color-muted: var(--coastal-muted);
+  --color-gold: var(--coastal-gold);
+  --color-gold-soft: var(--coastal-gold);
+  --color-cream: var(--coastal-bg);
+  --color-taupe: var(--coastal-raised);
+  --color-line: var(--coastal-line);
+  --color-error: var(--coastal-danger);
+  background: var(--coastal-bg);
+  color: var(--coastal-text);
+}
+.journey .journey-landscape {
+  height: 680px;
+  background-image: linear-gradient(180deg,#081b3045 0%,#10293612 40%,#102936b8 78%,#102936 100%),url('/images/coastal-hero-placeholder.jpg');
+  background-position: center, center 40%;
+  background-size: cover;
+  opacity: 1;
+}
+@media (min-width: 601px) {
+  .journey .journey-landscape { height: 760px; background-position: center, center 42%; }
+}
+
+.journey :is(h1,h2,h3,h4,h5,strong,legend,label,dt) { color: var(--coastal-text); }
+.journey :is(p,dd) { color: var(--coastal-copy); }
+.journey :is(a,summary,.journey-eyebrow,.journey-save,.recipe-eyebrow) { color: var(--coastal-gold); }
+.journey :is(.journey-brand,.journey-wordmark,.journey-brand p,.journey-intro p,.profile-intro p,.today-intro p) { color: var(--coastal-text); }
+.journey :is(.journey-brand,.journey-intro,.profile-intro,.today-intro) { text-shadow: 0 2px 12px #091827; }
+.journey .journey-wordmark svg { color: var(--coastal-gold); }
+.journey :is(.journey-intro,.profile-intro,.today-intro,.profile-page,.mobile-assessment) { background: transparent; }
+
+/* Panels use the same translucent ocean surface as the approved Today card. */
+.journey :is(.journey-card,.profile-section,.timeline-day,.today-coaching-loop,.today-supporting,.today-focus-line,.sunlight-now,.journey-steps,.ff-glass-card,.ff-dark-card,.ff-soft-panel,.light-check-in,.light-check-in-night),
+.journey .journey-secondary > section:not(.profile-page):not(.mobile-assessment),
+.journey [class~="bg-white"],
+.journey [class*="bg-white/"],
+.journey .mobile-assessment article,
+.journey .mobile-assessment > div > div:not(:first-child),
+.journey .mobile-assessment > div:last-child > div:first-child {
+  background: var(--coastal-panel);
+  color: var(--coastal-text);
+  border-color: var(--coastal-line);
+  box-shadow: 0 8px 28px #071c2b18;
+}
+.journey :is(.journey-card,.profile-section,.timeline-day,.sunlight-now) { backdrop-filter: blur(10px); }
+.journey :is(.recipe-card,.food-idea,.light-band,.spectrum-controls,.spectrum-night,.spectrum-preview-action,.food-learning-feature .go-deeper,.food-learning-feature .cody-discovery,.today-supporting details[open],.light-guide-preview details[open],.sunlight-explore[open]) {
+  background: var(--coastal-raised);
+  color: var(--coastal-text);
+  border-color: var(--coastal-line);
+}
+.journey .profile-page #connections { background: var(--coastal-panel); }
+.journey .timeline-page section[aria-label="Day recap"] { background: var(--coastal-panel); color: var(--coastal-text); }
+.journey .timeline-page [role="dialog"] { background: var(--coastal-bg); color: var(--coastal-text); }
+.journey .mobile-assessment > div:last-child > div:last-child { background: transparent; box-shadow: none; }
+.journey .today-dashboard .day-dashboard { background: transparent; }
+.journey .day-dashboard-times { background: var(--coastal-panel); border-color: var(--coastal-line); }
+.journey .day-dashboard-times dt { color: var(--coastal-muted); }
+.journey .day-dashboard-times dd { color: var(--coastal-text); }
+.journey .day-dashboard-times > div:nth-child(-n+2) dd { color: var(--coastal-gold); }
+.journey :is(.day-dashboard-clock,.day-dashboard-clock p,.day-dashboard-clock strong,.day-dashboard-clock > span,.day-dashboard-clock small) { color: var(--coastal-text); }
+.journey .day-dashboard-actions article { background: transparent; border-color: var(--coastal-line); }
+
+/* Shared form, secondary action and selected states. */
+.journey :is(input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea,option,.journey-segments),
+.journey .timeline-date-navigation button,
+.journey .recipe-slots button,
+.journey .mobile-assessment button[data-selected="false"] {
+  background: var(--coastal-control);
+  color: var(--coastal-text);
+  border-color: var(--coastal-control-line);
+}
+.journey :is(input,textarea)::placeholder { color: var(--coastal-muted); opacity: 1; }
+.journey :is(input[type=checkbox],input[type=radio],input[type=range]) { accent-color: var(--coastal-gold); }
+.journey .journey-outline,
+.journey button[class~="bg-white"],
+.journey .mobile-assessment > div:last-child > div:last-child > button:first-child {
+  background: var(--coastal-control);
+  color: var(--coastal-gold);
+  border-color: var(--coastal-control-line);
+}
+.journey :is(.journey-outline,button[class~="bg-white"],.timeline-date-navigation button,.recipe-slots button:not([aria-pressed="true"])):hover:not(:disabled),
+.journey .mobile-assessment button[data-selected="false"]:hover {
+  background: var(--coastal-raised);
+  border-color: var(--coastal-gold);
+}
+.journey .journey-primary,
+.journey button[type="submit"],
+.journey button[class*="bg-[var(--color-charcoal)]"],
+.journey .journey-segments .selected,
+.journey .recipe-slots button[aria-pressed="true"],
+.journey .mobile-assessment > div:last-child > div:last-child > button:last-child {
+  background: var(--coastal-gold);
+  color: var(--coastal-bg);
+  border-color: var(--coastal-gold);
+  text-shadow: none;
+}
+.journey :is(.journey-primary,button[type="submit"],button[class*="bg-[var(--color-charcoal)]"]):hover:not(:disabled) { background: var(--coastal-gold-hover); }
+.journey :is(.journey-primary,.journey-segments .selected) :is(span,small,strong) { color: inherit; }
+.journey .mobile-assessment article button[data-selected="true"] {
+  background: var(--coastal-raised);
+  color: var(--coastal-text);
+  border-color: var(--coastal-gold);
+  box-shadow: inset 0 0 0 1px var(--coastal-gold);
+}
+.journey .mobile-assessment article button[data-selected="true"] p { color: var(--coastal-text); }
+.journey .mobile-assessment article button[data-selected="true"] span {
+  background: var(--coastal-gold);
+  color: var(--coastal-bg);
+  border-color: var(--coastal-gold);
+}
+.journey .journey-steps span { background: var(--coastal-control); color: var(--coastal-copy); border-color: var(--coastal-control-line); }
+.journey .journey-steps small { color: var(--coastal-copy); }
+.journey .journey-steps [aria-current] span { background: var(--coastal-gold); color: var(--coastal-bg); border-color: var(--coastal-gold); }
+.journey .journey-steps [aria-current] small { color: var(--coastal-gold); }
+.journey .journey-steps li:not(:last-child)::after { background: var(--coastal-control-line); }
+.journey :is(button,a,input,select,textarea,summary,[tabindex]):focus-visible { outline: 3px solid var(--coastal-gold); outline-offset: 4px; }
+.journey .journey-segments label:focus-within { outline-color: var(--coastal-gold); }
+
+/* Disclosures stay in the same palette when expanded. Spectral swatches and
+   illustrations retain their real, data-driven wavelength colors. */
+.journey :is(.food-learning-feature > summary,.food-learning-feature .go-deeper > summary,.go-deeper > summary,.light-guide-preview > details > summary) {
+  background: var(--coastal-raised);
+  color: var(--coastal-gold);
+  border-color: var(--coastal-control-line);
+}
+.journey :is(.food-learning-feature > summary,.go-deeper > summary):hover,
+.journey .go-deeper[open] > summary { background: var(--coastal-control); color: var(--coastal-gold); }
+.journey :is(.light-guide-preview,.today-review-banner) { background: var(--coastal-panel); color: var(--coastal-text); border-color: var(--coastal-gold); }
+.journey :is(.sunlight-mode,.light-check-in-status,.journey-state,.journey-icon-disc) { background: var(--coastal-raised); color: var(--coastal-gold); border-color: var(--coastal-control-line); }
+.journey :is(.light-check-in-phases [aria-current],.journey-success,.journey-perspective) { background: var(--coastal-raised); border-color: var(--coastal-gold); }
+.journey :is(.spectrum-time,.spectrum-power,.spectrum-percent,.light-physiology dt,.profile-facts p:last-child,.timeline-selected-date) { color: var(--coastal-text); }
+.journey :is(.light-band-appearance,.sunlight-range,.sunlight-band-heading small,.day-dashboard-note,.timeline-zone,.cody-footer,.journey-footer,.journey-footer p) { color: var(--coastal-muted); }
+.journey :is(.sunlight-band-heading > strong,.light-check-in-icon,.journey-weather-lead svg) { color: var(--coastal-gold); }
+.journey :is(.light-check-in-next,.light-check-in-deeper,.light-check-in-phases li,.light-check-in-explanation,.spectrum-stack,.today-coach-progress,.today-supporting details,.sunlight-reading,.sunlight-bands article,.day-dashboard-actions,.timeline-story,.profile-disclosure) { border-color: var(--coastal-line); }
+.journey .sunlight-bands article { background: transparent; }
+.journey [role="alert"] { color: var(--coastal-danger); }
+.journey .mobile-assessment [role="alert"] { background: var(--coastal-raised); color: var(--coastal-gold); border-color: var(--coastal-gold); }
+.journey .journey-gold-line { background: var(--coastal-gold); }
+
+.journey .journey-nav { background: var(--coastal-nav); color: var(--coastal-copy); border-top: 1px solid var(--coastal-line); }
+.journey .journey-nav a { color: var(--coastal-copy); }
+.journey .journey-nav a[aria-current="page"] { color: var(--coastal-gold); }
+.journey .journey-nav a[aria-current="page"]::after { background: var(--coastal-gold); }
+.journey ::selection { background: var(--coastal-gold); color: var(--coastal-bg); }
+
+.journey .day-dashboard-actions article::before { color: var(--coastal-gold); }
+
+.journey :is(.light-guide-preview details[open],.sunlight-explore[open]) :is(span,li) { color: var(--coastal-copy); }
+.journey .journey-timeline svg { color: var(--coastal-gold); }
+
+.journey .recipe-slots button[aria-pressed="true"]:hover:not(:disabled) { background: var(--coastal-gold-hover); color: var(--coastal-bg); }

@@ -32,6 +32,8 @@ function mount(profile = {}, saved = new Map(), hasCompletedAudit = false, answe
   act(() => { tree = create(React.createElement(mod.exports.default)); });
   const text = node => typeof node === 'string' ? node : (node.children || []).map(text).join('');
   return {
+    content: () => text(tree.toJSON()),
+    details: () => tree.root.findAllByType("details"),
     answerWrites, saved, get completed() { return completed; }, get persisted() { return persisted; },
     click(label) { act(() => tree.root.findAllByType('button').find(b => text(b).includes(label)).props.onClick()); },
     stage: () => tree.root.findAllByType('li').find(li => li.props['aria-current'] === 'step').children.map(text).join(''),
@@ -231,5 +233,36 @@ for (const gender of [undefined, 'unspecified']) test('optional or legacy gender
   app.click('Next:'); app.click('Next:'); app.click('Next:');
   assert.equal(app.completed, true);
   assert.equal(app.persisted.gender, gender);
+  app.close();
+});
+
+
+test('reference-only profile details are disclosed and collapsed without losing saved data', () => {
+  const profile = { wakeTime: '07:00', targetBedtime: '23:00', dateOfBirth: '1960-01-01',
+    activityLevel: 'high', typicalEnvironment: 'coastal', travelFrequency: 'frequent',
+    elevation: '150', gender: 'male', realityNotes: 'Caregiving' };
+  const app = mount(profile);
+  assert.match(app.content(), /do not currently change your focus, suggested actions, or timing/);
+  assert.equal(app.details()[0].props.open, false);
+  app.click('Next:');
+  assert.match(app.content(), /Wake time places your morning-light opportunity/);
+  app.click('Next:');
+  assert.match(app.content(), /Surroundings and elevation do not currently change/);
+  app.click('Next:');
+  assert.match(app.content(), /their meaning is not automatically interpreted/);
+  assert.match(app.content(), /Adding any note pauses suggestions/);
+  app.click('Next:');
+  for (const key of ['dateOfBirth','activityLevel','typicalEnvironment','travelFrequency','elevation','gender','realityNotes']) {
+    assert.equal(app.persisted[key], profile[key], key);
+  }
+  app.close();
+});
+
+test('invalid existing reference date is revealed rather than hidden behind a collapsed section', () => {
+  const app = mount({ wakeTime: '07:00', targetBedtime: '23:00', dateOfBirth: 'bad' });
+  app.click('Next:');
+  assert.match(app.stage(), /Basics/);
+  assert.equal(app.details()[0].props.open, true);
+  assert.equal(app.completed, false);
   app.close();
 });

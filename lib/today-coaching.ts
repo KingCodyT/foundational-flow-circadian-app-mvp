@@ -1,6 +1,6 @@
 import type { DailyEventState, DailyProfile } from '@/types/circadian';
 import type { ContextualReminder } from './personalization/contextual-reminders';
-import { eventSupportsSignal } from './personalization/now-coaching';
+import { completionSignals } from './personalization/completion-evidence';
 import { scheduleDateKey, shiftDateKey } from './schedule-time';
 
 export const isLightReduction = (id?: string) => ['sunset', 'dim_house'].includes(id || '');
@@ -12,7 +12,7 @@ export function reportedDays(records: Record<string, DailyEventState> | null, si
   if (!signal) return 0;
   const today = scheduleDateKey(now, zone);
   return Array.from({length: 7}, (_, i) => shiftDateKey(today, -i)).filter(day =>
-    Object.entries(records?.[day] || {}).some(([id, r]) => eventSupportsSignal(id, signal) && r.status === 'completed' &&
+    Object.entries(records?.[day] || {}).some(([id, r]) => completionSignals(id, r).includes(signal) &&
       Number.isFinite(Date.parse(r.at)) && Date.parse(r.at) <= +now && scheduleDateKey(new Date(r.at), zone) === day)).length;
 }
 export function eveningHeadline(profile: DailyProfile | null, reminder: ContextualReminder | null, now: Date): boolean {

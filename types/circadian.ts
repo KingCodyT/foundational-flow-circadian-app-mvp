@@ -83,6 +83,8 @@ export type EventStatus =
   | "missed";
 
 export type EventRecord = {
+  /** Selected focus practiced; null marks a supporting step, absent means legacy/unattributed. */
+  coachingSignalId?: string | null;
   remindAt?: string; // user-adjusted reminder time; never a schedule anchor
   status: EventStatus;
   at: string; // ISO timestamp when action occurred (completed/skipped)

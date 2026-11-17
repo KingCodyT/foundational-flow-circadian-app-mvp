@@ -101,6 +101,7 @@ type CircadianState = {
       remindAt?: string;
       at?: string;
       fromNotification?: boolean;
+      coachingSignalId?: string | null;
     },
   ) => void;
   recordFoodTimingAction: (
@@ -392,6 +393,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       remindAt?: string;
       at?: string;
       fromNotification?: boolean;
+      coachingSignalId?: string | null;
     },
   ) => {
     const notification = notificationState.lastNotification;
@@ -404,6 +406,7 @@ export function CircadianProvider({ children }: { children: ReactNode }) {
       const dayState = { ...(next[dateStr] ?? {}) };
       dayState[eventId] = {
         status: record.status,
+        coachingSignalId: record.coachingSignalId !== undefined ? record.coachingSignalId : dayState[eventId]?.coachingSignalId,
         remindAt: record.status === "upcoming" ? record.remindAt : undefined,
         at: record.at ?? new Date().toISOString(),
       };

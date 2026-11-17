@@ -1,4 +1,5 @@
 "use client";
+import { eventSupportsSignal } from "@/lib/personalization/now-coaching";
 import { focusReason } from '@/lib/coaching-explanations';
 
 import { firstStepExplanation } from '@/lib/personalization/first-step-explanation';
@@ -98,7 +99,7 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
     } else {
       submitted.current.add(terminalKey);
       submitted.current.add(key);
-      setEventRecord(effective.dateKey, effective.eventId, { status: response, at: at.toISOString() });
+      setEventRecord(effective.dateKey, effective.eventId, { status: response, at: at.toISOString(), coachingSignalId: eventSupportsSignal(effective.eventId, signalId) ? signalId : null });
       if (notificationState.scheduledNotification?.id.startsWith("first-run:")) setScheduledNotification(null);
     }
     return true;
@@ -113,7 +114,7 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
     primarySignalId={signalId} primaryState={currentPersonalization?.primaryCoachingTarget.coachingState} progress={[]} respond={respond}
     coaching={<>
       <p className="today-focus-line">{focusReason(answers, signalId)}</p>
-      <TodayCoach signalId={signalId} updateWeekly={updateWeeklyCheckin} profile={profile} clientId={clientId} now={now}
+      <TodayCoach answers={answers} signalId={signalId} updateWeekly={updateWeeklyCheckin} profile={profile} clientId={clientId} now={now}
         firstStepContext={explanation} handled={handled} nextOpportunity={nextOpportunity} day={effective.dateKey} reminder={reminder} pending={current ? null : upcoming} count={reportedDays(eventStateByDate, signalId, now, profile.timeZone)}
         established={false} respond={respond} saveProfile={setDailyProfile} />
       <details className="today-focus-line"><summary>Optional reminder settings</summary><p>You can use Today without enabling notifications.</p>{setup}</details>

@@ -6,17 +6,7 @@ import assembleInterventionCandidate, {
 } from "./intervention-candidate";
 import { SignalReconsideration } from "./reconsideration";
 
-const EVENT_SIGNAL_MAP: Record<string, string[]> = {
-  morning_light: ["morning_light_timing", "morning_light_duration"],
-  first_meal: ["meal_timing_regularity"],
-  midday_light: ["day_brightness", "day_breaks_outside"],
-  movement: ["morning_movement"],
-  last_meal: ["meal_timing_regularity", "last_meal_timing"],
-  sunset: ["evening_light_reduction"],
-  dim_house: ["evening_light_reduction"],
-  digital_sunset: ["evening_screen_exposure"],
-  sleep_window: ["sleep_schedule"],
-};
+import { EVENT_SIGNAL_MAP } from "./completion-evidence";
 
 export type NowCoachingDecision = {
   candidate: InterventionCandidate;

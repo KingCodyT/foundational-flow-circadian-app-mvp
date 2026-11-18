@@ -3,6 +3,7 @@ import { eventSupportsSignal } from "@/lib/personalization/now-coaching";
 import { focusReason } from '@/lib/coaching-explanations';
 
 import { firstStepExplanation } from '@/lib/personalization/first-step-explanation';
+import { TodayPersonalCue } from './today-personal-cue';
 import { TodayCoach } from './today-coach';
 import { reportedDays } from '@/lib/today-coaching';
 import Link from "next/link";
@@ -112,6 +113,7 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
     status: "upcoming", scheduledFor: effective.start, priority: 90, responses: ["Done", "Not today", "Adjust"] };
   return <JourneyNow profile={profile} now={now} voice={voice} reminder={reminder} preview={null}
     primarySignalId={signalId} primaryState={currentPersonalization?.primaryCoachingTarget.coachingState} progress={[]} respond={respond}
+    personalCue={<TodayPersonalCue signalId={signalId} profile={profile} now={now} opportunity={handled ? nextOpportunity : (reminder || upcoming)} quiet={profile.weeklyCheckins?.[signalId]?.mode === "weekly"} />}
     coaching={<>
       <p className="today-focus-line">{focusReason(answers, signalId)}</p>
       <TodayCoach answers={answers} signalId={signalId} updateWeekly={updateWeeklyCheckin} profile={profile} clientId={clientId} now={now}

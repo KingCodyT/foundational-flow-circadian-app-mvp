@@ -3,6 +3,7 @@ import { focusReason, establishedReason } from '@/lib/coaching-explanations';
 
 import { useMemo, useRef } from "react";
 
+import { TodayPersonalCue } from '@/components/today-personal-cue';
 import { TodayCoach } from '@/components/today-coach';
 import { eveningHeadline, reportedDays, responseAllowed } from '@/lib/today-coaching';
 import { eventSupportsSignal } from '@/lib/personalization/now-coaching';
@@ -90,14 +91,16 @@ export default function NowPage() {
   const handled = Object.entries(eventStateForDate).filter(([id, record]) => eventSupportsSignal(id, signalId) && ["completed", "skipped"].includes(record.status))
     .sort((a,b)=>Date.parse(b[1].at)-Date.parse(a[1].at))[0]?.[1];
   const pending = reminders.next;
+  const nextOpportunity = dailyProfile ? selectFirstRunGuidance(dailyProfile, now, eventStateByDate, signalId) ?? undefined : undefined;
   const progress = Object.values(summarizeDailyEvidence(eventStateByDate)).map(summary =>
     `${SIGNAL_REGISTRY[summary.signalId]?.label || summary.signalId}: reported on ${summary.completedDays} distinct days.`);
   if (!isHydrated) return <FlowShell><p role="status">Loading your focus…</p></FlowShell>;
   if (firstRunHandoff && dailyProfile) return <FirstRunToday now={now} voice={voice} />;
   return <JourneyNow profile={dailyProfile} voice={voice} reminder={surfacedEvent && activeEvent ? { ...activeEvent, action: coachingDecision.candidate.originalDecision.reason === "adapted_feasible_action_due_to_constraint" ? coachingDecision.candidate.adaptedAction || activeEvent.action : activeEvent.action } : null}
     headline={eveningHeadline(dailyProfile, activeEvent, now) ? 'The day’s done. Give your body the message.' : undefined}
+    personalCue={<TodayPersonalCue signalId={signalId || ""} profile={dailyProfile} now={now} opportunity={handled ? nextOpportunity : (displayedReminder || pending || nextOpportunity)} quiet={currentPersonalization.primaryCoachingTarget.coachingState === "ESTABLISHED" || dailyProfile?.weeklyCheckins?.[signalId || ""]?.mode === "weekly"} />}
     coaching={<><p className="today-focus-line">{focusReason(answers, signalId || '')}</p>{process.env.NODE_ENV === 'development' && clientId === 'coaching-review-only' && <aside className="today-review-banner">LOCAL REVIEW · Synthetic profile and schedule. “Evening” refers to the test schedule, not your local time. Device clock: {new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',hour12:true,timeZoneName:'short'}).format(now)}.</aside>}<TodayCoach answers={answers} signalId={signalId || ''} updateWeekly={updateWeeklyCheckin} key={`${todayKey}:${signalId}`} profile={dailyProfile} clientId={clientId} now={now} day={todayKey}
-      reminder={displayedReminder} pending={pending} handled={handled} nextOpportunity={dailyProfile ? selectFirstRunGuidance(dailyProfile, now, eventStateByDate, signalId) ?? undefined : undefined}
+      reminder={displayedReminder} pending={pending} handled={handled} nextOpportunity={nextOpportunity}
       establishedExplanation={establishedReason(answers, signalId || '', currentPersonalization.signalStates[signalId || '']?.notes)} count={reportedDays(eventStateByDate, signalId, new Date(), profileTimeZone)} established={currentPersonalization.primaryCoachingTarget.coachingState === 'ESTABLISHED'}
       respond={respond} saveProfile={setDailyProfile} /></>}
     preview={preview} respond={respond} now={now} primarySignalId={currentPersonalization.primaryCoachingTarget.signalId}

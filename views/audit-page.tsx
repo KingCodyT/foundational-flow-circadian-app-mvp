@@ -1,5 +1,6 @@
 "use client";
 
+import { assessmentPurpose } from "@/lib/journey-value";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { FlowShell } from "@/components/flow-shell";
@@ -64,7 +65,7 @@ export default function AuditPage() {
       <div className="space-y-5">
         <div className="rounded-[1.5rem] border border-[var(--color-line)] bg-white/65 px-5 py-4">
           <p className="text-xs uppercase tracking-[0.22em] text-[var(--color-muted)]">Question {currentIndex + 1} of {questionnaire.length}</p>
-          <p className="mt-1 text-sm text-[var(--color-muted)]">Your answers help choose a useful starting focus.</p>
+          <p className="mt-1 text-sm text-[var(--color-muted)]">{assessmentPurpose(currentQuestion.id)}</p>
         </div>
         <QuestionCard question={currentQuestion} selectedValue={answers[currentQuestion.id]} onSelect={(value) => { setAnswer(currentQuestion.id, value); setShowValidation(false); }}/>
         {showValidation && <div role="alert" className="rounded-[1.5rem] border border-[rgba(179,145,80,0.35)] bg-[rgba(179,145,80,0.12)] px-4 py-3 text-sm text-[var(--color-charcoal)]">Choose an answer before continuing.</div>}

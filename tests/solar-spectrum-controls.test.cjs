@@ -6,6 +6,11 @@ test('actual sunrise/sunset range, one accessible slider; earlier/later reset re
  let tree;act(()=>tree=create(React.createElement(SolarSpectrum,{profile,now})));
  const slider=()=>tree.root.findByType('input'),buttons=()=>tree.root.findAllByType('button');
  const solar=getSolarTimes(now,profile.latitude,profile.longitude,profile.timeZone);
+ const gradient=()=>tree.root.findAllByProps({className:'solar-glowing-mix'})[0]?.props.style.backgroundImage;
+ const originalGradient=gradient();
+ act(()=>slider().props.onChange({target:{value:String(+solar.solarNoon)}}));
+ assert.notEqual(gradient(),originalGradient);assert.match(JSON.stringify(tree.toJSON()),/Light mix at/);
+ act(()=>buttons()[0].props.onClick());assert.equal(gradient(),originalGradient);
  assert.equal(slider().props.min,+solar.sunrise);assert.equal(slider().props.max,+solar.sunset);assert.equal(slider().props.value,+now);assert.equal(slider().props['aria-describedby'],'solar-rail-help');assert.equal(buttons().length,0);
  for(const at of [+solar.sunrise,+solar.solarNoon,+solar.sunset]){
   act(()=>slider().props.onChange({target:{value:String(at)}}));assert.equal(slider().props.value,at);assert.equal(buttons()[0].children.join(''),'Back to now');

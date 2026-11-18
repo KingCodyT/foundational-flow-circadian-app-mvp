@@ -13,17 +13,18 @@ import { hasValidCoordinates } from "@/lib/solar";
 import { ClockTimeField } from "@/components/clock-time-field";
 import { assessSleepInterval } from "@/lib/sleep-timing";
 
-export default function DailyProfileForm({ section = "all", onLocationSaved }: { section?: "all" | "schedule" | "preferences" | "location"; onLocationSaved?: () => void } = {}) {
+export default function DailyProfileForm({ section = "all", onLocationSaved, onScheduleSaved }: { section?: "all" | "schedule" | "preferences" | "location"; onLocationSaved?: () => void; onScheduleSaved?: () => void } = {}) {
   const router = useRouter();
   const { dailyProfile, setDailyProfile, storageIssue } = useCircadian();
-  const savedWakeTime = dailyProfile?.wakeTime ?? "07:00";
-  const savedBedtime = dailyProfile?.targetBedtime ?? "22:00";
+  const savedWakeTime = dailyProfile?.wakeTime ?? "";
+  const savedBedtime = dailyProfile?.targetBedtime ?? "";
   const savedTimeZone = dailyProfile?.timeZone ?? getRuntimeTimeZone() ?? "UTC";
   const savedLastMeal = dailyProfile?.lastMealTime ?? "";
   const [lastMealTime, setLastMealTime] = useState(savedLastMeal);
   const [timeZone, setTimeZone] = useState(savedTimeZone);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [error, setError] = useState("");
+  const [scheduleSaveRequested, setScheduleSaveRequested] = useState(false);
   const [wakeTime, setWakeTime] = useState(savedWakeTime);
   const [targetBedtime, setTargetBedtime] = useState(savedBedtime);
   const [zip, setZip] = useState("");
@@ -62,6 +63,20 @@ export default function DailyProfileForm({ section = "all", onLocationSaved }: {
     return () => window.clearTimeout(timer);
   }, [locationSaved, storageIssue, dailyProfile, onLocationSaved]);
 
+  // Return only after the submitted schedule is actually persisted, not merely in React state.
+  useEffect(() => {
+    if (!scheduleSaveRequested || !onScheduleSaved || storageIssue || returnSent.current) return;
+    const timer = window.setTimeout(() => {
+      try {
+        const persisted = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}').dailyProfile;
+        if (persisted?.wakeTime !== wakeTime || persisted?.targetBedtime !== targetBedtime || persisted?.timeZone !== timeZone || (persisted?.lastMealTime || '') !== lastMealTime) return;
+        returnSent.current = true;
+        onScheduleSaved();
+      } catch { setError('Your schedule could not be confirmed as saved. Stay here and try again.'); }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [scheduleSaveRequested, onScheduleSaved, storageIssue, dailyProfile, wakeTime, targetBedtime, timeZone, lastMealTime]);
+
   // Location-only updates must not discard unsaved time edits.
   useEffect(() => {
     setWakeTime(savedWakeTime);
@@ -88,6 +103,8 @@ export default function DailyProfileForm({ section = "all", onLocationSaved }: {
     if (lastMealTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(lastMealTime)) return;
     try { new Intl.DateTimeFormat(undefined, { timeZone }).format(); } catch { setError("Enter a valid timezone, such as America/Los_Angeles."); return; }
     setError("");
+    returnSent.current = false;
+    setScheduleSaveRequested(true);
     setDailyProfile({
       ...dailyProfile,
       lastMealTime: lastMealTime || null,
@@ -205,7 +222,11 @@ export default function DailyProfileForm({ section = "all", onLocationSaved }: {
         {sleepInterval.interpretation && <p role="status" className="text-sm sm:col-span-2">We’ll read this as <strong>{sleepInterval.interpretation}</strong>.</p>}
         {sleepInterval.warning && <p className="text-sm sm:col-span-2">{sleepInterval.warning}</p>}
         {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={saved} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-2.5 text-sm font-semibold disabled:opacity-60">{saved ? "Schedule saved ✓" : "Save schedule"}</button></>}
+        {storageIssue && scheduleSaveRequested && <p role="alert">Your schedule could not be saved in this browser. Use the storage recovery message before returning to Today.</p>}
+        {onScheduleSaved && !dailyProfile?.wakeTime && <p>No wake time is saved in this browser.</p>}
+        {onScheduleSaved && !dailyProfile?.targetBedtime && <p>No bedtime is saved in this browser.</p>}
+        {onScheduleSaved && <p>Changes are saved when you tap “Save schedule and return to Today.”</p>}
+        <button type="submit" disabled={saved && !onScheduleSaved} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-2.5 text-sm font-semibold disabled:opacity-60">{onScheduleSaved ? "Save schedule and return to Today" : saved && !storageIssue ? "Schedule saved ✓" : "Save schedule"}</button></>}
         {section !== "schedule" && section !== "location" && dailyProfile && <div className="space-y-3">
           <label className="block"><input type="checkbox" checked={dailyProfile.remindersEnabled === true} onChange={event => setDailyProfile({ ...dailyProfile, remindersEnabled: event.target.checked })}/> Allow notifications for useful reminders</label>
           <p>In-app reminders still work when notifications are off. Browser notification permission is also required.</p>
@@ -220,7 +241,7 @@ export default function DailyProfileForm({ section = "all", onLocationSaved }: {
           <ReminderDeliveryStatus />
           <label className="block">Food-timing goal <select value={dailyProfile.foodTimingGoal ?? "observe"} onChange={event => setDailyProfile({ ...dailyProfile, foodTimingGoal: event.target.value as "observe" | "earlier_last_meal" })}><option value="observe">Learn my pattern</option><option value="earlier_last_meal">Try an earlier last meal</option></select></label>
         </div>}
-        {section !== "preferences" && <div className="space-y-3">
+        {section !== "preferences" && !onScheduleSaved && <div className="space-y-3">
           <p className="text-sm font-semibold">Profile timezone</p>
           <p className="text-sm leading-6 text-[var(--color-muted)]">{savedTimeZone}</p>
           <p id="profile-location" className="text-sm font-semibold">Location — optional for local daylight guidance</p>

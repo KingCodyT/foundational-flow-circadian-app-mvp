@@ -14,7 +14,7 @@ test('location return retains the exact internal route, query and section, rejec
   for (const value of [undefined, [], ['/today'], 'https://evil.example', '//evil.example', '/\\evil.example', '/profile?edit=location', '/setup', '/today\n', '/%2f%2fevil.example']) assert.equal(locationReturnPath(value), null, String(value));
 });
 
-function mount({ returnFlow = true, failStorage = false, asyncZip = false } = {}) {
+function mount({ returnFlow = true, failStorage = false, asyncZip = false, scheduleReturn = false } = {}) {
   let profile = { wakeTime: '06:30', targetBedtime: '22:45', timeZone: 'UTC', lastMealTime: '18:15', displayName: 'Synthetic', foodRegion: 'ca', locationPermissionGranted: false };
   const initial = { ...profile }, answers = { morning_light_timing: 'rarely', bedroom_darkness: 'mostly_dark' };
   let persisted = { answers, dailyProfile: profile, hasCompletedAudit: true }, tree, returned = 0, writes = 0, geo, resolveZip;
@@ -33,7 +33,7 @@ function mount({ returnFlow = true, failStorage = false, asyncZip = false } = {}
   const mod = {exports:{}};
   const code = ts.transpileModule(fs.readFileSync('components/todays-flow/daily-profile-form.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX}}).outputText;
   new Function('require','module','exports','navigator','window','fetch',code)(req,mod,mod.exports,nav,{setTimeout,clearTimeout,localStorage:{getItem:key=>key===STORAGE_KEY?JSON.stringify(persisted):null}},fetch);
-  const Component=mod.exports.default, props={section:returnFlow?'location':'schedule',...(returnFlow?{onLocationSaved:()=>returned++}:{})};
+  const Component=mod.exports.default, props={section:scheduleReturn?'schedule':returnFlow?'location':'schedule',...(scheduleReturn?{onScheduleSaved:()=>returned++}:returnFlow?{onLocationSaved:()=>returned++}:{})};
   act(()=>{tree=create(React.createElement(Component,props));});
   const text=n=>typeof n==='string'?n:(n.children||[]).map(text).join('');
   return {initial, get profile(){return profile;}, get persisted(){return persisted;},get returned(){return returned;},get writes(){return writes;},get geo(){return geo;}, tree,
@@ -116,3 +116,26 @@ test('focused page route uses its URL after refresh, returns safely, and exposes
  router.query.returnTo='https://evil.example';act(()=>tree.update(React.createElement(mod.exports.default)));formProps.onLocationSaved();assert.equal(navigations[1],'/profile');
  act(()=>tree.unmount());
 });
+
+test('schedule return waits for persisted values and preserves unrelated profile and assessment',async()=>{
+ const app=mount({scheduleReturn:true});
+ act(()=>app.tree.root.findAllByType('select').find(n=>n.props['aria-label']==='Typical wake time hour').props.onChange({target:{value:'7'}}));
+ assert.equal(app.writes,0);assert.equal(app.returned,0);
+ act(()=>app.tree.root.findByType('form').props.onSubmit({preventDefault(){}}));
+ await app.flush();await app.flush();
+ assert.equal(app.returned,1);assert.equal(app.persisted.dailyProfile.wakeTime,'07:30');assert.equal(app.persisted.dailyProfile.targetBedtime,'22:45');
+ for(const key of Object.keys(app.initial).filter(k=>k!=='wakeTime'))assert.equal(app.profile[key],app.initial[key]);
+ assert.deepEqual(app.persisted.answers,{morning_light_timing:'rarely',bedroom_darkness:'mostly_dark'});app.close();
+});
+test('failed schedule storage stays on editor instead of claiming successful return',async()=>{
+ const app=mount({scheduleReturn:true,failStorage:true});act(()=>app.tree.root.findByType('form').props.onSubmit({preventDefault(){}}));await app.flush();assert.equal(app.returned,0);assert.ok(app.tree.root.findAll(n=>n.props.role==='alert').length);app.close();
+});
+
+test('missing schedule displays blank fields, not invented saved defaults',()=>{
+ const app=mount({scheduleReturn:true});app.updateProfile({wakeTime:null,targetBedtime:null});
+ for(const select of app.tree.root.findAllByType('select')) assert.equal(select.props.value,'');
+ assert.equal(app.tree.root.findAll(n=>n.props.id==='location-zip').length,0);
+ assert.equal(app.tree.root.findAllByType('a').filter(n=>n.props.href==='/today').length,0);
+ assert.equal(app.writes,0);app.close();
+});
+test('a saved wake time stays intact when only bedtime is missing',()=>{const app=mount({scheduleReturn:true});app.updateProfile({targetBedtime:null});const fields=app.tree.root.findAllByType('select');assert.equal(fields.find(n=>n.props['aria-label']==='Typical wake time hour').props.value,6);assert.equal(fields.find(n=>n.props['aria-label']==='Target bedtime hour').props.value,'');assert.equal(app.writes,0);app.close();});

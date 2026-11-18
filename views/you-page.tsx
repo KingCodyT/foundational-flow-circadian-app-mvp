@@ -58,6 +58,15 @@ export default function YouPage() {
 
   if (!isHydrated || !router.isReady) return <FlowShell><p role="status">Loading your profile…</p></FlowShell>;
 
+  if (router.query.edit === "schedule") {
+    const destination = returnTo || '/today#today-coaching';
+    return <FlowShell><section className="profile-page">
+      <header className="profile-intro"><p className="journey-eyebrow">SCHEDULE</p><h1>Set your daily timing</h1><p>Save your usual wake and bedtime, then return to your guidance. Your answers and location stay unchanged.</p></header>
+      <Link href={destination} replace className="journey-outline">Cancel and return to Today</Link>
+      <section id="your-schedule" className="profile-section"><DailyProfileForm key={router.asPath} section="schedule" onScheduleSaved={() => { void router.replace(destination); }} /></section>
+    </section></FlowShell>;
+  }
+
   if (editingLocation) {
     const destination = returnTo || '/profile';
     const label = returnTo ? locationReturnLabel(returnTo) : 'Profile';

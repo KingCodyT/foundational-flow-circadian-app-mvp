@@ -5,7 +5,7 @@ import { hasValidCoordinates } from '@/lib/solar';
 import { formatTimeInZone } from '@/lib/live-clock';
 import { SolarSpectrum } from './solar-spectrum';
 
-const visibleSpectrum = 'linear-gradient(90deg, #9b5cff 0%, #467cff 20%, #39d992 40%, #ffe66b 60%, #ff9b40 80%, #ff535b 100%)';
+const visibleSpectrum = 'linear-gradient(90deg, #7139a5 0%, #4545bf 16%, #2674cb 30%, #38b9c6 43%, #61b65c 56%, #eed75b 70%, #eb963e 84%, #c8453d 100%)';
 
 const groups = [
   { name: 'UVB', range: '300–315 nm modeled', ids: ['uvb'], color: '#655591', meaning: 'Vitamin D production in skin; also sunburn and DNA damage. Effects depend on exposure.' },

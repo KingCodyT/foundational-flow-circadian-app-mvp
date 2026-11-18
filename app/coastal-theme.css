@@ -197,3 +197,5 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .mobile-assessment .assessment-progress > div:first-child span { color: var(--coastal-muted); }
 .journey .mobile-assessment .assessment-progress > div:last-child { background: #0b202c; }
 .journey .mobile-assessment .assessment-progress > div:last-child > div { background: var(--coastal-gold); }
+
+.journey .seasonal-produce-statement { font-size: 1.125rem; line-height: 1.6; color: var(--coastal-text); }

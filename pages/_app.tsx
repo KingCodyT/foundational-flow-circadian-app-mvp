@@ -11,7 +11,7 @@ export default function FoundationalFlowApp({
 }: AppProps) {
   return (
     <CircadianProvider>
-      <Head><link rel="manifest" href="/manifest.webmanifest" /><link rel="apple-touch-icon" href="/push-icon-192.png" /><meta name="apple-mobile-web-app-capable" content="yes" /></Head>
+      <Head><meta name="theme-color" content="#102936" /><link rel="manifest" href="/manifest.webmanifest" /><link rel="apple-touch-icon" href="/push-icon-192.png" /><meta name="apple-mobile-web-app-capable" content="yes" /></Head>
       <NotificationTransportBridge />
       <MealNotificationsProvider><Component {...pageProps} /></MealNotificationsProvider>
     </CircadianProvider>

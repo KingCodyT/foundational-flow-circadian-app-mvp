@@ -10,7 +10,7 @@ export function ProgressBar({
   const percentage = Math.round((current / total) * 100);
 
   return (
-    <div className="space-y-3">
+    <div className="assessment-progress space-y-3">
       <div className="flex items-center justify-between text-sm text-[var(--color-muted)]">
         <span>
           {label} {current} of {total}

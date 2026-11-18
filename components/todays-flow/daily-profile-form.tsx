@@ -223,7 +223,7 @@ export default function DailyProfileForm({ section = "all", onLocationSaved }: {
         {section !== "preferences" && <div className="space-y-3">
           <p className="text-sm font-semibold">Profile timezone</p>
           <p className="text-sm leading-6 text-[var(--color-muted)]">{savedTimeZone}</p>
-          <p id="profile-location" className="text-sm font-semibold">Location — essential for personalized guidance</p>
+          <p id="profile-location" className="text-sm font-semibold">Location — optional for local daylight guidance</p>
           <p className="text-sm leading-6 text-[var(--color-muted)]">{hasLocation ? "A location is saved for sunrise and sunset timing." : "Save your location so Circadian Flow can calculate your local sunrise, sunset, and day length and identify your growing region. Without it, daylight guidance cannot be personalized. It stays in this browser."}</p>
           <p className="text-sm">Tap “Use my location,” then choose Allow if your browser asks. Prefer not to share device location? Use a ZIP code below.</p>
           <div className="flex flex-wrap gap-3">

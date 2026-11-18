@@ -5,7 +5,7 @@ import { buildInitialPersonalizationState } from './personalization/initial-stat
 export function focusReason(answers: AnswerMap, signalId: string) {
   const question = questionnaire.find(q => q.id === (SIGNAL_REGISTRY[signalId]?.questionId || signalId));
   const option = question?.options.find(o => o.value === answers[question.id]);
-  return option ? `For ${(SIGNAL_REGISTRY[signalId]?.label || 'this habit').replace(/ Priority$/, '').toLowerCase()}, you reported: “${option.detail || option.label}” That helped choose this focus.` : 'Your assessment helped choose this focus. It stays selected as you practice.';
+  return option ? `You told us: “${option.detail || option.label}” So we suggest practicing ${(SIGNAL_REGISTRY[signalId]?.label || 'this habit').replace(/ Priority$/, '').toLowerCase()}. The next step below follows that focus and your saved schedule.` : 'This is your saved focus. We do not have a matching assessment answer to explain its original selection.';
 }
 export function establishedReason(answers: AnswerMap, signalId: string, notes: string[] = []) {
   const initial = buildInitialPersonalizationState({answers}).perSignal[signalId];

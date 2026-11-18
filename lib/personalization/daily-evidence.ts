@@ -1,3 +1,4 @@
+import { completionSignals } from "./completion-evidence";
 import { DailyEventState } from "@/types/circadian";
 import { InitialPersonalizationState, InitialSignalState } from "./initial-state";
 import { CoachingState, SignalSourceType } from "./types";
@@ -8,14 +9,6 @@ export type DailyEvidenceSummary = {
   lastCompletedAt?: string;
   eventIds: string[];
   completedDates: string[];
-};
-
-const EVENT_SIGNAL_MAP: Record<string, string[]> = {
-  morning_light: ["morning_light_timing"],
-  midday_light: ["day_breaks_outside"],
-  dim_house: ["evening_light_reduction"],
-  digital_sunset: ["evening_screen_exposure"],
-  last_meal: ["last_meal_timing"],
 };
 
 export function summarizeDailyEvidence(
@@ -29,7 +22,7 @@ export function summarizeDailyEvidence(
     for (const [eventId, record] of Object.entries(dayState ?? {})) {
       if (record.status !== "completed") continue;
 
-      const signalIds = EVENT_SIGNAL_MAP[eventId] ?? [];
+      const signalIds = completionSignals(eventId, record);
       for (const signalId of signalIds) {
         const existing = summaries[signalId] ?? {
           signalId,

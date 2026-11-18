@@ -1,3 +1,5 @@
+import { assessmentAdaptations } from '@/lib/assessment-guidance';
+import type { AnswerMap } from '@/types/circadian';
 import { EstablishedCheckin } from './established-checkin';
 import type { WeeklyAction } from '@/lib/weekly-checkin';
 import { useEffect, useRef, useState } from 'react';
@@ -7,6 +9,7 @@ import { deferredTime, isLightReduction, smallerAction, savedClockTime, savedZon
 import { shiftDateKey } from '@/lib/schedule-time';
 
 type Props = {
+  answers?: AnswerMap;
   establishedExplanation?: string; signalId: string; updateWeekly: (id: string, action: WeeklyAction) => void;
   profile: DailyProfile | null; clientId: string; now: Date; day: string;
   reminder: ContextualReminder | null; pending: ContextualReminder | null;
@@ -15,7 +18,8 @@ type Props = {
   respond: (response: 'completed' | 'skipped' | 'adjust', at?: string) => boolean;
   saveProfile: (profile: DailyProfile) => void;
 };
-export function TodayCoach({establishedExplanation, signalId, updateWeekly, profile, clientId, now, day, reminder, pending, handled, nextOpportunity, firstStepContext, count, established, respond, saveProfile}: Props) {
+export function TodayCoach({answers = {}, establishedExplanation, signalId, updateWeekly, profile, clientId, now, day, reminder, pending, handled, nextOpportunity, firstStepContext, count, established, respond, saveProfile}: Props) {
+  const adaptations = assessmentAdaptations(answers, signalId);
   const [view, setView] = useState('action');
   const [error, setError] = useState('');
   const [returning, setReturning] = useState(false);
@@ -60,5 +64,5 @@ export function TodayCoach({establishedExplanation, signalId, updateWeekly, prof
   } else if(pending) content = <><h3>{firstStepContext?.heading || `Your next opportunity: ${time(pending.start)}`}.</h3><p>{pending.action}</p>{firstStepContext && <p>{pending.reason}</p>}{explanation}{firstStepContext && <p>Times shown in {profile?.timeZone || 'your device timezone'}.</p>}<p>Come back at the time shown to choose Done, Smaller step, Later, or Not today. This page does not confirm a background notification.</p></>;
   else if(nextOpportunity) content = <><h3>Your next focus opportunity: {time(new Date(nextOpportunity.start))}.</h3><p>{nextOpportunity.action}</p><p>Your focus stays in place. There’s nothing to make up from earlier windows.</p></>;
   else content = <><h3>Nothing to catch up on.</h3><p>Your focus stays in place. Return for the next useful opportunity; missed windows don’t become overdue tasks.</p></>;
-  return <section className="journey-card today-coaching-loop"><div ref={region} tabIndex={-1} aria-label="Today coaching" role="region">{content}<p role="alert">{error}</p></div>{count>0 && <p className="today-coach-progress">You reported this focus on {count} {count===1?'day':'different days'} in the past 7 days. This reflects your reports, not a measured change in sleep.</p>}</section>;
+  return <section className="journey-card today-coaching-loop"><div ref={region} tabIndex={-1} aria-label="Today coaching" role="region">{content}{adaptations.length > 0 && <details><summary>How your answers shape your focus</summary>{adaptations.map(item => <div key={item.questionId}><p>You told us: “{item.youSaid}”</p><p><strong>Try this:</strong> {item.suggestion}</p><p>{item.why}</p></div>)}</details>}<p role="alert">{error}</p></div>{count>0 && <p className="today-coach-progress">You reported this focus on {count} {count===1?'day':'different days'} in the past 7 days. This counts reported practice of the suggested step, not measured light exposure, sleep quality, or a health improvement.</p>}</section>;
 }

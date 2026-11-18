@@ -207,11 +207,11 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .seasonal-produce-statement { font-size: 1.125rem; line-height: 1.6; color: var(--coastal-text); }
 
 /* Preview: soften only the compact Sunlight Now energy-share strip.
-   Existing flex shares, band colors, labels and spectrum calculations are unchanged. */
+   Group widths retain modeled shares; the visible region is an illustrative rainbow. */
 .journey .today-dashboard .sunlight-strip {
   gap: 0;
-  height: 10px;
+  height: 14px;
   border-radius: 999px;
   overflow: hidden;
-  filter: blur(2px) brightness(1.45) saturate(1.2) drop-shadow(0 0 7px #97a9ff80);
+  filter: blur(3px) brightness(1.15) saturate(1.15) drop-shadow(0 0 9px #97a9ff99);
 }

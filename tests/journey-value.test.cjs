@@ -9,7 +9,7 @@ test('cue uses passed opportunity and saved timezone without choosing or schedul
  assert.match(opportunityLabel(future,now,profile.timeZone),/7:00 AM.*A test step/);
  assert.match(opportunityLabel({...future,start:now},now,profile.timeZone),/^Available now/);
  const html=renderToStaticMarkup(React.createElement(TodayPersonalCue,{signalId:'morning_light_timing',now,profile,opportunity:future}));
- assert.match(html,/Your focus: Morning Light Timing/); assert.match(html,/href="#today-coaching"/);
+ assert.match(html,/Your focus: <strong>Morning Light Timing/); assert.match(html,/href="#today-coaching"/);
  assert.doesNotMatch(html,/<button|Done|notification|remind you/);
 });
 test('quiet and missing opportunities do not invent actions',()=>{
@@ -21,7 +21,7 @@ test('quiet and missing opportunities do not invent actions',()=>{
 test('live sunlight remains and compact cue shares existing Today decisions',()=>{
  const read=f=>fs.readFileSync(f,'utf8');
  const journey=read('components/journey-now.tsx');
- assert.match(journey,/\{personalCue\}<SunlightNow/); assert.match(journey,/id="today-coaching"/);
+ assert.ok(journey.indexOf('{personalCue}') < journey.indexOf('<DayDashboard')); assert.match(journey,/<SunlightNow/); assert.match(journey,/id="today-coaching"/);
  assert.match(read('views/now-page.tsx'),/opportunity=\{handled \? nextOpportunity : \(displayedReminder \|\| pending \|\| nextOpportunity\)\}/);
 
 });
@@ -39,7 +39,7 @@ test('missing or invalid schedule offers direct setup, not fabricated guidance',
 });
 test('no selected focus is stated honestly and assessment is optional',()=>{
  for(const render of [renderCue,renderCoach]) {const html=render({signalId:'',assessment:assessmentContext({},false)});assert.match(html,/No assessment answers are saved/);assert.match(html,/href="\/audit"/);assert.doesNotMatch(html,/This is your saved focus|Your focus stays/);}
- const html=renderCue({signalId:'',opportunity:{start:now,action:'Existing schedule step'}});assert.match(html,/Existing schedule step/);assert.match(html,/Details: Existing schedule step/);
+ const html=renderCue({signalId:'',opportunity:{start:now,action:'Existing schedule step'}});assert.match(html,/Existing schedule step/);assert.match(html,/See the full guidance/);
 });
 test('valid focus distinguishes quiet, current and future without backlog',()=>{
  assert.match(renderCoach({}),/No action suggested right now/);
@@ -80,5 +80,13 @@ test('completion, partial, absent origin and unavailable focus stay distinct wit
 test('weak answer still gets real target, and existing action-specific cue',()=>{
  const q=questionnaire.find(q=>q.id==='morning_light_timing');const answers={...strongAnswers,[q.id]:[...q.options].sort((a,b)=>a.score-b.score)[0].value};
  const candidate=assembleDay1Personalization({answers}).primaryCoachingTarget;assert.equal(candidate.signalId,'morning_light_timing');
- assert.match(renderCue({signalId:candidate.signalId,assessment:assessmentContext(answers,true)}),/Your focus: Morning Light Timing/);
+ assert.match(renderCue({signalId:candidate.signalId,assessment:assessmentContext(answers,true)}),/Your focus: <strong>Morning Light Timing/);
+});
+test('first action explains actual when and why, rejecting expired and invalid windows',()=>{
+ const opportunity={action:'Existing action',reason:'Existing rationale',start:'2026-11-18T15:00:00Z',end:'2026-11-18T16:00:00Z'};
+ const html=renderCue({opportunity});assert.match(html,/<h3>Existing action/);assert.match(html,/Today at 7:00 AM PST/);assert.match(html,/Why this step:.*Existing rationale/);assert.doesNotMatch(html,/America\/Los_Angeles/);
+ assert.match(renderCue({opportunity:{...opportunity,start:now}}),/When:<\/strong> Now/);
+ for(const bad of [{...opportunity,end:now},{...opportunity,start:'bad'}])assert.doesNotMatch(renderCue({opportunity:bad}),/Existing action|Existing rationale/);
+ assert.doesNotMatch(renderCue({quiet:true,opportunity}),/Existing action|Existing rationale|check-in/);
+ assert.doesNotMatch(renderCue({opportunity:{...opportunity,reason:undefined}}),/Why this step/);
 });

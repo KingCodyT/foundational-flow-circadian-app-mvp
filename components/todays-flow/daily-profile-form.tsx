@@ -16,8 +16,8 @@ import { assessSleepInterval } from "@/lib/sleep-timing";
 export default function DailyProfileForm({ section = "all", onLocationSaved, onScheduleSaved }: { section?: "all" | "schedule" | "preferences" | "location"; onLocationSaved?: () => void; onScheduleSaved?: () => void } = {}) {
   const router = useRouter();
   const { dailyProfile, setDailyProfile, storageIssue } = useCircadian();
-  const savedWakeTime = dailyProfile?.wakeTime ?? "07:00";
-  const savedBedtime = dailyProfile?.targetBedtime ?? "22:00";
+  const savedWakeTime = dailyProfile?.wakeTime ?? "";
+  const savedBedtime = dailyProfile?.targetBedtime ?? "";
   const savedTimeZone = dailyProfile?.timeZone ?? getRuntimeTimeZone() ?? "UTC";
   const savedLastMeal = dailyProfile?.lastMealTime ?? "";
   const [lastMealTime, setLastMealTime] = useState(savedLastMeal);
@@ -223,6 +223,8 @@ export default function DailyProfileForm({ section = "all", onLocationSaved, onS
         {sleepInterval.warning && <p className="text-sm sm:col-span-2">{sleepInterval.warning}</p>}
         {error && <p role="alert">{error}</p>}
         {storageIssue && scheduleSaveRequested && <p role="alert">Your schedule could not be saved in this browser. Use the storage recovery message before returning to Today.</p>}
+        {onScheduleSaved && !dailyProfile?.wakeTime && <p>No wake time is saved in this browser.</p>}
+        {onScheduleSaved && !dailyProfile?.targetBedtime && <p>No bedtime is saved in this browser.</p>}
         {onScheduleSaved && <p>Changes are saved when you tap “Save schedule and return to Today.”</p>}
         <button type="submit" disabled={saved && !onScheduleSaved} className="rounded-full border border-[var(--color-line)] bg-white px-5 py-2.5 text-sm font-semibold disabled:opacity-60">{onScheduleSaved ? "Save schedule and return to Today" : saved && !storageIssue ? "Schedule saved ✓" : "Save schedule"}</button></>}
         {section !== "schedule" && section !== "location" && dailyProfile && <div className="space-y-3">
@@ -239,7 +241,7 @@ export default function DailyProfileForm({ section = "all", onLocationSaved, onS
           <ReminderDeliveryStatus />
           <label className="block">Food-timing goal <select value={dailyProfile.foodTimingGoal ?? "observe"} onChange={event => setDailyProfile({ ...dailyProfile, foodTimingGoal: event.target.value as "observe" | "earlier_last_meal" })}><option value="observe">Learn my pattern</option><option value="earlier_last_meal">Try an earlier last meal</option></select></label>
         </div>}
-        {section !== "preferences" && <div className="space-y-3">
+        {section !== "preferences" && !onScheduleSaved && <div className="space-y-3">
           <p className="text-sm font-semibold">Profile timezone</p>
           <p className="text-sm leading-6 text-[var(--color-muted)]">{savedTimeZone}</p>
           <p id="profile-location" className="text-sm font-semibold">Location — optional for local daylight guidance</p>

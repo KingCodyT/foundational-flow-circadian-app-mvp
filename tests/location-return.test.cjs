@@ -130,3 +130,12 @@ test('schedule return waits for persisted values and preserves unrelated profile
 test('failed schedule storage stays on editor instead of claiming successful return',async()=>{
  const app=mount({scheduleReturn:true,failStorage:true});act(()=>app.tree.root.findByType('form').props.onSubmit({preventDefault(){}}));await app.flush();assert.equal(app.returned,0);assert.ok(app.tree.root.findAll(n=>n.props.role==='alert').length);app.close();
 });
+
+test('missing schedule displays blank fields, not invented saved defaults',()=>{
+ const app=mount({scheduleReturn:true});app.updateProfile({wakeTime:null,targetBedtime:null});
+ for(const select of app.tree.root.findAllByType('select')) assert.equal(select.props.value,'');
+ assert.equal(app.tree.root.findAll(n=>n.props.id==='location-zip').length,0);
+ assert.equal(app.tree.root.findAllByType('a').filter(n=>n.props.href==='/today').length,0);
+ assert.equal(app.writes,0);app.close();
+});
+test('a saved wake time stays intact when only bedtime is missing',()=>{const app=mount({scheduleReturn:true});app.updateProfile({targetBedtime:null});const fields=app.tree.root.findAllByType('select');assert.equal(fields.find(n=>n.props['aria-label']==='Typical wake time hour').props.value,6);assert.equal(fields.find(n=>n.props['aria-label']==='Target bedtime hour').props.value,'');assert.equal(app.writes,0);app.close();});

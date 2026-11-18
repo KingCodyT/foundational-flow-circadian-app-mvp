@@ -60,3 +60,5 @@ test('valid focus distinguishes quiet, current and future without backlog',()=>{
 });
 test('preview cobalt surfaces are scoped to Today and coastline is retained',()=>{const css=fs.readFileSync('app/coastal-theme.css','utf8').split('/* Today review:')[1];assert.match(css,/\.journey:has\(\.today-dashboard\)/);assert.match(css,/--coastal-bg: #183464/);assert.match(css,/coastal-hero-placeholder.jpg/);assert.doesNotMatch(css,/:root|html, body/);});
 test('schedule-only future guidance never claims a selected focus',()=>{const html=renderCoach({signalId:'',nextOpportunity:{start:new Date(+now+3600000).toISOString(),action:'Schedule step'}});assert.match(html,/saved schedule, not a selected assessment focus/);assert.doesNotMatch(html,/Your focus stays/);});
+
+test('partial schedule prompts only for the missing field',()=>{for(const render of [renderCue,renderCoach]){assert.match(render({profile:{...profile,targetBedtime:null}}),/Your wake time is saved. Add your usual bedtime/);assert.match(render({profile:{...profile,wakeTime:null}}),/Your bedtime is saved. Add your usual wake time/);}});

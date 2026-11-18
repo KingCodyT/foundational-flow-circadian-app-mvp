@@ -22,3 +22,11 @@ export function hasGuidanceSchedule(profile: { wakeTime?: string | null; targetB
   const valid = (value?: string | null) => Boolean(value && /^([01]\d|2[0-3]):[0-5]\d$/.test(value));
   return valid(profile?.wakeTime) && valid(profile?.targetBedtime);
 }
+
+export function missingScheduleDescription(profile: { wakeTime?: string | null; targetBedtime?: string | null } | null) {
+  const wake = Boolean(profile?.wakeTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(profile.wakeTime));
+  const bed = Boolean(profile?.targetBedtime && /^([01]\d|2[0-3]):[0-5]\d$/.test(profile.targetBedtime));
+  if (wake && !bed) return 'Your wake time is saved. Add your usual bedtime to time your guidance.';
+  if (bed && !wake) return 'Your bedtime is saved. Add your usual wake time to time your guidance.';
+  return 'Add your usual wake and bedtime to get guidance timed to your day.';
+}

@@ -1,3 +1,5 @@
+import { questionnaire } from './questionnaire';
+import type { AnswerMap } from '@/types/circadian';
 import { SIGNAL_REGISTRY } from './personalization/signal-registry';
 
 /** Explain implemented uses, not an invented individual prescription. */
@@ -29,4 +31,16 @@ export function missingScheduleDescription(profile: { wakeTime?: string | null; 
   if (wake && !bed) return 'Your wake time is saved. Add your usual bedtime to time your guidance.';
   if (bed && !wake) return 'Your bedtime is saved. Add your usual wake time to time your guidance.';
   return 'Add your usual wake and bedtime to get guidance timed to your day.';
+}
+
+export type AssessmentContext = { kind: 'absent' | 'partial' | 'setup' | 'complete' | 'unavailable'; heading: string; explanation: string; href?: string; label?: string };
+export function assessmentContext(answers: AnswerMap = {}, completed = false, noTargetReason?: string | null): AssessmentContext {
+  const valid = questionnaire.filter(q => q.options.some(o => o.value === answers[q.id]));
+  const firstMissing = questionnaire.findIndex(q => !q.options.some(o => o.value === answers[q.id]));
+  if (completed && valid.length !== questionnaire.length) return {kind:'unavailable', heading:'Your assessment focus is unavailable', explanation:'This browser does not have a complete set of valid answers to explain your focus. If you completed setup elsewhere, open that same app address and browser. Your saved schedule still works here.'};
+  if (!valid.length) return {kind:'absent',heading:'Guidance from your saved schedule',explanation:'No assessment answers are saved in this browser at this app address. If you already completed it elsewhere, use that same address and browser; this does not mean those answers were erased.',href:'/audit',label:'Start an assessment here'};
+  if (firstMissing >= 0) return {kind:'partial',heading:'Your assessment is partly complete',explanation:`${valid.length} of ${questionnaire.length} answers are saved here. Continue from the first unanswered question; your answers stay saved.`,href:`/audit?question=${firstMissing+1}`,label:'Continue my assessment'};
+  if (!completed) return {kind:'setup',heading:'Your answers are saved. Finish setup.',explanation:'All 16 questions are answered. Finish your profile setup to connect those answers with your schedule. There is no need to answer them again.',href:'/setup',label:'Finish my setup'};
+  if (noTargetReason === 'no_behavioral_weakness') return {kind:'complete',heading:'Keep supporting your daily rhythm',explanation:'Your completed assessment did not identify a priority habit to work on under the app’s current rules. That is not a health assessment or a guarantee that everything is ideal. Your saved schedule can still suggest useful light and wind-down opportunities.'};
+  return {kind:'unavailable',heading:'Your assessment focus is unavailable',explanation:'Your answers and completed setup are saved, but no personal focus is available to explain right now. Schedule-based suggestions remain available; you do not need to retake the assessment.'};
 }

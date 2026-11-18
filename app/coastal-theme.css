@@ -203,3 +203,5 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .today-personal-cue p { margin: 0 0 .5rem; }
 .journey .today-personal-cue a { display: inline-block; padding: .4rem 0; }
 .journey .today-coaching-anchor { scroll-margin-top: 1rem; min-width: 0; }
+
+.journey .seasonal-produce-statement { font-size: 1.125rem; line-height: 1.6; color: var(--coastal-text); }

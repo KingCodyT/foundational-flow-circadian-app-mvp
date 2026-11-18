@@ -4,7 +4,7 @@ const {assessmentPurpose,opportunityLabel}=load('lib/journey-value.ts');
 const {TodayPersonalCue}=load('components/today-personal-cue.tsx');
 const {questionnaire}=load('lib/questionnaire.ts');
 const now=new Date('2026-11-18T14:00:00Z');
-const profile={timeZone:'America/Los_Angeles'};
+const profile={timeZone:'America/Los_Angeles',wakeTime:'06:00',targetBedtime:'22:00'};
 test('all 16 unchanged assessment questions have bounded explanations',()=>{
  assert.equal(questionnaire.length,16);
  for(const q of questionnaire) assert.ok(assessmentPurpose(q.id).length>20);
@@ -22,7 +22,7 @@ test('cue uses passed opportunity and saved timezone without choosing or schedul
 });
 test('quiet and missing opportunities do not invent actions',()=>{
  const props={signalId:'morning_light_timing',now,profile};
- assert.match(renderToStaticMarkup(React.createElement(TodayPersonalCue,props)),/focus stays in place/);
+ assert.match(renderToStaticMarkup(React.createElement(TodayPersonalCue,props)),/selected focus stays in place/);
  const html=renderToStaticMarkup(React.createElement(TodayPersonalCue,{...props,quiet:true,opportunity:{action:'Hidden step',start:now}}));
  assert.doesNotMatch(html,/Hidden step|Available now/);assert.match(html,/No new action/);
 });
@@ -36,3 +36,26 @@ test('live sunlight remains and compact cue shares existing Today decisions',()=
  assert.ok(setup.indexOf('<h2>Your starting point')<setup.indexOf('<h2>Your profile at a glance'));
  assert.match(setup,/no background reminder is promised here/);
 });
+const {hasGuidanceSchedule}=load('lib/journey-value.ts');
+const {TodayCoach}=load('components/today-coach.tsx');
+const renderCue=overrides=>renderToStaticMarkup(React.createElement(TodayPersonalCue,{signalId:'morning_light_timing',now,profile,...overrides}));
+const renderCoach=overrides=>renderToStaticMarkup(React.createElement(TodayCoach,{signalId:'morning_light_timing',profile,now,day:'2026-11-18',clientId:'test',reminder:null,pending:null,count:0,established:false,updateWeekly:()=>{},respond:()=>true,saveProfile:()=>{},...overrides}));
+test('missing or invalid schedule offers direct setup, not fabricated guidance',()=>{
+ for(const p of [null,{}, {...profile,wakeTime:null},{...profile,targetBedtime:''},{...profile,wakeTime:'25:00'}]) {
+  assert.equal(hasGuidanceSchedule(p),false);
+  for(const html of [renderCue({profile:p,opportunity:{start:now,action:'Should not show'}}),renderCoach({profile:p})]) {
+   assert.match(html,/href="\/profile#your-schedule"/);assert.doesNotMatch(html,/Nothing to catch up|Should not show|Your saved daily rhythm/);
+  }
+ }
+});
+test('no selected focus is stated honestly and assessment is optional',()=>{
+ for(const render of [renderCue,renderCoach]) {const html=render({signalId:''});assert.match(html,/No personal focus selected/);assert.match(html,/href="\/audit"/);assert.doesNotMatch(html,/This is your saved focus|Your focus stays/);}
+ const html=renderCue({signalId:'',opportunity:{start:now,action:'Existing schedule step'}});assert.match(html,/Existing schedule step/);assert.match(html,/See schedule guidance/);
+});
+test('valid focus distinguishes quiet, current and future without backlog',()=>{
+ assert.match(renderCoach({}),/No action suggested right now/);
+ assert.match(renderCoach({reminder:{id:'morning_light',start:now,action:'Existing current action',reason:'Saved timing'}}),/Existing current action/);
+ assert.match(renderCoach({pending:{start:new Date(+now+3600000),action:'Existing future action'}}),/Existing future action/);
+ assert.match(renderCoach({nextOpportunity:{start:new Date(+now+3600000).toISOString(),action:'Existing next action'}}),/Existing next action/);
+});
+test('preview cobalt surfaces are scoped to Today and coastline is retained',()=>{const css=fs.readFileSync('app/coastal-theme.css','utf8').split('/* Today review:')[1];assert.match(css,/\.journey:has\(\.today-dashboard\)/);assert.match(css,/--coastal-bg: #183464/);assert.match(css,/coastal-hero-placeholder.jpg/);assert.doesNotMatch(css,/:root|html, body/);});

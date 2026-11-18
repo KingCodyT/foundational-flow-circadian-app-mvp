@@ -1,3 +1,5 @@
+import { hasGuidanceSchedule } from '@/lib/journey-value';
+import { SIGNAL_REGISTRY } from '@/lib/personalization/signal-registry';
 import { assessmentAdaptations } from '@/lib/assessment-guidance';
 import type { AnswerMap } from '@/types/circadian';
 import { EstablishedCheckin } from './established-checkin';
@@ -45,7 +47,8 @@ export function TodayCoach({answers = {}, establishedExplanation, signalId, upda
   const time = (date: Date) => `${new Intl.DateTimeFormat('en-US',{timeZone:profile?.timeZone || undefined,weekday:'long',month:'short',day:'numeric'}).format(date)} at ${new Intl.DateTimeFormat('en-US',{timeZone:profile?.timeZone || undefined,hour:'numeric',minute:'2-digit',hour12:true}).format(date)} (${savedZoneLabel(profile)})`;
   const explanation = firstStepContext && <><p>{firstStepContext.why}</p>{firstStepContext.next && <p><strong>{firstStepContext.next.label} at {firstStepContext.next.clock}.</strong> {firstStepContext.next.action}. {firstStepContext.next.reason}</p>}</>;
   let content;
-  if (returning && profile) content = view === 'schedule' ? <>
+  if (!hasGuidanceSchedule(profile)) content = <><h3>Set the timing for your guidance.</h3><p>Add your usual wake and bedtime so suggestions can follow your day. Your saved answers and location stay unchanged.</p><a href="/profile#your-schedule">Set my schedule →</a></>;
+  else if (returning && profile) content = view === 'schedule' ? <>
     <h3>What fits your days now?</h3><p>Your location, timezone, and other schedule details stay as saved.</p>
     <div className="today-coach-fields"><label>Wake time<input type="time" ref={wakeInput} defaultValue={profile.wakeTime || ''} required /></label><label>Bedtime<input type="time" ref={bedInput} defaultValue={profile.targetBedtime || ''} required /></label></div>
     <div className="today-coach-actions">{button('Save schedule',()=>{const wake=wakeInput.current?.value || '', bed=bedInput.current?.value || '';if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(wake)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(bed)){setError('Add both times to continue.');return;}saveProfile({...profile,wakeTime:wake,targetBedtime:bed});confirmReturn();},true)}{button('Cancel',()=>change('action'))}</div>
@@ -63,6 +66,7 @@ export function TodayCoach({answers = {}, establishedExplanation, signalId, upda
     else content = <><h3>{firstStepContext ? `${firstStepContext.heading}: ` : ''}{reminder.action}</h3><p>{reminder.reason}</p>{explanation}{light && <><p>Your saved bedtime is {savedClockTime(profile?.targetBedtime)} ({savedZoneLabel(profile)}).</p><p>Keep the light you need for safety. Don’t dim lights while driving or doing safety-critical work.</p></>}<div className="today-coach-actions">{button('Done',()=>submit('completed'),true)}{button('Smaller step',()=>change('constraints'))}{button('Later',()=>change('later'))}{skip}</div></>;
   } else if(pending) content = <><h3>{firstStepContext?.heading || `Your next opportunity: ${time(pending.start)}`}.</h3><p>{pending.action}</p>{firstStepContext && <p>{pending.reason}</p>}{explanation}{firstStepContext && <p>Times shown in {profile?.timeZone || 'your device timezone'}.</p>}<p>Come back at the time shown to choose Done, Smaller step, Later, or Not today. This page does not confirm a background notification.</p></>;
   else if(nextOpportunity) content = <><h3>Your next focus opportunity: {time(new Date(nextOpportunity.start))}.</h3><p>{nextOpportunity.action}</p><p>Your focus stays in place. There’s nothing to make up from earlier windows.</p></>;
-  else content = <><h3>Nothing to catch up on.</h3><p>Your focus stays in place. Return for the next useful opportunity; missed windows don’t become overdue tasks.</p></>;
+  else if (!SIGNAL_REGISTRY[signalId]) content = <><h3>No personal focus selected.</h3><p>Your schedule is saved. Explore the assessment to choose a starting focus; local sunlight and food ideas remain available without it.</p><a href="/audit">Explore the assessment →</a></>;
+  else content = <><h3>No action suggested right now.</h3><p>Your selected focus stays in place. There is no timed step to show right now; missed windows do not become overdue tasks.</p></>;
   return <section className="journey-card today-coaching-loop"><div ref={region} tabIndex={-1} aria-label="Today coaching" role="region">{content}{adaptations.length > 0 && <details><summary>How your answers shape your focus</summary>{adaptations.map(item => <div key={item.questionId}><p>You told us: “{item.youSaid}”</p><p><strong>Try this:</strong> {item.suggestion}</p><p>{item.why}</p></div>)}</details>}<p role="alert">{error}</p></div>{count>0 && <p className="today-coach-progress">You reported this focus on {count} {count===1?'day':'different days'} in the past 7 days. This counts reported practice of the suggested step, not measured light exposure, sleep quality, or a health improvement.</p>}</section>;
 }

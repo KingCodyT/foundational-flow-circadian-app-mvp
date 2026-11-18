@@ -215,3 +215,15 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
   overflow: hidden;
   filter: blur(3px) brightness(1.15) saturate(1.15) drop-shadow(0 0 9px #97a9ff99);
 }
+
+/* Today review: use the existing cobalt direction, not a green/teal surface. */
+.journey:has(.today-dashboard) {
+  --coastal-bg: #183464;
+  --coastal-panel: #172f59ed;
+  --coastal-raised: #25477a;
+  --coastal-nav: #12284ef5;
+  background: var(--coastal-bg);
+}
+.journey:has(.today-dashboard) .journey-landscape {
+  background-image: linear-gradient(180deg,#081b3045 0%,#18346412 40%,#183464b8 78%,#183464 100%),url('/images/coastal-hero-placeholder.jpg');
+}

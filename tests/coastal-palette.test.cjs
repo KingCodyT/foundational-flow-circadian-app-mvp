@@ -6,7 +6,7 @@ const postcss = require('postcss');
 const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 const theme = postcss.parse(read('app/coastal-theme.css'));
 const tokens = {};
-theme.walkDecls(/^--coastal-/, node => { tokens[node.prop] = node.value; });
+theme.walkDecls(/^--coastal-/, node => { if (node.parent.selector === ':root') tokens[node.prop] = node.value; });
 
 function luminance(hex) {
   const rgb = hex.slice(1,7).match(/../g).map(v => parseInt(v,16)/255)
@@ -100,3 +100,9 @@ test('mobile profile controls shrink and optional location copy is consistent', 
   assert.match(read('components/progress-bar.tsx'), /assessment-progress/);
   assert.match(css, /assessment-instructions \{ background: var\(--coastal-raised\)/);
 });
+
+ test('scoped Today review surfaces retain contrast without changing shared launch palette',()=> {
+ const today=theme.nodes.find(n=>n.selector === '.journey:has(.today-dashboard)');
+ assert.ok(today); const scoped={...tokens};today.walkDecls(/^--coastal-/,n=>{scoped[n.prop]=n.value});
+ for(const fg of ['--coastal-text','--coastal-copy','--coastal-muted','--coastal-gold']) for(const bg of ['--coastal-bg','--coastal-panel','--coastal-raised','--coastal-nav']) assert.ok(contrast(scoped[fg],scoped[bg])>=4.5,`${fg} on ${bg}`);
+ });

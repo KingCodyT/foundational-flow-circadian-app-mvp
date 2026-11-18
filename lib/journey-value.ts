@@ -17,3 +17,8 @@ export function opportunityLabel(opportunity: CueOpportunity, now: Date, timeZon
   const formatted = new Intl.DateTimeFormat('en-US', { timeZone: timeZone || undefined, weekday: 'short', hour: 'numeric', minute: '2-digit' }).format(at);
   return `Next opportunity: ${formatted} · ${opportunity.action}`;
 }
+
+export function hasGuidanceSchedule(profile: { wakeTime?: string | null; targetBedtime?: string | null } | null) {
+  const valid = (value?: string | null) => Boolean(value && /^([01]\d|2[0-3]):[0-5]\d$/.test(value));
+  return valid(profile?.wakeTime) && valid(profile?.targetBedtime);
+}

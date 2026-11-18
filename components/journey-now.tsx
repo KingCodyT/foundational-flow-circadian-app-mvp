@@ -32,7 +32,7 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
     </header>
     <main className="journey-content today-content">
       <DayDashboard profile={profile} now={now}>{personalCue}<SunlightNow profile={profile} now={now} /></DayDashboard>
-      {coaching ? <p className="today-focus-line">Current focus: <strong>{primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : "Your daily schedule"}</strong></p> : <JourneyCard className="today-coaching-focus"><h2>Your current coaching focus</h2><h3>{firstRun?.focus || (primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : profile?.wakeTime && profile?.targetBedtime ? "Your saved sleep and wake schedule" : "Your daily schedule")}</h3>{!firstRun && primaryState && <p>{primaryState.replaceAll("_", " ")}</p>}</JourneyCard>}
+      {coaching ? <p className="today-focus-line">Current focus: <strong>{primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label || "No personal focus selected" : "No personal focus selected"}</strong></p> : <JourneyCard className="today-coaching-focus"><h2>Your current coaching focus</h2><h3>{firstRun?.focus || (primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : profile?.wakeTime && profile?.targetBedtime ? "Your saved sleep and wake schedule" : "Your daily schedule")}</h3>{!firstRun && primaryState && <p>{primaryState.replaceAll("_", " ")}</p>}</JourneyCard>}
       <div id="today-coaching" className="today-coaching-anchor">{coaching}</div>
       {!coaching && (firstRun || action) && <JourneyCard className="journey-focus today-moment">
         <h2>{firstRun?.heading || "What matters now"}</h2>

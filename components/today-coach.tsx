@@ -1,4 +1,4 @@
-import { hasGuidanceSchedule, missingScheduleDescription } from '@/lib/journey-value';
+import { hasGuidanceSchedule, missingScheduleDescription, type AssessmentContext } from '@/lib/journey-value';
 import { SIGNAL_REGISTRY } from '@/lib/personalization/signal-registry';
 import { assessmentAdaptations } from '@/lib/assessment-guidance';
 import type { AnswerMap } from '@/types/circadian';
@@ -11,7 +11,7 @@ import { deferredTime, isLightReduction, smallerAction, savedClockTime, savedZon
 import { shiftDateKey } from '@/lib/schedule-time';
 
 type Props = {
-  answers?: AnswerMap;
+  answers?: AnswerMap; assessment?: AssessmentContext;
   establishedExplanation?: string; signalId: string; updateWeekly: (id: string, action: WeeklyAction) => void;
   profile: DailyProfile | null; clientId: string; now: Date; day: string;
   reminder: ContextualReminder | null; pending: ContextualReminder | null;
@@ -20,7 +20,7 @@ type Props = {
   respond: (response: 'completed' | 'skipped' | 'adjust', at?: string) => boolean;
   saveProfile: (profile: DailyProfile) => void;
 };
-export function TodayCoach({answers = {}, establishedExplanation, signalId, updateWeekly, profile, clientId, now, day, reminder, pending, handled, nextOpportunity, firstStepContext, count, established, respond, saveProfile}: Props) {
+export function TodayCoach({answers = {}, assessment, establishedExplanation, signalId, updateWeekly, profile, clientId, now, day, reminder, pending, handled, nextOpportunity, firstStepContext, count, established, respond, saveProfile}: Props) {
   const adaptations = assessmentAdaptations(answers, signalId);
   const [view, setView] = useState('action');
   const [error, setError] = useState('');
@@ -65,8 +65,8 @@ export function TodayCoach({answers = {}, establishedExplanation, signalId, upda
     else if(view === 'later') content = <><h3>{later ? 'Set this step aside for 15 minutes?' : 'There isn’t room for another 15-minute delay.'}</h3><p>{later ? `The step will return here at ${time(later)}, within this opportunity. This does not confirm a background notification.` : 'You can take the current step now if it fits, or leave it today.'}</p><div className="today-coach-actions">{later && button('Later — 15 minutes',()=>submit('adjust',later.toISOString()),true)}{button(later?'Cancel':'See the step now',()=>change('action'))}{skip}</div></>;
     else content = <><h3>{firstStepContext ? `${firstStepContext.heading}: ` : ''}{reminder.action}</h3><p>{reminder.reason}</p>{explanation}{light && <><p>Your saved bedtime is {savedClockTime(profile?.targetBedtime)} ({savedZoneLabel(profile)}).</p><p>Keep the light you need for safety. Don’t dim lights while driving or doing safety-critical work.</p></>}<div className="today-coach-actions">{button('Done',()=>submit('completed'),true)}{button('Smaller step',()=>change('constraints'))}{button('Later',()=>change('later'))}{skip}</div></>;
   } else if(pending) content = <><h3>{firstStepContext?.heading || `Your next opportunity: ${time(pending.start)}`}.</h3><p>{pending.action}</p>{firstStepContext && <p>{pending.reason}</p>}{explanation}{firstStepContext && <p>Times shown in {profile?.timeZone || 'your device timezone'}.</p>}<p>Come back at the time shown to choose Done, Smaller step, Later, or Not today. This page does not confirm a background notification.</p></>;
-  else if(nextOpportunity) content = <><h3>Your next focus opportunity: {time(new Date(nextOpportunity.start))}.</h3><p>{nextOpportunity.action}</p><p>{SIGNAL_REGISTRY[signalId] ? 'Your selected focus stays in place.' : 'This follows your saved schedule, not a selected assessment focus.'} There’s nothing to make up from earlier windows.</p></>;
-  else if (!SIGNAL_REGISTRY[signalId]) content = <><h3>No personal focus selected.</h3><p>Your schedule is saved. Explore the assessment to choose a starting focus; local sunlight and food ideas remain available without it.</p><a href="/audit">Explore the assessment →</a></>;
+  else if(nextOpportunity) content = <><h3>{SIGNAL_REGISTRY[signalId] ? 'Your next focus opportunity' : 'Your next schedule-based opportunity'}: {time(new Date(nextOpportunity.start))}.</h3><p>{nextOpportunity.action}</p><p>{SIGNAL_REGISTRY[signalId] ? 'Your selected focus stays in place.' : 'This follows your saved schedule, not a selected assessment focus.'} There’s nothing to make up from earlier windows.</p></>;
+  else if (!SIGNAL_REGISTRY[signalId]) content = <><h3>No timed step to show right now.</h3><p>Your saved schedule still supports local sunlight and food ideas. Missed windows do not become overdue tasks.</p></>;
   else content = <><h3>No action suggested right now.</h3><p>Your selected focus stays in place. There is no timed step to show right now; missed windows do not become overdue tasks.</p></>;
-  return <section className="journey-card today-coaching-loop"><div ref={region} tabIndex={-1} aria-label="Today coaching" role="region">{content}{adaptations.length > 0 && <details><summary>How your answers shape your focus</summary>{adaptations.map(item => <div key={item.questionId}><p>You told us: “{item.youSaid}”</p><p><strong>Try this:</strong> {item.suggestion}</p><p>{item.why}</p></div>)}</details>}<p role="alert">{error}</p></div>{count>0 && <p className="today-coach-progress">You reported this focus on {count} {count===1?'day':'different days'} in the past 7 days. This counts reported practice of the suggested step, not measured light exposure, sleep quality, or a health improvement.</p>}</section>;
+  return <section className="journey-card today-coaching-loop"><div ref={region} tabIndex={-1} aria-label="Today coaching" role="region">{!SIGNAL_REGISTRY[signalId] && assessment && <div><h3>{assessment.heading}</h3><p>{assessment.explanation}</p>{assessment.href && <a href={assessment.href}>{assessment.label} →</a>}</div>}{content}{adaptations.length > 0 && <details><summary>How your answers shape your focus</summary>{adaptations.map(item => <div key={item.questionId}><p>You told us: “{item.youSaid}”</p><p><strong>Try this:</strong> {item.suggestion}</p><p>{item.why}</p></div>)}</details>}<p role="alert">{error}</p></div>{count>0 && <p className="today-coach-progress">You reported this focus on {count} {count===1?'day':'different days'} in the past 7 days. This counts reported practice of the suggested step, not measured light exposure, sleep quality, or a health improvement.</p>}</section>;
 }

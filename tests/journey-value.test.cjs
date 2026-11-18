@@ -56,3 +56,7 @@ test("Today light details omit distracting Food shortcut while main navigation r
  const journey=fs.readFileSync("components/journey-now.tsx","utf8");assert.doesNotMatch(journey,/today-food-link/);assert.match(journey,/More about today’s light/);
  const navigation=fs.readFileSync("components/journey-design.tsx","utf8");assert.match(navigation,/href: "\/food", label: "Food"/);
 });
+const {assessmentPurpose}=load('lib/journey-value.ts');
+const {questionnaire}=load('lib/questionnaire.ts');
+test('16 unchanged questions receive bounded explanations from actual signal roles',()=>{assert.equal(questionnaire.length,16);for(const q of questionnaire)assert.ok(assessmentPurpose(q.id).length>20);assert.match(assessmentPurpose('morning_light_timing'),/starting focus.*answer alone does not set a time/);assert.match(assessmentPurpose('sleep_latency'),/does not diagnose/);assert.match(assessmentPurpose('travel_schedule_variability'),/does not follow a live shift roster/);});
+test('finish explains existing first-step decision before profile summary, without changing setup structure',()=>{const source=fs.readFileSync('views/profile-setup-page.tsx','utf8');assert.match(source,/\["Basics", "Schedule", "Environment", "Your Reality", "Finish"\]/);assert.ok(source.indexOf('<h2>Your starting point')<source.indexOf('<h2>Your profile at a glance'));assert.match(source,/selectFirstRunGuidance\(draft, now, eventStateByDate\)/);assert.match(source,/No personal coaching focus is selected/);assert.match(source,/no background reminder is promised here/);});

@@ -20,7 +20,7 @@ import type { ContextualReminder } from "@/lib/personalization/contextual-remind
 
 export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelationshipOutput }) {
   const { dailyProfile: profile, firstRunHandoff, setFirstRunHandoff, eventStateByDate,
-    setEventRecord, setDailyProfile, notificationState, setScheduledNotification, deliverySetup, currentPersonalization, hasCompletedAudit, candidateTarget, answers, clientId, updateWeeklyCheckin } = useCircadian();
+    setEventRecord, setDailyProfile, notificationState, setScheduledNotification, deliverySetup, currentPersonalization, acceptedFocus, hasCompletedAudit, candidateTarget, answers, clientId, updateWeeklyCheckin } = useCircadian();
   const submitted = useRef(new Set<string>());
   const [permission, setPermission] = useState(getBrowserNotificationPermissionState);
   const [permissionError, setPermissionError] = useState(false);
@@ -117,7 +117,7 @@ export function FirstRunToday({ now, voice }: { now: Date; voice: VoiceRelations
     personalCue={<TodayPersonalCue assessment={assessmentContext(answers, hasCompletedAudit, candidateTarget?.noTargetReason)} signalId={signalId} profile={profile} now={now} opportunity={handled ? nextOpportunity : (reminder || upcoming)} quiet={profile.weeklyCheckins?.[signalId]?.mode === "weekly"} />}
     coaching={<>
       <p className="today-focus-line">{focusReason(answers, signalId)}</p>
-      <TodayCoach assessment={assessmentContext(answers, hasCompletedAudit, candidateTarget?.noTargetReason)} answers={answers} signalId={signalId} updateWeekly={updateWeeklyCheckin} profile={profile} clientId={clientId} now={now}
+      <TodayCoach acceptedAt={acceptedFocus?.acceptedAt} assessment={assessmentContext(answers, hasCompletedAudit, candidateTarget?.noTargetReason)} answers={answers} signalId={signalId} updateWeekly={updateWeeklyCheckin} profile={profile} clientId={clientId} now={now}
         firstStepContext={explanation} handled={handled} nextOpportunity={nextOpportunity} day={effective.dateKey} reminder={reminder} pending={current ? null : upcoming} count={reportedDays(eventStateByDate, signalId, now, profile.timeZone)}
         established={false} respond={respond} saveProfile={setDailyProfile} />
       <details className="today-focus-line"><summary>Optional reminder settings</summary><p>You can use Today without enabling notifications.</p>{setup}</details>

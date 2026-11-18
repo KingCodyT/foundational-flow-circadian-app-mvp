@@ -1,0 +1,20 @@
+const test=require('node:test'),assert=require('node:assert/strict'),React=require('react'),{create,act}=require('react-test-renderer'),load=require('./load-typescript.cjs');
+const {normalizeReflection,reflectionDue,reflectionResponse}=load('lib/practice-reflection.ts');
+const {PracticeReflection}=load('components/practice-reflection.tsx');
+const now=new Date('2026-11-18T18:00:00Z'),acceptedAt='2026-11-01T18:00:00Z';
+const props={signalId:'morning_light_timing',clientId:'test-only',acceptedAt,now,timeZone:'America/Los_Angeles'};
+test('reflection invitation is calendar-based, optional, bounded and pausable',()=>{
+ assert.equal(reflectionDue({version:1},null,now),false);assert.equal(reflectionDue({version:1},now.toISOString(),now),false);assert.equal(reflectionDue({version:1},acceptedAt,now),true);
+ assert.equal(reflectionDue({version:1,nextFrom:now.toISOString()},acceptedAt,now),false);assert.equal(reflectionDue({version:1,paused:true},acceptedAt,now),false);
+ assert.equal(reflectionDue({version:1},'2026-03-02T20:00:00Z',new Date('2026-03-09T07:00:00Z'),'America/Los_Angeles'),true);
+ assert.equal(reflectionDue({version:1,nextFrom:'2026-11-04T18:00:00Z'},acceptedAt,now),true);
+});
+test('malformed storage never fabricates a reflection; response never asserts causation',()=>{
+ assert.deepEqual(normalizeReflection({version:2,response:{}}),{version:1});assert.deepEqual(normalizeReflection({version:1,response:{at:'oops',fit:'fits',change:'helpful'}}),{version:1});
+ assert.match(reflectionResponse('difficult','helpful'),/does not tell us what caused it/);assert.match(reflectionResponse('mixed','none'),/not a failure/);
+});
+function harness(block=false){const saved=new Map(),writes=[];global.localStorage={getItem:k=>saved.get(k)||null,setItem:(k,v)=>{if(block)throw Error('blocked');saved.set(k,v);writes.push([k,v]);}};let tree;act(()=>tree=create(React.createElement(PracticeReflection,props)));const click=label=>act(()=>tree.root.findAllByType('button').find(b=>b.children.join('')===label).props.onClick());return {tree,saved,writes,click};}
+test('open, cancel and repeated visits add no response; not now defers without completion',()=>{const h=harness();h.click('Reflect on this practice');h.click('Cancel');assert.equal(h.writes.length,0);h.click('Not now');assert.equal(h.writes.length,1);assert.equal(JSON.parse(h.writes[0][1]).response,undefined);act(()=>h.tree.unmount());});
+test('save survives remount, keeps only latest response and does not touch app profile',()=>{const h=harness();h.click('Reflect on this practice');act(()=>h.tree.root.findByProps({value:'difficult'}).props.onChange());act(()=>h.tree.root.findByProps({value:'none'}).props.onChange());act(()=>h.tree.root.findByType('form').props.onSubmit({preventDefault(){}}));assert.equal(h.writes.length,1);assert.ok(h.writes.every(([k])=>k.startsWith('ff-practice-reflection-v1:')));act(()=>h.tree.unmount());let tree;act(()=>tree=create(React.createElement(PracticeReflection,props)));assert.match(JSON.stringify(tree.toJSON()),/Hard to fit/);assert.match(JSON.stringify(tree.toJSON()),/No noticeable change/);act(()=>tree.unmount());});
+test('blocked persistence leaves form open and never claims saved',()=>{const h=harness(true);h.click('Reflect on this practice');act(()=>h.tree.root.findByProps({value:'fits'}).props.onChange());act(()=>h.tree.root.findByProps({value:'helpful'}).props.onChange());act(()=>h.tree.root.findByType('form').props.onSubmit({preventDefault(){}}));assert.equal(h.writes.length,0);assert.equal(h.tree.root.findAllByType('form').length,1);assert.match(JSON.stringify(h.tree.toJSON()),/has not been saved/);act(()=>h.tree.unmount());});
+test('pausing and removing reflection persist locally; no selected focus exposes no prompt',()=>{const h=harness();h.click('Turn invitations off');assert.equal(JSON.parse(h.writes.at(-1)[1]).paused,true);act(()=>h.tree.update(React.createElement(PracticeReflection,{...props,signalId:''})));assert.equal(h.tree.toJSON(),null);act(()=>h.tree.unmount());});

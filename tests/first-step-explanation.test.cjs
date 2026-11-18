@@ -14,7 +14,7 @@ test('afternoon onboarding explains 8 PM support, 10 PM bedtime and next morning
  assert.equal(next.start,'2026-11-02T14:00:00.000Z');assert.equal(copy.next.label,'Tomorrow morning: your morning-light step');assert.equal(JSON.stringify(profile),before);
  const pending={...step,id:step.eventId,start:new Date(step.start),end:new Date(step.end)};
  const html=renderToStaticMarkup(React.createElement(TodayCoach,{profile,now,signalId:'morning_light_timing',clientId:'test',day:'2026-11-01',reminder:null,pending,count:0,established:false,respond:()=>false,saveProfile(){},updateWeekly(){},firstStepContext:copy}));
- assert.match(html,/8:00 PM/);assert.match(html,/10:00 PM bedtime/);assert.match(html,/Tomorrow morning: your morning-light step at 6:00 AM/);assert.doesNotMatch(html,/Your next opportunity|ended|missed/);assert.doesNotMatch(html,/<details/);
+ assert.match(html,/8:00 PM/);assert.match(html,/10:00 PM bedtime/);assert.match(html,/Tomorrow morning: your morning-light step at 6:00 AM/);assert.doesNotMatch(html,/Your next opportunity|ended|missed/);assert.doesNotMatch(html.split('<aside')[0],/<details/);
 });
 test('same-focus action is identified directly without describing it as supporting a different focus',()=>{
  const {copy}=context(profile,new Date('2026-11-01T14:05:00Z'),'morning_light_timing');

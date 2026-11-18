@@ -23,10 +23,10 @@ export function reflectionResponse(fit: keyof typeof fitChoices, change: keyof t
 export type ReflectionNextStep = 'keep' | 'smaller' | 'leave';
 /** Practical options, not doses, treatment or new timing rules. */
 export const manageablePractices: Record<string, string> = {
- morning_light_timing: 'Pair a brief, safe daylight visit with something you already do after waking, when daylight is available. Do not look directly at the sun.',
- morning_light_duration: 'Use one brief, accessible daylight break rather than trying to meet a duration target. Do not look directly at the sun.',
+ morning_light_timing: 'Pair a brief, safe daylight visit with something you already do after waking, when daylight is available.',
+ morning_light_duration: 'Use one brief, accessible daylight break rather than trying to meet a duration target.',
  day_brightness: 'At your next daytime break, use an accessible naturally lit area if comfortable. Avoid glare and keep the lighting you need for work.',
- day_breaks_outside: 'Attach a brief outdoor break to a break you already take, if weather, access and safety allow. Do not look directly at the sun.',
+ day_breaks_outside: 'Attach a brief outdoor break to a break you already take, if weather, access and safety allow.',
  morning_movement: 'At a comfortable morning moment, change position or move gently for a moment. Skip this if movement is painful or unsafe.',
  evening_light_reduction: 'At your next wind-down, reduce just one unnecessary light you control. Keep enough light for safe movement and leave shared or work lighting alone.',
  evening_screen_exposure: 'At your next wind-down, put aside one nonessential screen. Keep screens needed for work, navigation or safety.',

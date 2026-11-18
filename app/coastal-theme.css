@@ -198,6 +198,12 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .mobile-assessment .assessment-progress > div:last-child { background: #0b202c; }
 .journey .mobile-assessment .assessment-progress > div:last-child > div { background: var(--coastal-gold); }
 
+/* Personal orientation beside the live overview; never a second action list. */
+.journey .today-personal-cue { margin: 1rem 0; padding: 1rem; border: 1px solid var(--coastal-control-line); border-radius: 1rem; background: var(--coastal-panel); overflow-wrap: anywhere; }
+.journey .today-personal-cue p { margin: 0 0 .5rem; }
+.journey .today-personal-cue a { display: inline-block; padding: .4rem 0; }
+.journey .today-coaching-anchor { scroll-margin-top: 1rem; min-width: 0; }
+
 .journey .seasonal-produce-statement { font-size: 1.125rem; line-height: 1.6; color: var(--coastal-text); }
 
 /* Preview: soften only the compact Sunlight Now energy-share strip.
@@ -208,4 +214,16 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
   border-radius: 999px;
   overflow: hidden;
   filter: blur(3px) brightness(1.15) saturate(1.15) drop-shadow(0 0 9px #97a9ff99);
+}
+
+/* Today review: use the existing cobalt direction, not a green/teal surface. */
+.journey:has(.today-dashboard) {
+  --coastal-bg: #183464;
+  --coastal-panel: #172f59ed;
+  --coastal-raised: #25477a;
+  --coastal-nav: #12284ef5;
+  background: var(--coastal-bg);
+}
+.journey:has(.today-dashboard) .journey-landscape {
+  background-image: linear-gradient(180deg,#081b3045 0%,#18346412 40%,#183464b8 78%,#183464 100%),url('/images/coastal-hero-placeholder.jpg');
 }

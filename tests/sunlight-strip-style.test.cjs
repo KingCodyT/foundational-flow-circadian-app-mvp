@@ -1,0 +1,7 @@
+const fs=require('node:fs'),test=require('node:test'),assert=require('node:assert/strict');
+const s=fs.readFileSync(__dirname+'/../components/sunlight-now.tsx','utf8'),css=fs.readFileSync(__dirname+'/../app/coastal-theme.css','utf8');
+test('reuses full continuous visible rainbow including orange',()=>{assert.match(s,/#7139a5 0%.*#4545bf 16%.*#2674cb 30%.*#38b9c6 43%.*#61b65c 56%.*#eed75b 70%.*#eb963e 84%.*#c8453d 100%/)});
+test('bar retains dynamic group energy shares with no minimum visual share',()=>{assert.equal((s.match(/reduce\(\(sum,b\) => sum \+ b.percent, 0\)/g)||[]).length,2);assert.match(s,/flexGrow: share, flexBasis: 0, minWidth: 0/)});
+test('only visible region receives rainbow; invisible bands labeled',()=>{assert.match(s,/group.name === 'Visible light' \? visibleSpectrum : undefined/);assert.match(s,/UV and infrared are invisible and use representative false colors/);assert.match(s,/color widths do not show measured sub-band shares/)});
+test('night and horizon cases still omit daytime strip',()=>{assert.match(s,/\{spectrum \? <>/);assert.match(s,/pauses below 5° elevation/)});
+test('softening is static and scoped to compact strip',()=>{const rule=css.slice(css.indexOf('/* Preview: soften'));assert.match(rule,/\.journey \.today-dashboard \.sunlight-strip/);assert.match(rule,/gap: 0/);assert.match(rule,/blur\(3px\)/);assert.doesNotMatch(rule,/spectrum-stack|animation|light-visible-gradient/)});

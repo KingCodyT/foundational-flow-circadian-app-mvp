@@ -88,3 +88,15 @@ test('secondary hero text remains readable over the brightest possible photo', (
   assert.ok(contrast(tokens['--coastal-text'],composite)>=4.5);
   assert.match(theme.toString(), /\.mobile-assessment > div:first-child > div:first-child p\s*\{\s*color: var\(--coastal-text\)/);
 });
+
+
+test('mobile profile controls shrink and optional location copy is consistent', () => {
+  const css = theme.toString();
+  assert.match(css, /#your-schedule fieldset \{ min-width: 0/);
+  assert.match(css, /#your-schedule select \{ min-width: 0; flex: 1 1 0; width: 0/);
+  assert.match(read('components/location-required-notice.tsx'), /Location is optional/);
+  assert.match(read('components/todays-flow/daily-profile-form.tsx'), /Location — optional/);
+  assert.match(read('views/audit-page.tsx'), /assessment-instructions/);
+  assert.match(read('components/progress-bar.tsx'), /assessment-progress/);
+  assert.match(css, /assessment-instructions \{ background: var\(--coastal-raised\)/);
+});

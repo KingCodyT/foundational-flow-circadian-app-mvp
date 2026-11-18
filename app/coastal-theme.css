@@ -182,3 +182,18 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
   color: var(--coastal-text);
   text-shadow: 0 2px 10px #071c2b;
 }
+
+/* Phone-width schedule controls must shrink inside their grid and fieldsets. */
+.journey .profile-page #your-schedule fieldset { min-width: 0; max-width: 100%; }
+.journey .profile-page #your-schedule select { min-width: 0; flex: 1 1 0; width: 0; padding-left: 8px; padding-right: 8px; }
+.journey .profile-page #your-schedule .grid > * { min-width: 0; }
+.journey .profile-page #your-schedule input { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.journey .profile-page button.bg-white,
+.journey .profile-page #connections { background: var(--coastal-raised); color: var(--coastal-text); }
+
+/* Explicit surfaces keep progress and instructions readable at every width. */
+.journey .mobile-assessment .assessment-instructions { background: var(--coastal-raised); color: var(--coastal-text); }
+.journey .mobile-assessment .assessment-progress > div:first-child,
+.journey .mobile-assessment .assessment-progress > div:first-child span { color: var(--coastal-muted); }
+.journey .mobile-assessment .assessment-progress > div:last-child { background: #0b202c; }
+.journey .mobile-assessment .assessment-progress > div:last-child > div { background: var(--coastal-gold); }

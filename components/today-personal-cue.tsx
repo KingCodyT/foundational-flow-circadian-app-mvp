@@ -7,7 +7,7 @@ export function TodayPersonalCue({ signalId, profile, now, opportunity, quiet = 
   signalId: string; profile: DailyProfile | null; now: Date; opportunity?: CueOpportunity | null; quiet?: boolean;
 }) {
   const focus = SIGNAL_REGISTRY[signalId]?.label?.replace(/ Priority$/, '');
-  if (!hasGuidanceSchedule(profile)) return <aside className="today-personal-cue" aria-label="Your personal guidance"><p><strong>Guidance timed to your day</strong></p><p>Add your usual wake and bedtime to get guidance timed to your day. You can still explore sunlight and food.</p><a href="/profile#your-schedule">Set my schedule →</a></aside>;
+  if (!hasGuidanceSchedule(profile)) return <aside className="today-personal-cue" aria-label="Your personal guidance"><p><strong>Guidance timed to your day</strong></p><p>Add your usual wake and bedtime to get guidance timed to your day. You can still explore sunlight and food.</p><a href="/profile?edit=schedule&returnTo=%2Ftoday%23today-coaching#your-schedule">Set my schedule →</a></aside>;
   if (!focus) return <aside className="today-personal-cue" aria-label="Your personal guidance"><p><strong>No personal focus selected</strong></p><p>{opportunity ? opportunityLabel(opportunity, now, profile?.timeZone) : 'Your schedule is saved. The assessment can help choose a personal focus.'}</p>{opportunity && <a href="#today-coaching">See schedule guidance →</a>}<p><a href="/audit">Explore the assessment →</a></p></aside>;
   return <aside className="today-personal-cue" aria-label="Your personal guidance">
     <p><strong>Your focus: {focus}</strong></p>

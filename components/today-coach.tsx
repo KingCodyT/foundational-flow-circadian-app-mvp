@@ -47,7 +47,7 @@ export function TodayCoach({answers = {}, establishedExplanation, signalId, upda
   const time = (date: Date) => `${new Intl.DateTimeFormat('en-US',{timeZone:profile?.timeZone || undefined,weekday:'long',month:'short',day:'numeric'}).format(date)} at ${new Intl.DateTimeFormat('en-US',{timeZone:profile?.timeZone || undefined,hour:'numeric',minute:'2-digit',hour12:true}).format(date)} (${savedZoneLabel(profile)})`;
   const explanation = firstStepContext && <><p>{firstStepContext.why}</p>{firstStepContext.next && <p><strong>{firstStepContext.next.label} at {firstStepContext.next.clock}.</strong> {firstStepContext.next.action}. {firstStepContext.next.reason}</p>}</>;
   let content;
-  if (!hasGuidanceSchedule(profile)) content = <><h3>Set the timing for your guidance.</h3><p>Add your usual wake and bedtime so suggestions can follow your day. Your saved answers and location stay unchanged.</p><a href="/profile#your-schedule">Set my schedule →</a></>;
+  if (!hasGuidanceSchedule(profile)) content = <><h3>Set the timing for your guidance.</h3><p>Add your usual wake and bedtime so suggestions can follow your day. Your saved answers and location stay unchanged.</p><a href="/profile?edit=schedule&returnTo=%2Ftoday%23today-coaching#your-schedule">Set my schedule →</a></>;
   else if (returning && profile) content = view === 'schedule' ? <>
     <h3>What fits your days now?</h3><p>Your location, timezone, and other schedule details stay as saved.</p>
     <div className="today-coach-fields"><label>Wake time<input type="time" ref={wakeInput} defaultValue={profile.wakeTime || ''} required /></label><label>Bedtime<input type="time" ref={bedInput} defaultValue={profile.targetBedtime || ''} required /></label></div>

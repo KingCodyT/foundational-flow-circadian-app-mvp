@@ -44,7 +44,7 @@ test('missing or invalid schedule offers direct setup, not fabricated guidance',
  for(const p of [null,{}, {...profile,wakeTime:null},{...profile,targetBedtime:''},{...profile,wakeTime:'25:00'}]) {
   assert.equal(hasGuidanceSchedule(p),false);
   for(const html of [renderCue({profile:p,opportunity:{start:now,action:'Should not show'}}),renderCoach({profile:p})]) {
-   assert.match(html,/href="\/profile#your-schedule"/);assert.doesNotMatch(html,/Nothing to catch up|Should not show|Your saved daily rhythm/);
+   assert.match(html,/href="\/profile\?edit=schedule.*#your-schedule"/);assert.doesNotMatch(html,/Nothing to catch up|Should not show|Your saved daily rhythm/);
   }
  }
 });

@@ -12,8 +12,8 @@ import { DayDashboard } from "./day-dashboard";
 import { SunlightNow } from "./sunlight-now";
 import { LightCheckIn } from "./light-check-in";
 
-export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, coaching, headline, children }: {
-  coaching?: ReactNode; headline?: string;
+export function JourneyNow({ profile, now, voice, reminder, preview, respond, primarySignalId, primaryState, progress, firstRun, coaching, personalCue, headline, children }: {
+  coaching?: ReactNode; personalCue?: ReactNode; headline?: string;
   profile: DailyProfile | null; now: Date; voice: VoiceRelationshipOutput; reminder: ContextualReminder | null;
   preview: string | null;
   firstRun?: { heading: string; action: string; reason: string; focus: string; setup: ReactNode; summary: string };
@@ -31,9 +31,9 @@ export function JourneyNow({ profile, now, voice, reminder, preview, respond, pr
       <h1>{headline || (profile?.displayName ? `Hello, ${profile.displayName}.` : "Welcome to today.")}</h1>
     </header>
     <main className="journey-content today-content">
-      <DayDashboard profile={profile} now={now}><SunlightNow profile={profile} now={now} /></DayDashboard>
+      <DayDashboard profile={profile} now={now}>{personalCue}<SunlightNow profile={profile} now={now} /></DayDashboard>
       {coaching ? <p className="today-focus-line">Current focus: <strong>{primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : "Your daily schedule"}</strong></p> : <JourneyCard className="today-coaching-focus"><h2>Your current coaching focus</h2><h3>{firstRun?.focus || (primarySignalId ? SIGNAL_REGISTRY[primarySignalId]?.label : profile?.wakeTime && profile?.targetBedtime ? "Your saved sleep and wake schedule" : "Your daily schedule")}</h3>{!firstRun && primaryState && <p>{primaryState.replaceAll("_", " ")}</p>}</JourneyCard>}
-      {coaching}
+      <div id="today-coaching" className="today-coaching-anchor">{coaching}</div>
       {!coaching && (firstRun || action) && <JourneyCard className="journey-focus today-moment">
         <h2>{firstRun?.heading || "What matters now"}</h2>
         <h3>{firstRun?.action || (action ? reminder.action : hasLocation ? "You’re set for now." : "Save your location to personalize your day.")}</h3>

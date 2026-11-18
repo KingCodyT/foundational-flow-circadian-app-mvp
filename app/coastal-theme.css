@@ -197,3 +197,9 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .mobile-assessment .assessment-progress > div:first-child span { color: var(--coastal-muted); }
 .journey .mobile-assessment .assessment-progress > div:last-child { background: #0b202c; }
 .journey .mobile-assessment .assessment-progress > div:last-child > div { background: var(--coastal-gold); }
+
+/* Personal orientation beside the live overview; never a second action list. */
+.journey .today-personal-cue { margin: 1rem 0; padding: 1rem; border: 1px solid var(--coastal-control-line); border-radius: 1rem; background: var(--coastal-panel); overflow-wrap: anywhere; }
+.journey .today-personal-cue p { margin: 0 0 .5rem; }
+.journey .today-personal-cue a { display: inline-block; padding: .4rem 0; }
+.journey .today-coaching-anchor { scroll-margin-top: 1rem; min-width: 0; }

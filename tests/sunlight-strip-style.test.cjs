@@ -1,7 +1,14 @@
-const fs=require('node:fs'),test=require('node:test'),assert=require('node:assert/strict');
-const s=fs.readFileSync(__dirname+'/../components/sunlight-now.tsx','utf8'),css=fs.readFileSync(__dirname+'/../app/coastal-theme.css','utf8');
-test('reuses full continuous visible rainbow including orange',()=>{assert.match(s,/#7139a5 0%.*#4545bf 16%.*#2674cb 30%.*#38b9c6 43%.*#61b65c 56%.*#eed75b 70%.*#eb963e 84%.*#c8453d 100%/)});
-test('bar retains dynamic group energy shares with no minimum visual share',()=>{assert.equal((s.match(/reduce\(\(sum,b\) => sum \+ b.percent, 0\)/g)||[]).length,2);assert.match(s,/flexGrow: share, flexBasis: 0, minWidth: 0/)});
-test('only visible region receives rainbow; invisible bands labeled',()=>{assert.match(s,/group.name === 'Visible light' \? visibleSpectrum : undefined/);assert.match(s,/UV and infrared are invisible and use representative false colors/);assert.match(s,/color widths do not show measured sub-band shares/)});
-test('night and horizon cases still omit daytime strip',()=>{assert.match(s,/\{spectrum \? <>/);assert.match(s,/pauses below 5° elevation/)});
-test('softening is static and scoped to compact strip',()=>{const rule=css.slice(css.indexOf('/* Preview: soften'));assert.match(rule,/\.journey \.today-dashboard \.sunlight-strip/);assert.match(rule,/gap: 0/);assert.match(rule,/blur\(3px\)/);assert.doesNotMatch(rule,/spectrum-stack|animation|light-visible-gradient/)});
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),load=require('./load-typescript.cjs');
+const {solarMixGradient}=load('lib/solar-day-display.ts'),{getSolarSpectrum}=load('lib/solar-spectrum.ts');
+const src=fs.readFileSync('components/solar-spectrum.tsx','utf8'),css=fs.readFileSync('app/coastal-theme.css','utf8');
+test('smooth spectrum includes visible colors and data-positioned invisible false colors',()=>{
+ const a=getSolarSpectrum(new Date('2026-11-18T18:00:00Z'),33.54,-117.78).spectrum;
+ const b=getSolarSpectrum(new Date('2026-11-18T22:00:00Z'),33.54,-117.78).spectrum;
+ assert.match(solarMixGradient(a.bands),/^linear-gradient/);assert.notEqual(solarMixGradient(a.bands),solarMixGradient(b.bands));
+ for(const color of ['#8264e8','#557ef5','#53d1c5','#dced91','#ffd28a','#f57d5e'])assert.ok(solarMixGradient(a.bands).includes(color));
+ assert.match(src,/UV and infrared use illustrative colors/);assert.match(src,/not a wavelength scale/);assert.match(src,/\{mix &&/);
+});
+test('glow is static and scoped; single slider replaces separate compact/explorer controls',()=>{
+ assert.match(css,/\.journey \.solar-glowing-mix/);assert.doesNotMatch(css.split('/* Approved solar-day')[1],/animation|@keyframes/);
+ const wrapper=fs.readFileSync('components/sunlight-now.tsx','utf8');assert.match(wrapper,/localDateKey/);assert.equal((src.match(/type="range"/g)||[]).length,1);assert.doesNotMatch(wrapper,/type="range"|sunlight-strip/);
+});

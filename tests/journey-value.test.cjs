@@ -51,3 +51,8 @@ test('preview ocean-slate surfaces are scoped to Today and coastline is retained
 test('schedule-only future guidance never claims a selected focus',()=>{const html=renderCoach({signalId:'',nextOpportunity:{start:new Date(+now+3600000).toISOString(),action:'Schedule step'}});assert.match(html,/saved schedule, not a selected assessment focus/);assert.doesNotMatch(html,/Your focus stays/);});
 
 test('partial schedule prompts only for the missing field',()=>{for(const render of [renderCue,renderCoach]){assert.match(render({profile:{...profile,targetBedtime:null}}),/Your wake time is saved. Add your usual bedtime/);assert.match(render({profile:{...profile,wakeTime:null}}),/Your bedtime is saved. Add your usual wake time/);}});
+
+test("Today light details omit distracting Food shortcut while main navigation retains Food",()=>{
+ const journey=fs.readFileSync("components/journey-now.tsx","utf8");assert.doesNotMatch(journey,/today-food-link/);assert.match(journey,/More about today’s light/);
+ const navigation=fs.readFileSync("components/journey-design.tsx","utf8");assert.match(navigation,/href: "\/food", label: "Food"/);
+});

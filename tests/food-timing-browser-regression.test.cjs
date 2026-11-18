@@ -163,13 +163,15 @@ test('Food Timing uses a simplified meal logger with modal time selection', asyn
     await page.getByRole('heading', { name: 'Add a meal time' }).waitFor({ timeout: 5_000 });
     await page.keyboard.press('Escape');
     await page.getByRole('heading', { name: 'Add a meal time' }).waitFor({ state: 'hidden', timeout: 5_000 });
-    await assert.equal(await addEarlier.evaluate((element) => document.activeElement === element), true);
+    // Closing returns focus on the next task after the dialog unmounts.
+    await page.waitForFunction(() => document.activeElement?.textContent?.trim() === 'Add a meal time');
+    assert.equal(await addEarlier.evaluate((element) => document.activeElement === element), true);
 
     await addEarlier.click();
     await page.getByRole('heading', { name: 'Add a meal time' }).waitFor({ timeout: 5_000 });
-    await page.getByLabel('Hour').selectOption(earlierParts.hour12);
-    await page.getByLabel('Minute').selectOption(earlierParts.minute);
-    await page.getByLabel('AM / PM').selectOption(earlierParts.meridiem);
+    await page.getByRole('dialog').getByLabel('Hour', { exact: true }).selectOption(earlierParts.hour12);
+    await page.getByRole('dialog').getByLabel('Minute', { exact: true }).selectOption(earlierParts.minute);
+    await page.getByRole('dialog').getByLabel('AM / PM', { exact: true }).selectOption(earlierParts.meridiem);
     await page.getByRole('button', { name: /^Save$/ }).click();
     await page.getByRole('status').getByText(/Meal time saved:/i).waitFor({ timeout: 5_000 });
     assert.equal(await page.getByText('No meal times saved today.').count(), 0);

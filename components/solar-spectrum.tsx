@@ -44,6 +44,10 @@ export function SolarSpectrum({profile,now}:{profile:DailyProfile|null;now:Date}
         <div><strong>Solar noon</strong><span>{time(noon)}</span></div>
         <div><strong>{range.daylight?'Sunset':'End'}</strong><span>{datedTime(new Date(range.end))}</span></div>
       </div>
+      <div className="solar-compact-readout" aria-label="Selected sunlight estimates">
+        <span><strong>{Math.round(state.elevation)}°</strong> sun angle</span>
+        <span>{spectrum ? <><strong>{Math.round(spectrum.total)} W/m²</strong> clear-sky estimate</> : <><strong>{state.status==='night'?'Nighttime':'Twilight'}</strong> strength unavailable</>}</span>
+      </div>
       {!range.daylight && <p className="light-spectrum-note">No sunrise or sunset crossing today. Explore the 24 hours around solar noon.</p>}
       {outside && <p className="light-spectrum-note">The current time is outside {range.daylight?'this daylight rail':'the displayed 24-hour rail'}. Its handle rests at the nearest edge; the light mix still shows now.</p>}
       <p id="solar-rail-help" className="solar-rail-help">Drag the dot to explore another time. Arrow keys work too.</p>
@@ -52,13 +56,13 @@ export function SolarSpectrum({profile,now}:{profile:DailyProfile|null;now:Date}
     <div className="solar-mix-summary">
       <p className="solar-section-label">02 / Light mix at {time(at)}</p>
       <h3>{offset===null?'What’s in the light right now':'What’s in the light at this time'}</h3>
-      <p>Modeled clear-sky mix · {Math.round(state.elevation)}° solar elevation{state.status==='night'?' · Nighttime':''}</p>
+      <p>Modeled clear-sky mix</p>
       {mix && <><div className="solar-glowing-mix" role="img" aria-label="Smooth illustrative spectrum positioned by modeled band energy shares; ultraviolet and infrared use false colors" style={{backgroundImage:mix}} /><div className="solar-mix-labels"><span>Ultraviolet</span><span>Visible light</span><span>Infrared</span></div><p className="light-spectrum-note">UV and infrared use illustrative colors. The blend follows modeled energy shares, not a wavelength scale or measured color boundaries.</p></>}
     </div>
     {spectrum ? <>
       <details className="solar-band-details"><summary>Explore the light bands and modeled strength</summary><h4>Estimated clear-sky energy mix</h4>
       <p className="light-spectrum-note">Shares of modeled sunlight from 300–4,000 nm on open, level ground. Includes direct sunlight and scattered skylight. Not a sensor reading. Fixed atmosphere—not today’s weather or your personal exposure.</p>
-      <p className="spectrum-total"><strong>{Math.round(spectrum.total)} W/m²</strong> total modeled strength · {powerTrend(spectrum.total,future?.spectrum?.total)} over the next 15 minutes</p>
+      <p className="spectrum-total">Modeled strength: {powerTrend(spectrum.total,future?.spectrum?.total)} over the next 15 minutes</p>
       <p className="light-spectrum-note">Energy share is not biological effect, UV Index, or a personal exposure dose. UVB below 300 nm is outside this model. A larger share can still be weaker light. Rounded shares may not total exactly 100%.</p>
       <div className="light-band-grid">{spectrum.bands.map((band,i)=><article key={band.id} className="light-band">
         <div className="light-band-title"><span aria-hidden="true" className={`light-band-swatch ${band.invisible?'light-band-invisible':''}`} style={{backgroundColor:band.color}}/><h5>{band.name}</h5><strong className="spectrum-percent">{percent(band.percent)}%<small> energy share</small></strong></div>

@@ -264,3 +264,8 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .solar-band-details summary {color:#f4d28f;cursor:pointer;min-height:44px;}
 .journey .solar-day-card .spectrum-percent small {display:block;font-size:11px;}
 @media(max-width:420px){.journey .solar-day-card{padding:18px 15px}.journey .solar-mix-labels{font-size:11px}.journey .solar-event-labels strong{font-size:10px}.journey .solar-time-label{font-size:13px}.journey .solar-day-card h3{font-size:20px}}
+
+/* Keep the selected sun angle and modeled strength beside the time control. */
+.journey .solar-compact-readout { display:grid; grid-template-columns:1fr 1.4fr; gap:.5rem; align-items:start; margin:.8rem 0; padding:.65rem 0; border-top:1px solid rgba(242,221,171,.18); border-bottom:1px solid rgba(242,221,171,.18); color:#e5e8ed; font-size:.8rem; line-height:1.4; text-align:left; }
+.journey .solar-compact-readout > span { min-width:0; }
+.journey .solar-compact-readout strong { display:block; color:#f4dfad; font-size:1.05rem; font-weight:600; white-space:nowrap; }

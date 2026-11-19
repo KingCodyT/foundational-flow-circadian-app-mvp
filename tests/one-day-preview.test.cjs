@@ -26,3 +26,13 @@ test('evening is anchored to explicitly dated bed, not a prior usual-wake rollov
  const a=oneDayPreview({...profile,wakeTime:usualWake},now,'tomorrow',wake,bed);assert.equal(+a.bedAt-+a.evening.start,120*60000);
  }
 });
+test('opening focuses a heading and scrolls once; edits do not scroll; closing restores position',()=>{
+ const React=require('react'),{create,act}=require('react-test-renderer'),{OneDayPreview}=load('components/one-day-preview.tsx');
+ const calls=[],frames=[];global.window={scrollY:420,matchMedia:()=>({matches:true}),scrollTo:x=>calls.push(['restore',x.top])};global.requestAnimationFrame=f=>(frames.push(f),frames.length);global.cancelAnimationFrame=()=>{};
+ let tree;try {
+ act(()=>tree=create(React.createElement(OneDayPreview,{profile,now:new Date('2026-11-19T02:00Z')}),{createNodeMock:e=>({focus:x=>calls.push(['focus',e.type,x.preventScroll]),scrollIntoView:x=>calls.push(['scroll',x.block,x.behavior])})}));
+ assert.equal(frames.length,0);act(()=>tree.root.findByType('button').props.onClick());act(()=>frames.shift()());assert.deepEqual(calls,[['focus','h2',true],['scroll','start','instant']]);
+ act(()=>tree.root.findAllByType('input')[0].props.onChange({target:{value:'17:30'}}));assert.equal(frames.length,0);assert.match(JSON.stringify(tree.toJSON()),/Check AM and PM/);assert.doesNotMatch(JSON.stringify(tree.toJSON()),/What would change/);
+ act(()=>tree.root.findAllByType('button').at(-1).props.onClick());act(()=>frames.shift()());assert.deepEqual(calls.at(-1),['restore',420]);
+ }finally{act(()=>tree?.unmount());delete global.window;delete global.requestAnimationFrame;delete global.cancelAnimationFrame;}
+});

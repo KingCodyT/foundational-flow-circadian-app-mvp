@@ -289,3 +289,10 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .one-day-entry > button:hover { background:#294d89; }
 .journey .one-day-entry > button:focus-visible { outline:3px solid #fff3d4; outline-offset:3px; }
 .journey .one-day-entry > button > span { flex-shrink:0; font-size:1.4rem; }
+
+/* Keep the opened plan readable above mobile browser chrome and bottom navigation. */
+.journey .one-day-preview h2 { scroll-margin-top: max(1rem, env(safe-area-inset-top)); }
+.journey .one-day-preview { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); scroll-margin-bottom: 7rem; }
+.journey .one-day-preview input[type="time"] { display:block; max-width:100%; inline-size:100%; min-inline-size:0; }
+.journey .one-day-preview input::-webkit-date-and-time-value { min-width:0; text-align:left; }
+@media (max-width: 520px) { .journey .one-day-inputs { grid-template-columns:minmax(0,1fr); } }

@@ -12,7 +12,7 @@ export function assessmentPurpose(questionId: string): string {
   return 'This contributes context to your assessment. Not every answer changes your next step; Today will explain the selected focus.';
 }
 
-export type CueOpportunity = { action: string; start: Date | string };
+export type CueOpportunity = { action: string; start: Date | string; end?: Date | string | null; reason?: string };
 export function opportunityLabel(opportunity: CueOpportunity, now: Date, timeZone?: string | null): string {
   const at = new Date(opportunity.start);
   if (at <= now) return `Available now: ${opportunity.action}`;

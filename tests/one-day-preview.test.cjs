@@ -36,3 +36,16 @@ test('opening focuses a heading and scrolls once; edits do not scroll; closing r
  act(()=>tree.root.findAllByType('button').at(-1).props.onClick());act(()=>frames.shift()());assert.deepEqual(calls.at(-1),['restore',420]);
  }finally{act(()=>tree?.unmount());delete global.window;delete global.requestAnimationFrame;delete global.cancelAnimationFrame;}
 });
+test('Apply explains invalid PM, unchanged, missing, gated, failure and success beside action',()=>{
+ const React=require('react'),{create,act}=require('react-test-renderer'),{OneDayPreview}=load('components/one-day-preview.tsx');let tree;
+ const now=new Date('2026-11-19T02:00Z'),props={profile,now,onApply:()=>{}};
+ act(()=>tree=create(React.createElement(OneDayPreview,props)));act(()=>tree.root.findByType('button').props.onClick());
+ const apply=()=>tree.root.findAllByType('button').find(x=>['Use this plan for one day','Plan saved'].includes(x.props.children));
+ assert.equal(apply().props.disabled,true);assert.match(JSON.stringify(tree.toJSON()),/match your usual/);
+ act(()=>tree.root.findAllByType('input')[0].props.onChange({target:{value:'19:56'}}));act(()=>tree.root.findAllByType('input')[1].props.onChange({target:{value:'21:56'}}));assert.equal(apply().props.disabled,true);assert.match(JSON.stringify(tree.toJSON()),/Wake time must be 4 AM to noon/);
+ act(()=>tree.root.findAllByType('input')[0].props.onChange({target:{value:'07:56'}}));assert.equal(apply().props.disabled,false);
+ act(()=>tree.update(React.createElement(OneDayPreview,{...props,blocked:'Existing reminders must remain unchanged.'})));assert.equal(apply().props.disabled,true);assert.match(JSON.stringify(tree.toJSON()),/Existing reminders/);
+ act(()=>tree.update(React.createElement(OneDayPreview,{...props,applyError:'Could not save. Nothing applied.'})));assert.match(JSON.stringify(tree.toJSON()),/Could not save/);
+ act(()=>tree.update(React.createElement(OneDayPreview,{...props,applied:{version:1,date:'2026-11-19',wake:'07:56',bed:'21:56',zone:profile.timeZone,base:''}})));assert.equal(apply().props.children,'Plan saved');assert.equal(apply().props.disabled,true);
+ act(()=>tree.update(React.createElement(OneDayPreview,{...props,profile:null})));assert.equal(apply().props.disabled,true);assert.match(JSON.stringify(tree.toJSON()),/Save your usual wake time/);act(()=>tree.unmount());
+});

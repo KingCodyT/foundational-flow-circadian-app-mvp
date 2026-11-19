@@ -296,3 +296,8 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .one-day-preview input[type="time"] { display:block; max-width:100%; inline-size:100%; min-inline-size:0; }
 .journey .one-day-preview input::-webkit-date-and-time-value { min-width:0; text-align:left; }
 @media (max-width: 520px) { .journey .one-day-inputs { grid-template-columns:minmax(0,1fr); } }
+
+.journey .one-day-apply .journey-primary:disabled { background:#46536a; color:#e0e5ed; border:1px solid #8190a6; box-shadow:none; cursor:not-allowed; opacity:1; }
+.journey .one-day-apply { margin:1rem 0; padding-top:.75rem; border-top:1px solid #73829b; }
+.journey .one-day-field-help { font-size:.85rem; line-height:1.4; color:#f4dfad; }
+.journey .one-day-preview input[aria-invalid="true"] { border-color:#f4dfad; border-width:2px; }

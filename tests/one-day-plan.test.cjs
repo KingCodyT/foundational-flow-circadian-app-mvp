@@ -29,3 +29,10 @@ test('hook apply/reload/undo uses only dedicated storage and invalidates base ch
  R.act(()=>api.undo());assert.equal(api.active,null);assert.equal(memory.size,0);
  R.act(()=>api.apply('tomorrow','05:30','22:00'));R.act(()=>tree.update(React.createElement(H,{profile:{...p,wakeTime:'06:00'}})));assert.equal(api.active,null);assert.equal(memory.size,0);assert.ok(keys.every(k=>k===ONE_DAY_KEY));R.act(()=>tree.unmount());delete global.window;delete global.localStorage;
 });
+
+test('one-day light replacement includes screen exposure but not meal focus',()=>{
+ const {eventSupportsSignal}=load('lib/personalization/now-coaching.ts');
+ const matches=s=>['dim_house','digital_sunset','morning_light'].some(e=>eventSupportsSignal(e,s));
+ assert.equal(matches('evening_screen_exposure'),true);
+ assert.equal(matches('late_eating'),false);
+});

@@ -15,7 +15,10 @@ export function FoodRecipes({profile,now,onPreferencesChange}:{profile:DailyProf
  return <JourneyCard className="food-recipes">
   <p className="recipe-eyebrow">Meals for your waking day</p>
   <h2>{selection || !timing.slot ? `Plan your ${labels[slot].toLowerCase()}` : `${labels[slot]} ideas for now`}</h2>
-  <p>{selection ? 'You’re browsing this meal slot. Your saved schedule and reminders stay the same.' : timing.reason}</p>
+  <aside className="food-fit-note" aria-label="Meal timing context">
+   <h3>{selection ? 'Planning another meal' : timing.slot ? 'Why this fits your day' : 'Plan at your own pace'}</h3>
+   <p>{selection ? `You’re browsing ${labels[slot].toLowerCase()} options, not a suggestion to eat now. Your saved schedule and reminders stay the same.` : timing.reason}</p>
+  </aside>
   {timing.schedule && <p className="food-idea-note">{timing.schedule}</p>}
   <p className="food-idea-note">Pick a recipe, check the ingredients, then open the steps. No meal logging needed.</p>
   <div className="recipe-slots" role="group" aria-label="Browse meal slots">

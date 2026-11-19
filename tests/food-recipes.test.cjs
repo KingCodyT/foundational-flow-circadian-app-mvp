@@ -57,3 +57,14 @@ test('Today and Food share recipes and filters for day, overnight and unknown sc
  R.act(()=>{preview.unmount();food.unmount();});
  }
 });
+test('Food Lab contextual note distinguishes now, browsing, missing schedule and outside hours without duplicated reasons',()=>{
+ for(const [profile,at,title,reason] of [[p,'08:00','Why this fits your day','first four hours'],[null,'08:00','Plan at your own pace','usable waking schedule'],[p,'02:00','Plan at your own pace','outside your saved waking hours']]){
+ let r;R.act(()=>r=R.create(React.createElement(FoodRecipes,{profile,now:new Date(`2026-11-02T${at}Z`),onPreferencesChange:()=>{throw new Error('unexpected write')}})));
+ const note=r.root.findByType('aside');assert.match(text(note),new RegExp(title));assert.match(text(note),new RegExp(reason));assert.equal(text(r.root).split(reason).length-1,1);
+ R.act(()=>r.root.findAllByType('button').find(b=>b.children.includes('Last meal')).props.onClick());assert.match(text(r.root.findByType('aside')),/Planning another meal.*not a suggestion to eat now/);
+ assert.ok(r.root.findAllByType('summary').some(s=>text(s)==='Ingredients & cooking steps'));assert.ok(r.root.findAllByType('a').some(a=>/^https:\/\/codyoakland.com\/recipe\//.test(a.props.href)));R.act(()=>r.unmount());
+ }
+});
+test('Food Lab keeps existing navigation route and icon and does not add a Today control',()=>{
+ const fs=require('node:fs'); const nav=fs.readFileSync('components/journey-design.tsx','utf8');assert.match(nav,/href: "\/food", label: "Food Lab", icon: "food"/);assert.match(fs.readFileSync('views/food-page.tsx','utf8'),/<h1>Food Lab<\/h1>/);
+});

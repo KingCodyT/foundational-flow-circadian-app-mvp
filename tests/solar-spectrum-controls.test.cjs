@@ -31,3 +31,16 @@ test('gradient centers follow actual energy shares, not fixed mockup widths',()=
  const a=solarMixGradient([{id:'uva',percent:10},{id:'blue',percent:90}]);assert.match(a,/5.000%.*55.000%/);assert.notEqual(a,solarMixGradient([{id:'uva',percent:30},{id:'blue',percent:70}]));
  const range=solarDayRange(getSolarTimes(now,profile.latitude,profile.longitude,profile.timeZone));assert.equal(range.position(new Date(range.start)),0);assert.equal(range.position(new Date(range.end)),100);
 });
+
+test('compact slider readout follows selected angle and strength and resets without duplicate totals',()=>{
+ let tree;act(()=>tree=create(React.createElement(SolarSpectrum,{profile,now})));
+ const row=()=>JSON.stringify(tree.toJSON()).split('solar-compact-readout')[1].split('solar-rail-help')[0];
+ const initial=row();assert.match(initial,/sun angle/);assert.match(initial,/clear-sky estimate/);
+ const solar=getSolarTimes(now,profile.latitude,profile.longitude,profile.timeZone);
+ act(()=>tree.root.findByType('input').props.onChange({target:{value:String(+solar.solarNoon)}}));
+ assert.notEqual(row(),initial);
+ act(()=>tree.root.findByType('button').props.onClick());assert.equal(row(),initial);
+ act(()=>tree.update(React.createElement(SolarSpectrum,{profile,now:new Date('2026-11-19T04:00:00Z')})));
+ assert.match(row(),/Nighttime/);assert.match(row(),/strength unavailable/);assert.doesNotMatch(row(),/W\/m/);
+ act(()=>tree.unmount());
+});

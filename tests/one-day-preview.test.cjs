@@ -18,7 +18,7 @@ test('DST elapsed sleep opportunity is real hours, missing location cannot inven
 test('interactive edit/reset/close affects only component state',()=>{
  const React=require('react'),{create,act}=require('react-test-renderer'),{OneDayPreview}=load('components/one-day-preview.tsx');let tree;act(()=>tree=create(React.createElement(OneDayPreview,{profile,now:new Date('2026-11-19T02:00:00Z')})));
  act(()=>tree.root.findByType('button').props.onClick());let inputs=tree.root.findAllByType('input');act(()=>inputs[0].props.onChange({target:{value:'05:30'}}));assert.match(JSON.stringify(tree.toJSON()),/7.5/);
- act(()=>tree.root.findAllByType('button')[0].props.onClick());assert.equal(tree.root.findAllByType('input')[0].props.value,'07:00');act(()=>tree.root.findAllByType('button')[1].props.onClick());assert.equal(tree.root.findAllByType('input').length,0);assert.equal(profile.wakeTime,'07:00');act(()=>tree.unmount());
+ act(()=>tree.root.findAllByType('button')[1].props.onClick());assert.equal(tree.root.findAllByType('input')[0].props.value,'07:00');act(()=>tree.root.findAllByType('button')[2].props.onClick());assert.equal(tree.root.findAllByType('input').length,0);assert.equal(profile.wakeTime,'07:00');act(()=>tree.unmount());
 });
 test('evening is anchored to explicitly dated bed, not a prior usual-wake rollover',()=>{
  const now=new Date('2026-11-18T20:00:00Z');

@@ -278,3 +278,9 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .one-day-preview input,.journey .one-day-preview select { width:100%; min-width:0; box-sizing:border-box; padding:.6rem; color:#edf0f6; background:#263955; border:1px solid #9faec7; border-radius:.4rem; font-size:1rem; }
 .journey .one-day-preview article { padding:.75rem 0; border-top:1px solid #73829b; }
 .journey .one-day-buttons { display:flex; flex-wrap:wrap; gap:1rem; }
+
+/* A prominent, thumb-friendly entry directly beneath the saved schedule. */
+.journey .one-day-entry > button { display:flex; align-items:center; justify-content:space-between; gap:1rem; width:100%; min-height:56px; padding:1rem 1.2rem; border:1px solid #f4dfad; border-radius:.85rem; background:#203d70; color:#fff3d4; font-size:1.05rem; line-height:1.4; font-weight:650; text-align:left; box-shadow:0 4px 14px rgba(0,0,0,.2); cursor:pointer; }
+.journey .one-day-entry > button:hover { background:#294d89; }
+.journey .one-day-entry > button:focus-visible { outline:3px solid #fff3d4; outline-offset:3px; }
+.journey .one-day-entry > button > span { flex-shrink:0; font-size:1.4rem; }

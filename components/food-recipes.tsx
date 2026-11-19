@@ -1,6 +1,7 @@
+import { foodLabRecipesForSlot, seasonalRecipeMatches, FOOD_SAFETY_SOURCE } from '@/lib/personalization/food-lab-recipes';
 import { useState } from 'react';
 import type { DailyProfile } from '@/types/circadian';
-import { recipesForSlot, type MealSlot } from '@/lib/personalization/food-recipes';
+import { type MealSlot } from '@/lib/personalization/food-recipes';
 import { recipeWindow } from '@/lib/personalization/recipe-window';
 import { seasonalFood } from '@/lib/seasonal/seasonal-food';
 import { JourneyCard } from './journey-design';
@@ -10,7 +11,7 @@ export function FoodRecipes({profile,now,onPreferencesChange}:{profile:DailyProf
  const [selection,setSelection]=useState<MealSlot|null>(null);
  const slot=selection??timing.slot??'first';
  const season=seasonalFood(profile,now);
- const recipes=recipesForSlot(slot, profile);
+ const recipes=foodLabRecipesForSlot(slot, profile);
  const plant=profile?.foodPreference==='plant';
  return <JourneyCard className="food-recipes">
   <p className="recipe-eyebrow">Meals for your waking day</p>
@@ -32,7 +33,7 @@ export function FoodRecipes({profile,now,onPreferencesChange}:{profile:DailyProf
    <label><input type="checkbox" checked={profile?.foodQuick??false} onChange={e=>onPreferencesChange({foodQuick:e.target.checked})}/> 30 minutes or less</label>
   </details>
   {plant ? <p role="status">This first recipe collection includes animal foods. Your plant-based preference is still saved; we haven’t substituted an incompatible recipe.</p> : recipes.length ? <div className="recipe-list">{recipes.map(recipe=>{
-   const matches=season?.vegetables.filter(v=>recipe.produce.some(p=>p.toLowerCase()===v.toLowerCase()))??[];
+   const matches=seasonalRecipeMatches(recipe,season);
    return <article key={`${slot}:${recipe.id}`} className="recipe-card">
     <p className="recipe-eyebrow">{recipe.minutes} min · makes {recipe.servings} servings</p>
     <h3>{recipe.title}</h3>
@@ -45,8 +46,9 @@ export function FoodRecipes({profile,now,onPreferencesChange}:{profile:DailyProf
      <p><strong>Check before cooking:</strong> {recipe.allergens}. Check every package and cross-contact guidance for your allergies; this is not an allergy-safe certification.</p>
      <p><strong>Simple swap:</strong> {recipe.swap} Swaps change the original recipe; check any replacement for your allergies.</p>
      <p><strong>Make it local:</strong> Choose the listed produce from a nearby grower when available. A different vegetable may need a different cooking time; swaps change the recipe and its nutrition.</p>
-     <p className="food-idea-note">Cody’s original working recipe—not kitchen-tested. Times are estimates. This app does not calculate recipe nutrition.</p>
-     <a href={recipe.source} target="_blank" rel="noreferrer">Full recipe & source notes (new tab)</a>
+     <p className="food-idea-note">{recipe.original ? 'Original Food Lab recipe draft; not kitchen-tested or published on the website.' : 'Adapted from Cody’s published working recipe; not kitchen-tested here.'} Times are estimates. This app does not calculate recipe nutrition.</p>
+     {recipe.source && <a href={recipe.source} target="_blank" rel="noreferrer">Full recipe & source notes (new tab)</a>}
+     {recipe.original && <a href={FOOD_SAFETY_SOURCE} target="_blank" rel="noreferrer">FoodSafety.gov cooking temperatures (new tab)</a>}
     </details>
    </article>;
   })}</div> : <p role="status">No recipes in this meal slot match those filters yet. Try another slot or change a filter; your preferences won’t be ignored.</p>}

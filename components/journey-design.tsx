@@ -16,7 +16,7 @@ export function JourneyFrame({ children, image = 1, night = false, onboarding = 
 }
 const destinations = [
   { href: "/today", label: "Today", icon: "sun" },
-  { href: "/food", label: "Food", icon: "food" },
+  { href: "/food", label: "Food Lab", icon: "food" },
   { href: "/timeline", label: "Timeline", icon: "clock" },
   { href: "/profile", label: "Profile", icon: "person" },
 ] as const;

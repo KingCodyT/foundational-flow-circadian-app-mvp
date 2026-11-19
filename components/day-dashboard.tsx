@@ -1,3 +1,4 @@
+import { OneDayPreview } from './one-day-preview';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { DailyProfile } from '@/types/circadian';
@@ -31,6 +32,7 @@ export function DayDashboard({profile, now, children}: {profile: DailyProfile | 
       <div><dt>Usual wake</dt><dd>{profile?.wakeTime ? savedClockTime(profile.wakeTime) : 'Not set'}</dd></div>
       <div><dt>Planned bed</dt><dd>{profile?.targetBedtime ? savedClockTime(profile.targetBedtime) : 'Not set'}</dd></div>
     </dl>
+    <OneDayPreview profile={profile} now={now} />
     {children}
     <div className="day-dashboard-actions">
       <article><h2>Light for this moment</h2><p>{lightAction}</p><a href="#today-light-guide">Why this light matters →</a></article>

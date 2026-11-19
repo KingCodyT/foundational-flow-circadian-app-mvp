@@ -244,7 +244,7 @@ test('canonical pages and back/forward-style navigation preserve the complete ac
     const nav = h.rendered.findByProps({ 'aria-label': 'Primary navigation' });
     const links = nav.findAllByType('a');
     assert.deepEqual(links.map(a => a.props.href), ['/today', '/food', '/timeline', '/profile']);
-    assert.deepEqual(links.map(a => a.findByType('span').children.join('')), ['Today', 'Food', 'Timeline', 'Profile']);
+    assert.deepEqual(links.map(a => a.findByType('span').children.join('')), ['Today', 'Food Lab', 'Timeline', 'Profile']);
     assert.deepEqual(links.filter(a => a.props['aria-current'] === 'page').map(a => a.props.href), [route.split('?')[0]]);
     assert.equal(h.value.runtime, runtime);
     assert.equal(h.value.acceptedFocus, focus);

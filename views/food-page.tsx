@@ -9,7 +9,7 @@ export default function FoodPage() {
   const { dailyProfile, setDailyProfile, storageIssue, now, isHydrated } = useCircadian();
   return <FlowShell>
     <header className="journey-intro">
-      <h1>Food</h1>
+      <h1>Food Lab</h1>
       <p>Real recipes for your waking day. Pick what fits, open the steps, and make it yours.</p>
     </header>
     {isHydrated ? <><FoodRecipes profile={dailyProfile} now={now} onPreferencesChange={changes => setDailyProfile({wakeTime:null,targetBedtime:null,locationPermissionGranted:false,...dailyProfile,...changes})} /><p role="status">{storageIssue ? "Your changes could not be saved. Please use the storage recovery message above." : "Food preferences are saved in this browser and used on Today."}</p></> : <p role="status">Loading your meal ideas…</p>}

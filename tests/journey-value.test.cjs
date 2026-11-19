@@ -54,7 +54,7 @@ test('partial schedule prompts only for the missing field',()=>{for(const render
 
 test("Today light details omit distracting Food shortcut while main navigation retains Food",()=>{
  const journey=fs.readFileSync("components/journey-now.tsx","utf8");assert.doesNotMatch(journey,/today-food-link/);assert.match(journey,/More about today’s light/);
- const navigation=fs.readFileSync("components/journey-design.tsx","utf8");assert.match(navigation,/href: "\/food", label: "Food"/);
+ const navigation=fs.readFileSync("components/journey-design.tsx","utf8");assert.match(navigation,/href: "\/food", label: "Food Lab"/);
 });
 const {assessmentPurpose}=load('lib/journey-value.ts');
 const {questionnaire}=load('lib/questionnaire.ts');

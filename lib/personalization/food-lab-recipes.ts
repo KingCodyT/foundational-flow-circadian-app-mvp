@@ -1,0 +1,25 @@
+import { recipesForSlot, type FoodRecipe, type MealSlot } from './food-recipes';
+import type { SeasonalFood } from '../seasonal/seasonal-food';
+export type LabRecipe = Omit<FoodRecipe,'source'> & {source?:string; original?:boolean};
+export const FOOD_LAB_ADDITIONS: LabRecipe[] = [
+ {id:'lab-roast-chicken-squash-sage',title:'Roast chicken with winter squash and sage',slot:'middle',servings:2,minutes:50,dairyFree:true,original:true,
+ ingredients:['12 oz raw boneless skinless chicken thighs','16 oz peeled, seeded winter squash, cut into 3/4-inch cubes','4 oz onion, cut into wedges','0.75 fl oz olive oil','0.1 oz fresh sage, chopped','0.1 oz garlic, minced','0.04 oz salt','0.01 oz black pepper'],
+ steps:['Heat oven to 425°F. Wash produce before cutting. Toss squash and onion with half the oil, sage, garlic, salt and pepper on a rimmed baking sheet. Roast for 15 minutes.', 'On a separate board, prepare the chicken. Do not rinse raw chicken. Coat with remaining oil and place beside the vegetables. Wash hands, board and utensils that touched raw chicken.', 'Roast another 20–25 minutes, turning vegetables once, until squash is tender and the thickest part of each thigh reaches 165°F on a food thermometer. Continue cooking if needed; timing varies with size.', 'Divide all chicken, vegetables and juices evenly between two plates. Refrigerate leftovers in shallow containers within 2 hours (1 hour above 90°F).'],
+ allergens:'No major U.S. allergens intentionally included; check packaged ingredients and cross-contact.',produce:['Winter Squash','Onions'],swap:'Use an equal weight of carrots instead of squash; cut into small pieces and roast until tender.'},
+ {id:'lab-salmon-fennel-citrus',title:'Salmon with fennel and orange',slot:'middle',servings:2,minutes:40,dairyFree:true,original:true,
+ ingredients:['12 oz raw wild-caught salmon fillets, pin bones removed','12 oz trimmed fennel bulb, thinly sliced','6 oz peeled orange segments, seeds removed','0.75 fl oz olive oil','0.5 fl oz lemon juice','0.1 oz fresh parsley, chopped','0.04 oz salt','0.01 oz black pepper'],
+ steps:['Heat oven to 400°F. Wash fennel, orange and parsley before preparing them. Toss sliced fennel with half the oil, salt and pepper in a shallow baking dish. Roast for 15–20 minutes until beginning to soften.', 'Keep raw fish separate from produce. Place salmon over fennel; add orange segments around it. Spoon remaining oil and lemon juice over fish. Wash utensils and hands after touching raw fish.', 'Bake for another 12–18 minutes, until a food thermometer in the thickest part of each fillet reads 145°F. If needed, remove cooked fish and continue roasting fennel until tender.', 'Scatter parsley over the dish and split salmon, fennel, orange and juices equally between two plates. Refrigerate leftovers within 2 hours (1 hour above 90°F).'],
+ allergens:'Fish (salmon). Check packaged ingredients and cross-contact.',produce:['Fennel','Oranges'],swap:'Use an equal weight of thinly sliced cabbage instead of fennel; roast until tender before adding the fish.'},
+ {id:'lab-beef-root-vegetable-skillet',title:'Beef and root-vegetable skillet',slot:'middle',servings:2,minutes:40,dairyFree:true,original:true,
+ ingredients:['12 oz raw ground beef','8 oz carrots, scrubbed and cut into 1/2-inch cubes','8 oz parsnips, peeled and cut into 1/2-inch cubes','4 oz onion, diced','0.5 fl oz olive oil','3 fl oz water','0.1 oz garlic, minced','0.05 oz fresh thyme leaves','0.04 oz salt','0.01 oz black pepper'],
+ steps:['Wash produce before preparing it. Heat olive oil in a large skillet over medium heat. Add carrots, parsnips and onion; cook for 5 minutes, stirring.', 'Add water, cover and simmer for 10–15 minutes until roots are nearly tender. Transfer vegetables and liquid to a clean bowl.', 'Add beef to the skillet and break it into small pieces. Cook, stirring, until a food thermometer reads 160°F in several portions. Stir in garlic and thyme for the last minute. Wash hands and tools that handled raw beef.', 'Return vegetables and liquid to the pan. Add salt and pepper; simmer until vegetables are tender and everything is hot. Split evenly between two plates. Refrigerate leftovers within 2 hours (1 hour above 90°F).'],
+ allergens:'No major U.S. allergens intentionally included; check packaged ingredients and cross-contact.',produce:['Carrots','Parsnips'],swap:'Use an equal weight of turnips instead of parsnips; simmer until tender.'},
+];
+export const FOOD_SAFETY_SOURCE='https://www.foodsafety.gov/food-safety-charts/safe-minimum-internal-temperatures';
+export function foodLabRecipesForSlot(slot:MealSlot, preferences:Parameters<typeof recipesForSlot>[1]):LabRecipe[] {
+ if(preferences?.foodPreference==='plant') return [];
+ return [...recipesForSlot(slot,preferences),...FOOD_LAB_ADDITIONS.filter(r=>r.slot===slot&&(!preferences?.foodDairyFree||r.dairyFree)&&(!preferences?.foodQuick||r.minutes<=30))];
+}
+export function seasonalRecipeMatches(recipe:LabRecipe,season:SeasonalFood|null):string[]{
+ return season?[...season.vegetables,...season.fruits].filter(item=>recipe.produce.some(p=>p.toLowerCase()===item.toLowerCase())):[];
+}

@@ -269,3 +269,9 @@ html, body { background: var(--coastal-bg); color: var(--coastal-text); color-sc
 .journey .solar-compact-readout { display:grid; grid-template-columns:1fr 1.4fr; gap:.5rem; align-items:start; margin:.8rem 0; padding:.65rem 0; border-top:1px solid rgba(242,221,171,.18); border-bottom:1px solid rgba(242,221,171,.18); color:#e5e8ed; font-size:.8rem; line-height:1.4; text-align:left; }
 .journey .solar-compact-readout > span { min-width:0; }
 .journey .solar-compact-readout strong { display:block; color:#f4dfad; font-size:1.05rem; font-weight:600; white-space:nowrap; }
+
+/* Food-only context, before choosing a recipe. */
+.journey .food-fit-note { margin:1rem 0; padding:1rem; border-left:3px solid var(--coastal-gold); background:rgba(28,41,64,.92); border-radius:.5rem; }
+.journey .food-fit-note h3 { margin:0 0 .4rem; font-size:1.05rem; color:#f4dfad; }
+.journey .food-fit-note p { margin:0; line-height:1.55; }
+.journey .journey-nav a[href="/food"] span { white-space:nowrap; }
